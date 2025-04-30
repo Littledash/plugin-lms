@@ -2,7 +2,7 @@ import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
-import { lmsPlugin } from '../src/plugin/index.js'
+import { lmsPlugin } from '../src/index.js'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
@@ -52,7 +52,7 @@ export default buildConfig({
       quizzes: true,
       categories: true,
       tags: true,
-      
+
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || 'test-secret_key',

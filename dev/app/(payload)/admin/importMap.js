@@ -20,9 +20,9 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { PriceInput as PriceInput_33ab1265382aa893ac6b86c37ac920f9 } from '../../../ui/PriceInput'
-import { PriceRowLabel as PriceRowLabel_a7be99f5bcbaef5b32524c8ddfde4187 } from '../../../ui/PriceRowLabel'
-import { SlugInput as SlugInput_87c2b28e822b339da48d5fb42f8e7cc3 } from '../../../ui/SlugInput'
+import { PriceInput as PriceInput_33ab1265382aa893ac6b86c37ac920f9 } from '../../../../src/ui/PriceInput'
+import { PriceRowLabel as PriceRowLabel_2271d9ad0d592f85e0b8c21e74000df4 } from '../../../../src/ui/PriceRowLabel'
+import { SlugInput as SlugInput_1b83e60294c19256294ff8efa0e2b002 } from '../../../../src/ui/SlugInput'
 
 export const importMap = {
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -48,6 +48,6 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "./ui/PriceInput#PriceInput": PriceInput_33ab1265382aa893ac6b86c37ac920f9,
-  "./ui/PriceRowLabel#PriceRowLabel": PriceRowLabel_a7be99f5bcbaef5b32524c8ddfde4187,
-  "./ui/SlugInput#SlugInput": SlugInput_87c2b28e822b339da48d5fb42f8e7cc3
+  "../ui/PriceRowLabel#PriceRowLabel": PriceRowLabel_2271d9ad0d592f85e0b8c21e74000df4,
+  "../ui/SlugInput#SlugInput": SlugInput_1b83e60294c19256294ff8efa0e2b002
 }

@@ -46,7 +46,7 @@ export const pricesField: (props: Props) => ArrayField = ({
           clientProps: {
             currenciesConfig,
           },
-          path: './ui/PriceRowLabel#PriceRowLabel',
+          path: '../ui/PriceRowLabel#PriceRowLabel',
         },
       },
       initCollapsed: true,
