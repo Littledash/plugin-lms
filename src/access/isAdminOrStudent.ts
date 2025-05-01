@@ -5,18 +5,15 @@ import type { User } from 'payload'
 import { checkRole } from './checkRole.js'
 
 /**
- * Access control for Course based on the user's role and the query string
+ * Access control that allows users with admin role or student role
+ * @returns True if the user is an admin or student, false otherwise
  */
-export const isAdminOrStudent: Access = ({ req, req: { user } }) => {
-  if (user && checkRole(['admin', 'author'], user)) {
+export const isAdminOrStudent: Access = ({ req: { user } }) => {
+  if (user && checkRole(['admin', 'student'], user)) {
     return true
   }
 
-  return {
-    students: {
-      contains: user?.id,
-    },
-  }
+  return false
 }
 
 

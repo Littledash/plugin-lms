@@ -1,13 +1,14 @@
-import type { Access, FieldAccess, Where } from 'payload'
-
-import type { User } from 'payload'
-
+import type { Access } from 'payload'
 import { checkRole } from './checkRole.js'
 
 /**
- * Access control for Course based on the user's role and the query string
+ * Access control that allows users with admin role or author role
+ * @returns True if the user is an admin or author, false otherwise
  */
-export const isAdminOrAuthor: Access = ({ req, req: { user } }) => {
-   // Return true or false based on if the user has an admin role
-   return Boolean(checkRole(['admin', 'author'], user))
+export const isAdminOrAuthor: Access = ({ req: { user } }) => {
+  if (user && checkRole(['admin', 'author'], user)) {
+    return true
+  }
+
+  return false
 }
