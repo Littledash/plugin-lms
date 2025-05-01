@@ -1,15 +1,32 @@
 import { CollectionConfig, Field } from 'payload';
 import { FieldsOverride } from '../types.js';
-
+import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
+import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
+/**
+ * Props interface for configuring the quizzes collection
+ * @property mediaCollectionSlug - Slug for the media collection (default: 'media')
+ * @property overrides - Optional configuration overrides for fields and collection settings
+ */
 type Props = {
     mediaCollectionSlug?: string
     overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
+/**
+ * Creates a quizzes collection configuration for Payload CMS
+ * This collection manages quizzes and assessments
+ * 
+ * @param props - Configuration properties for the quizzes collection
+ * @returns CollectionConfig object for quizzes
+ */
 export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> = (props) => {
   const { overrides, mediaCollectionSlug = 'media'} = props || {}
   const fieldsOverride = overrides?.fields
 
+  /**
+   * Default fields for the quizzes collection
+   * Includes quiz details, access control, and content organization
+   */
   const defaultFields: Field[] = [
     {
       name: 'title',
@@ -55,16 +72,23 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
     },
   ]
 
+  // Apply field overrides if provided
   const fields =
   fieldsOverride && typeof fieldsOverride === 'function'
     ? fieldsOverride({ defaultFields })
     : defaultFields
 
-    const baseConfig: CollectionConfig = {
-      slug: 'quizzes',
-      access: {
-        // TODO: Add access control
-        read: () => true,
+  /**
+   * Base configuration for the quizzes collection
+   * Includes slug, access control, timestamps, and admin settings
+   */
+  const baseConfig: CollectionConfig = {
+    slug: 'quizzes',
+    access: {
+      read: isAdminOrAuthorOrStudent,
+      create: isAdminOrAuthor,
+      update: isAdminOrAuthor,
+      delete: isAdminOrAuthor,
       },
       timestamps: true,
       ...overrides,

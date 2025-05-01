@@ -2,8 +2,20 @@ import { CollectionConfig, Field } from 'payload';
 import { FieldsOverride } from '../types.js';
 import type { CurrenciesConfig } from '../types.js';
 import { pricesField } from '../fields/pricesField.js';
-import { isAdminOrStudent } from '../access/isAdminOrStudent.js';
 import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
+import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
+
+/**
+ * Props interface for configuring the courses collection
+ * @property categoriesCollectionSlug - Slug for the categories collection (default: 'categories')
+ * @property certificatesCollectionSlug - Slug for the certificates collection (default: 'certificates')
+ * @property currenciesConfig - Configuration for supported currencies
+ * @property lessonsCollectionSlug - Slug for the lessons collection (default: 'lessons')
+ * @property mediaCollectionSlug - Slug for the media collection (default: 'media')
+ * @property studentsCollectionSlug - Slug for the students collection (default: 'users')
+ * @property tagsCollectionSlug - Slug for the tags collection (default: 'tags')
+ * @property overrides - Optional configuration overrides for fields and collection settings
+ */
 type Props = {
     categoriesCollectionSlug?: string
     certificatesCollectionSlug?: string
@@ -15,11 +27,21 @@ type Props = {
     overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
-
+/**
+ * Creates a courses collection configuration for Payload CMS
+ * This collection manages educational courses with various access modes, pricing, and content organization
+ * 
+ * @param props - Configuration properties for the courses collection
+ * @returns CollectionConfig object for courses
+ */
 export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> = (props) => {
   const { overrides, mediaCollectionSlug = 'media', lessonsCollectionSlug = 'lessons', categoriesCollectionSlug = 'categories', tagsCollectionSlug = 'tags', currenciesConfig, studentsCollectionSlug = 'users', certificatesCollectionSlug = 'certificates' } = props || {}
   const fieldsOverride = overrides?.fields
 
+  /**
+   * Default fields for the courses collection
+   * Includes course details, access control, pricing, relationships, and content organization
+   */
   const defaultFields: Field[] = [
     {
       name: 'title',
@@ -157,28 +179,32 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     }
   ]
 
+  // Apply field overrides if provided
   const fields =
   fieldsOverride && typeof fieldsOverride === 'function'
     ? fieldsOverride({ defaultFields })
     : defaultFields
 
-    const baseConfig: CollectionConfig = {
-      slug: 'courses',
-      access: {
-        create: isAdminOrAuthor,
-        delete: isAdminOrAuthor,
-        read: isAdminOrStudent,
-        update: isAdminOrAuthor,
-      },
-      timestamps: true,
-      ...overrides,
-      admin: {
-        useAsTitle: 'title',
-        ...overrides?.admin,
-      },
-      fields,
-    }
-  
-    return { ...baseConfig }
+  /**
+   * Base configuration for the courses collection
+   * Includes slug, access control, timestamps, and admin settings
+   */
+  const baseConfig: CollectionConfig = {
+    slug: 'courses',
+    access: {
+      create: isAdminOrAuthor,
+      delete: isAdminOrAuthor,
+      read: isAdminOrAuthorOrStudent,
+      update: isAdminOrAuthor,
+    },
+    timestamps: true,
+    ...overrides,
+    admin: {
+      useAsTitle: 'title',
+      ...overrides?.admin,
+    },
+    fields,
+  }
 
+  return { ...baseConfig }
 }

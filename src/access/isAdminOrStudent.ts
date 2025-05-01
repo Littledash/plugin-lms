@@ -13,6 +13,14 @@ export const isAdminOrStudent: Access = ({ req: { user } }) => {
     return true
   }
 
+  // if (user && checkRole(['student'], user)) {
+  //   return {
+  //     students: {
+  //       contains: user.id,
+  //     },
+  //   }
+  // }
+
   return false
 }
 

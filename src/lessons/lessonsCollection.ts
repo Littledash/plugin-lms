@@ -1,7 +1,16 @@
 import { CollectionConfig, Field } from 'payload';
 import { FieldsOverride } from '../types.js';
 import { embeddedVideo } from '../fields/embeddedVideo.js';
+import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
+import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
 
+/**
+ * Props interface for configuring the lessons collection
+ * @property coursesCollectionSlug - Slug for the courses collection (default: 'courses')
+ * @property mediaCollectionSlug - Slug for the media collection (default: 'media')
+ * @property quizzesCollectionSlug - Slug for the quizzes collection (default: 'quizzes')
+ * @property overrides - Optional configuration overrides for fields and collection settings
+ */
 type Props = {
     coursesCollectionSlug?: string
     mediaCollectionSlug?: string
@@ -9,11 +18,21 @@ type Props = {
     overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
-
+/**
+ * Creates a lessons collection configuration for Payload CMS
+ * This collection manages individual lessons within courses, including content, media, and assessments
+ * 
+ * @param props - Configuration properties for the lessons collection
+ * @returns CollectionConfig object for lessons
+ */
 export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> = (props) => {
   const { overrides, mediaCollectionSlug = 'media', coursesCollectionSlug = 'courses', quizzesCollectionSlug = 'quizzes' } = props || {}
   const fieldsOverride = overrides?.fields
 
+  /**
+   * Default fields for the lessons collection
+   * Includes lesson content, media, progression control, and assessment relationships
+   */
   const defaultFields: Field[] = [
     {
       name: 'title',
@@ -98,26 +117,32 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     },
   ]
 
+  // Apply field overrides if provided
   const fields =
   fieldsOverride && typeof fieldsOverride === 'function'
     ? fieldsOverride({ defaultFields })
     : defaultFields
 
-    const baseConfig: CollectionConfig = {
-      slug: 'lessons',
-      access: {
-        // TODO: Add access control
-        read: () => true,
-      },
-      timestamps: true,
-      ...overrides,
-      admin: {
-        useAsTitle: 'title',
-        ...overrides?.admin,
-      },
-      fields,
-    }
-  
-    return { ...baseConfig }
+  /**
+   * Base configuration for the lessons collection
+   * Includes slug, access control, timestamps, and admin settings
+   */
+  const baseConfig: CollectionConfig = {
+    slug: 'lessons',
+    access: {
+      create: isAdminOrAuthor,
+      read: isAdminOrAuthorOrStudent,
+      update: isAdminOrAuthor,
+      delete: isAdminOrAuthor,
+    },
+    timestamps: true,
+    ...overrides,
+    admin: {
+      useAsTitle: 'title',
+      ...overrides?.admin,
+    },
+    fields,
+  }
 
+  return { ...baseConfig }
 }

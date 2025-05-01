@@ -1,14 +1,31 @@
 import { CollectionConfig, Field } from 'payload';
 import { FieldsOverride } from '../types.js';
+import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
+import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
 
+/**
+ * Props interface for configuring the questions collection
+ * @property overrides - Optional configuration overrides for fields and collection settings
+ */
 type Props = {
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
+/**
+ * Creates a questions collection configuration for Payload CMS
+ * This collection manages questions for quizzes and assessments
+ * 
+ * @param props - Configuration properties for the questions collection
+ * @returns CollectionConfig object for questions 
+ */
 export const questionsCollection: (props?: Props) => CollectionConfig<'questions'> = (props) => {
   const { overrides } = props || {}
   const fieldsOverride = overrides?.fields
 
+  /**
+   * Default fields for the questions collection
+   * Includes question details, access control, and content organization
+   */
   const defaultFields: Field[] = [
     {
       name: 'title',
@@ -104,15 +121,23 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     },
   ]
 
+  // Apply field overrides if provided
   const fields =
     fieldsOverride && typeof fieldsOverride === 'function'
       ? fieldsOverride({ defaultFields })
       : defaultFields
 
+  /**
+   * Base configuration for the questions collection
+   * Includes slug, access control, timestamps, and admin settings
+   */
   const baseConfig: CollectionConfig = {
     slug: 'questions',
     access: {
-      read: () => true,
+      read: isAdminOrAuthorOrStudent,
+      create: isAdminOrAuthor,
+      update: isAdminOrAuthor,
+      delete: isAdminOrAuthor,
     },
     timestamps: true,
     ...overrides,
