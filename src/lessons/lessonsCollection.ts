@@ -1,9 +1,9 @@
 import { CollectionConfig, Field } from 'payload';
 import { FieldsOverride } from '../types.js';
 import { embeddedVideo } from '../fields/embeddedVideo.js';
-import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
 import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
 
+import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 /**
  * Props interface for configuring the lessons collection
  * @property coursesCollectionSlug - Slug for the courses collection (default: 'courses')
@@ -43,19 +43,22 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       },
     },
     {
+      name: 'excerpt',
+      type: 'text',
+      admin: {
+        description: 'The excerpt of the lesson',
+      },
+    },
+    {
       name: 'content',
       type: 'richText',
       required: true,
       admin: {
         description: 'The content of the lesson',
       },
-    },
-    {
-      name: 'excerpt',
-      type: 'text',
-      admin: {
-        description: 'The excerpt of the lesson',
-      },
+      access: {
+        read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+      },  
     },
     {
       name: 'featuredImage',
@@ -76,6 +79,11 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     },
     embeddedVideo({
       mediaCollectionSlug,
+      overrides: {
+        access: {
+          read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+        },
+      },
     }),
     {
       name: 'lessonMaterials',
@@ -84,6 +92,9 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       admin: {
         description: 'The materials of the lesson',
       },
+      access: {
+        read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+      }, 
     },
     {
       name: 'progressionControl',
@@ -103,7 +114,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       type: 'number',
       label: 'Lesson Order',
       admin: {
-        description: 'The order of the lesson in the course',
+        description: 'The order of the lesson in the course', // TODO: Not sure if this is needed
       },
     },
     {
@@ -131,7 +142,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     slug: 'lessons',
     access: {
       create: isAdminOrAuthor,
-      read: isAdminOrAuthorOrStudent,
+      // read: isAdminOrAuthorOrEnrolledInCourse, // TODO not sure if everyone should be able to read lessons
       update: isAdminOrAuthor,
       delete: isAdminOrAuthor,
     },

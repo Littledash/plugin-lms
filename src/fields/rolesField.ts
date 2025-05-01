@@ -16,8 +16,8 @@ export const rolesOptions = [
     value: 'author',
   },
   {
-    label: 'Customer',
-    value: 'customer',
+    label: 'Student',
+    value: 'student',
   },
   {
     label: 'Contributor',
@@ -47,7 +47,7 @@ export const rolesField: (props: Props) => SelectField = ({ overrides }) => {
   const field: SelectField = {
     name: 'roles',
     type: 'select',
-    defaultValue: ['subscriber'],
+    defaultValue: ['student'],
     hasMany: true,
     options: rolesOptions,
     ...overrides,

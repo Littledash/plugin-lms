@@ -2,6 +2,7 @@ import { CollectionConfig, Field } from 'payload';
 import { FieldsOverride } from '../types.js';
 import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
 import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
+import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 /**
  * Props interface for configuring the quizzes collection
  * @property mediaCollectionSlug - Slug for the media collection (default: 'media')
@@ -37,20 +38,24 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
       },
     },
     {
-      name: 'description',
-      type: 'richText',
-      required: true,
-      admin: {
-        description: 'The description of the quiz',
-      },
-    },
-    {
       name: 'excerpt',
       type: 'text',
       admin: {
         description: 'The excerpt of the quiz',
       },
     },
+    {
+      name: 'description',
+      type: 'richText',
+      required: true,
+      admin: {
+        description: 'The description of the quiz',
+      },
+      access: {
+        read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+      },
+    },
+
     {
       name: 'featuredImage',
       type: 'upload',
@@ -68,6 +73,9 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
       required: true,
       admin: {
         description: 'The questions in this quiz',
+      },
+      access: {
+        read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
       },
     },
   ]

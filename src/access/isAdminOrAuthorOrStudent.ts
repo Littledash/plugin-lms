@@ -22,6 +22,6 @@ export const isAdminOrAuthorOrStudentFieldLevel: FieldAccess<{ id: string; stude
   doc,
 }) => {
   if (!user) return false
-  if (checkRole(['admin', 'author', 'student'], user)) return true
+  if (checkRole(['admin', 'author'], user)) return true
   return doc?.students?.includes(String(user.id)) ?? false
 }

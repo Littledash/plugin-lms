@@ -3,8 +3,8 @@ import { FieldsOverride } from '../types.js';
 import type { CurrenciesConfig } from '../types.js';
 import { pricesField } from '../fields/pricesField.js';
 import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
-import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
-
+import { isAdminOrAuthorOrStudent, isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js';
+import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 /**
  * Props interface for configuring the courses collection
  * @property categoriesCollectionSlug - Slug for the categories collection (default: 'categories')
@@ -140,6 +140,9 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     {
       name: 'courseMaterials',
       type: 'richText',
+      access: {
+        read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+      },
     },
     {
       name: 'certificate',
@@ -155,6 +158,10 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
       admin: {
         allowCreate: false,
         description: 'The lessons that are part of the course',
+      },
+      access: {
+        // No access control for the lessons field
+        read: isAdminOrAuthorOrStudentFieldLevel,
       },
     },
     {
@@ -194,7 +201,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     access: {
       create: isAdminOrAuthor,
       delete: isAdminOrAuthor,
-      read: isAdminOrAuthorOrStudent,
+      read: isAdminOrAuthorOrStudent, // TODO not sure if everyone should be able to read courses
       update: isAdminOrAuthor,
     },
     timestamps: true,
