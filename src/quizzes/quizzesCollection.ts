@@ -93,7 +93,7 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
   const baseConfig: CollectionConfig = {
     slug: 'quizzes',
     access: {
-      read: isAdminOrAuthorOrStudent,
+      read: isAdminOrAuthorOrStudent, // TODO not sure if everyone should be able to read quizzes
       create: isAdminOrAuthor,
       update: isAdminOrAuthor,
       delete: isAdminOrAuthor,

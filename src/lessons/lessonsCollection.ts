@@ -4,6 +4,7 @@ import { embeddedVideo } from '../fields/embeddedVideo.js';
 import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
 
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
+import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
 /**
  * Props interface for configuring the lessons collection
  * @property coursesCollectionSlug - Slug for the courses collection (default: 'courses')
@@ -142,7 +143,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     slug: 'lessons',
     access: {
       create: isAdminOrAuthor,
-      // read: isAdminOrAuthorOrEnrolledInCourse, // TODO not sure if everyone should be able to read lessons
+      read: isAdminOrPublished,
       update: isAdminOrAuthor,
       delete: isAdminOrAuthor,
     },

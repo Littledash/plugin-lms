@@ -2,9 +2,10 @@ import { CollectionConfig, Field } from 'payload';
 import { FieldsOverride } from '../types.js';
 import type { CurrenciesConfig } from '../types.js';
 import { pricesField } from '../fields/pricesField.js';
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
-import { isAdminOrAuthorOrStudent, isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js';
+import { isAdminOrAuthor, isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
+import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js';
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
+import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
 /**
  * Props interface for configuring the courses collection
  * @property categoriesCollectionSlug - Slug for the categories collection (default: 'categories')
@@ -82,6 +83,9 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
       hasMany: true,
       admin: {
         description: 'The students enrolled in the course',
+      },
+      access: {
+        read: isAdminOrAuthorFieldLevel,
       },
     },
     {
@@ -201,7 +205,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     access: {
       create: isAdminOrAuthor,
       delete: isAdminOrAuthor,
-      read: isAdminOrAuthorOrStudent, // TODO not sure if everyone should be able to read courses
+      read: isAdminOrPublished, // TODO not sure if everyone should be able to read courses
       update: isAdminOrAuthor,
     },
     timestamps: true,
