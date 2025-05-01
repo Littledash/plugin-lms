@@ -7,7 +7,7 @@ import { lessonsCollection } from '../lessons/lessonsCollection.js'
 import { quizzesCollection } from '../quizzes/quizzesCollection.js'
 import { categoriesCollection } from '../categoires/categoriesCollection.js'
 import { tagsCollection } from '../tags/tagsCollection.js'
-
+import { certificatesCollection } from '../certificates/certificatesCollection.js'
 export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Config): Config => {
   
     if (!pluginConfig) {
@@ -16,6 +16,7 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
 
      const studentsCollectionSlug = pluginConfig.studentsCollectionSlug || 'users'
      const categoriesCollectionSlug = pluginConfig.categoriesCollectionSlug || 'categories'
+     const certificatesCollectionSlug = pluginConfig.certificatesCollectionSlug || 'certificates'
      const coursesCollectionSlug = pluginConfig.coursesCollectionSlug || 'courses'
      const lessonsCollectionSlug = pluginConfig.lessonsCollectionSlug || 'lessons'
      const mediaCollectionSlug = pluginConfig.mediaCollectionSlug || 'media'
@@ -38,6 +39,13 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
     if (!currenciesConfig.defaultCurrency) {
       currenciesConfig.defaultCurrency = currenciesConfig.supportedCurrencies[0]?.code
     }
+
+    if ( pluginConfig.certificates) {
+        const certificates = certificatesCollection({
+            mediaCollectionSlug,
+        })
+        incomingConfig.collections.push(certificates)
+    }   
    
     if ( pluginConfig.courses) {
         const courses = coursesCollection({

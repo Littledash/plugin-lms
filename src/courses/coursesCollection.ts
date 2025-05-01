@@ -14,7 +14,7 @@ type Props = {
 }
 
 
-export const coursesCollection: (props?: Props) => CollectionConfig = (props) => {
+export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> = (props) => {
   const { overrides, mediaCollectionSlug = 'media', lessonsCollectionSlug = 'lessons', categoriesCollectionSlug = 'categories', tagsCollectionSlug = 'tags', currenciesConfig, studentsCollectionSlug = 'users' } = props || {}
   const fieldsOverride = overrides?.fields
 
@@ -37,7 +37,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig = (props) =>
     },
     {
       name: 'excerpt',
-      type: 'text',
+      type: 'textarea',
       admin: {
         description: 'The excerpt of the course',
       },
@@ -118,6 +118,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig = (props) =>
       type: 'richText',
     },
     {
+      // TODO: Add certificate collection
       name: 'certificate',
       type: 'upload',
       relationTo: mediaCollectionSlug,

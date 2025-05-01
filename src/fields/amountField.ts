@@ -19,7 +19,7 @@ export const amountField: (props: Props) => NumberField = ({ currenciesConfig, o
           clientProps: {
             currenciesConfig,
           },
-          path: './ui/PriceInput#PriceInput',
+          path: '../src/ui/PriceInput#PriceInput',
         },
         ...overrides?.admin?.components,
       },

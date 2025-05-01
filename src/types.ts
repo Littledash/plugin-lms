@@ -62,6 +62,10 @@ export type Currency = {
     tagsCollection?: CollectionOverride
   }
 
+  export type CertificateConfig = {
+    certificatesCollection?: CollectionOverride
+  }
+
   export type LMSPluginConfig = {
     /**
      * Configure supported currencies and default settings.
@@ -75,6 +79,13 @@ export type Currency = {
      * @default 'users'
      */
     studentsCollectionSlug?: string
+    /**
+     * Slug of the collection to use for certificates. Referenced in places such as courses and lessons.
+     *
+     * @default 'certificates'
+     */
+    certificatesCollectionSlug?: string
+    
     /**
      * Slug of the collection to use for courses. Referenced in places such as courses and lessons.
      *
@@ -112,6 +123,7 @@ export type Currency = {
      */
     quizzesCollectionSlug?: string
 
+
     /** 
      * Enable courses collection.
      *
@@ -145,4 +157,10 @@ export type Currency = {
      * @default true
      */
     tags?: boolean | TagsConfig
+    /**
+     * Enable certificates collection.
+     *
+     * @default true
+     */
+    certificates?: boolean | CertificateConfig
   }

@@ -7,7 +7,7 @@ type Props = {
 }
 
 
-export const categoriesCollection: (props?: Props) => CollectionConfig = (props) => {
+export const categoriesCollection: (props?: Props) => CollectionConfig<'categories'> = (props) => {
   const { overrides } = props || {}
   const fieldsOverride = overrides?.fields
 

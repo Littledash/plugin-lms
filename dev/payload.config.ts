@@ -52,7 +52,7 @@ export default buildConfig({
       quizzes: true,
       categories: true,
       tags: true,
-
+      certificates: true,
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
