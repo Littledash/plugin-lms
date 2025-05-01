@@ -1,10 +1,10 @@
-import type { User } from '@types'
+import type { User } from 'payload'
 
 export const checkRole = (allRoles: User['roles'] = [], user: User | null): boolean => {
   if (user) {
     if (
-      allRoles.some((role) => {
-        return user?.roles?.some((individualRole) => {
+      allRoles.some((role: string) => {
+        return user?.roles?.some((individualRole: string) => {
           return individualRole === role
         })
       })

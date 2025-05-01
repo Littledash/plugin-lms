@@ -125,6 +125,7 @@ export default buildConfig({
       categories: true,
       tags: true,
       certificates: true,
+      questions: true,
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || 'test-secret_key',

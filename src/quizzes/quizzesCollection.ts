@@ -43,16 +43,16 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
         description: 'The featured image of the quiz',
       },
     },
-    // {
-    //   name: 'questions',
-    //   type: 'relationship',
-    //   relationTo: 'questions',
-    //   hasMany: true,
-    //   required: true,
-    //   admin: {
-    //     description: 'The questions in this quiz',
-    //   },
-    // },
+    {
+      name: 'questions',
+      type: 'relationship',
+      relationTo: 'questions',
+      hasMany: true,
+      required: true,
+      admin: {
+        description: 'The questions in this quiz',
+      },
+    },
   ]
 
   const fields =

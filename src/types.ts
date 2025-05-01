@@ -66,6 +66,10 @@ export type Currency = {
     certificatesCollection?: CollectionOverride
   }
 
+  export type QuestionsConfig = {
+    questionsCollection?: CollectionOverride
+  }
+
   export type LMSPluginConfig = {
     /**
      * Configure supported currencies and default settings.
@@ -163,4 +167,10 @@ export type Currency = {
      * @default true
      */
     certificates?: boolean | CertificateConfig
+    /**
+     * Enable questions collection.
+     *
+     * @default true
+     */
+    questions?: boolean | QuestionsConfig
   }

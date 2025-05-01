@@ -1,5 +1,5 @@
 import type { AccessArgs, FieldAccess } from 'payload'
-import type { User } from '../payload-types.js'
+import type { User } from 'payload'
 import { checkRole } from './checkRole.js'
 
 type isAdminType = (args: AccessArgs<User>) => boolean

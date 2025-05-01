@@ -1,0 +1,6 @@
+export { isAdminOrStudent } from '../access/isAdminOrStudent.js'
+export { isAdmin } from '../access/isAdmin.js'
+export { isAdminOrLoggedIn } from '../access/isAdminOrLoggedIn.js'
+export { checkRole } from '../access/checkRole.js'
+export { isAdminOrAuthor } from '../access/isAdminOrAuthor.js'
+export { isAuthor } from '../access/isAuthor.js'

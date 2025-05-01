@@ -9,6 +9,8 @@ import { categoriesCollection } from '../categoires/categoriesCollection.js'
 import { tagsCollection } from '../tags/tagsCollection.js'
 import { certificatesCollection } from '../certificates/certificatesCollection.js'
 import { rolesField, rolesOptions } from '../fields/rolesField.js'
+import { questionsCollection } from '../questions/questionsCollection.js'
+
 export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Config): Config => {
 
     if (!pluginConfig) {
@@ -79,6 +81,7 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
     if ( pluginConfig.courses) {
         const courses = coursesCollection({
             categoriesCollectionSlug,
+            certificatesCollectionSlug,
             currenciesConfig,
             lessonsCollectionSlug,
             mediaCollectionSlug,
@@ -112,6 +115,11 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
     if ( pluginConfig.tags) {
         const tags = tagsCollection()
         incomingConfig.collections.push(tags)
+    }
+
+    if ( pluginConfig.questions) {
+        const questions = questionsCollection()
+        incomingConfig.collections.push(questions)
     }
 
     return {

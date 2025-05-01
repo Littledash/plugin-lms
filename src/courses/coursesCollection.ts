@@ -2,9 +2,11 @@ import { CollectionConfig, Field } from 'payload';
 import { FieldsOverride } from '../types.js';
 import type { CurrenciesConfig } from '../types.js';
 import { pricesField } from '../fields/pricesField.js';
-
+import { isAdminOrStudent } from '../access/isAdminOrStudent.js';
+import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
 type Props = {
     categoriesCollectionSlug?: string
+    certificatesCollectionSlug?: string
     currenciesConfig?: CurrenciesConfig
     lessonsCollectionSlug?: string
     mediaCollectionSlug?: string
@@ -15,7 +17,7 @@ type Props = {
 
 
 export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> = (props) => {
-  const { overrides, mediaCollectionSlug = 'media', lessonsCollectionSlug = 'lessons', categoriesCollectionSlug = 'categories', tagsCollectionSlug = 'tags', currenciesConfig, studentsCollectionSlug = 'users' } = props || {}
+  const { overrides, mediaCollectionSlug = 'media', lessonsCollectionSlug = 'lessons', categoriesCollectionSlug = 'categories', tagsCollectionSlug = 'tags', currenciesConfig, studentsCollectionSlug = 'users', certificatesCollectionSlug = 'certificates' } = props || {}
   const fieldsOverride = overrides?.fields
 
   const defaultFields: Field[] = [
@@ -118,10 +120,10 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
       type: 'richText',
     },
     {
-      // TODO: Add certificate collection
       name: 'certificate',
-      type: 'upload',
-      relationTo: mediaCollectionSlug,
+      type: 'relationship',
+      relationTo: certificatesCollectionSlug,
+      hasMany: false,
     },
     {
       name: 'lessons',
@@ -163,8 +165,10 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     const baseConfig: CollectionConfig = {
       slug: 'courses',
       access: {
-        // TODO: Add access control
-        read: () => true,
+        create: isAdminOrAuthor,
+        delete: isAdminOrAuthor,
+        read: isAdminOrStudent,
+        update: isAdminOrAuthor,
       },
       timestamps: true,
       ...overrides,

@@ -1,6 +1,6 @@
 import type { Access, AccessArgs, FieldAccess } from 'payload'
 
-import type { User } from '@types'
+import type { User } from 'payload'
 
 import { checkRole } from './checkRole.js'
 
