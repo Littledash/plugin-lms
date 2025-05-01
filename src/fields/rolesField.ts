@@ -1,10 +1,15 @@
 import type { SelectField } from 'payload'
 
-
+/**
+ * Props for the roles field configuration
+ */
 type Props = {
   overrides?: Partial<SelectField>
 }
 
+/**
+ * Available role options for the select field
+ */
 export const rolesOptions = [
   {
     label: 'Author',
@@ -32,9 +37,13 @@ export const rolesOptions = [
   },
 ]
 
+/**
+ * Creates a select field for user roles
+ * @param props - Configuration overrides for the field
+ * @returns A configured select field for roles
+ */
 export const rolesField: (props: Props) => SelectField = ({ overrides }) => {
-
-// @ts-expect-error - issue with payload types
+  // @ts-expect-error - issue with payload types
   const field: SelectField = {
     name: 'roles',
     type: 'select',

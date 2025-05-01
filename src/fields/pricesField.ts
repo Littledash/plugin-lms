@@ -5,6 +5,9 @@ import type { CurrenciesConfig } from '../types.js'
 import { amountField } from './amountField.js'
 import { currencyField } from './currencyField.js'
 
+/**
+ * Props for the prices field configuration
+ */
 type Props = {
   /**
    * Use this to specify a path for the condition.
@@ -14,6 +17,11 @@ type Props = {
   overrides?: Partial<ArrayField>
 }
 
+/**
+ * Creates a field for managing multiple price points
+ * @param props - Configuration overrides for the field
+ * @returns A configured array field for prices
+ */
 export const pricesField: (props: Props) => ArrayField = ({
   currenciesConfig,
   overrides,
@@ -51,6 +59,7 @@ export const pricesField: (props: Props) => ArrayField = ({
       },
       initCollapsed: true,
       readOnly: maxRows === minRows,
+      description: 'The price points for this item',
     },
     fields: [amountField({ currenciesConfig }), currencyField({ currenciesConfig })],
   }
