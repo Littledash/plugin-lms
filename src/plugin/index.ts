@@ -1,4 +1,4 @@
-import type { Config } from 'payload'
+import type { Config, Field, SelectField } from 'payload'
 
 import type { LMSPluginConfig } from '../types.js'
 import { AUD } from '../currencies/index.js'
@@ -8,8 +8,9 @@ import { quizzesCollection } from '../quizzes/quizzesCollection.js'
 import { categoriesCollection } from '../categoires/categoriesCollection.js'
 import { tagsCollection } from '../tags/tagsCollection.js'
 import { certificatesCollection } from '../certificates/certificatesCollection.js'
+import { rolesField, rolesOptions } from '../fields/rolesField.js'
 export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Config): Config => {
-  
+
     if (!pluginConfig) {
         return incomingConfig
       }
@@ -28,6 +29,34 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
     if (!incomingConfig.collections) {
         incomingConfig.collections = []
       }
+      const existingStudentsCollection = incomingConfig.collections.find(
+        collection => collection.slug === studentsCollectionSlug
+    )
+     if ( existingStudentsCollection ) {
+
+
+                const existingRolesField = existingStudentsCollection?.fields?.find(
+                    (field): field is SelectField => 
+                        'name' in field && field.name === 'roles' && field.type === 'select'
+                )
+
+                if (!existingRolesField) {
+                    // Add roles field if it doesn't exist
+                    existingStudentsCollection.fields.push(rolesField({}))
+                } else if (existingRolesField.type === 'select') {
+                    // Merge options if roles field exists
+                    const existingOptions = (existingRolesField.options || []) as Array<{ label: string; value: string }>
+                    const rolesFieldConfig = rolesField({})
+                    existingRolesField.options = [
+                        ...existingOptions,
+                        ...(rolesOptions).filter(
+                            newOpt => !existingOptions.find(
+                                existingOpt => existingOpt.value === newOpt.value
+                            )
+                        )
+                    ]
+                }
+     }
 
      // Ensure currencies are configured
     const currenciesConfig: NonNullable<LMSPluginConfig['currencies']> =

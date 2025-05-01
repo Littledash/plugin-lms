@@ -6,7 +6,6 @@ type Props = {
     overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
-
 export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> = (props) => {
   const { overrides, mediaCollectionSlug = 'media'} = props || {}
   const fieldsOverride = overrides?.fields
@@ -44,48 +43,16 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
         description: 'The featured image of the quiz',
       },
     },
-    {
-      name: 'questions',
-      type: 'array',
-      fields: [
-        {
-          name: 'question',
-          type: 'text',
-        },
-        {
-          name: 'questionType',
-          type: 'select',
-          options: [
-            { label: 'Multiple Choice', value: 'multipleChoice' },
-            { label: 'True/False', value: 'trueFalse' },
-          ],
-        },     {
-          name: 'choices',
-          type: 'array',
-          admin: {
-            condition: (_, siblingData) => siblingData.questionType === 'multipleChoice',
-          },
-          fields: [
-            { name: 'label', type: 'text' },
-            { name: 'isCorrect', type: 'checkbox' },
-          ],
-        },
-        {
-          name: 'correctAnswer',
-          type: 'select',
-          admin: {
-            condition: (_, siblingData) => siblingData.questionType === 'trueFalse',
-          },
-          options: [
-            { label: 'True', value: 'true' },
-            { label: 'False', value: 'false' },
-          ],
-        },
-        
-      ],
-    },
-
-  
+    // {
+    //   name: 'questions',
+    //   type: 'relationship',
+    //   relationTo: 'questions',
+    //   hasMany: true,
+    //   required: true,
+    //   admin: {
+    //     description: 'The questions in this quiz',
+    //   },
+    // },
   ]
 
   const fields =
@@ -109,5 +76,4 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
     }
   
     return { ...baseConfig }
-
 }

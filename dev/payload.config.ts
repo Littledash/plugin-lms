@@ -26,6 +26,78 @@ export default buildConfig({
   },
   collections: [
     {
+      slug: 'users',
+      auth: true,
+      admin: {
+        defaultColumns: ['fullName', 'email', 'roles'],
+        useAsTitle: 'email',
+      },
+      fields: [
+        {
+          name: 'email',
+          type: 'email',
+          required: true,
+          unique: true,
+        },
+        {
+          name: 'name',
+          type: 'text',
+        },
+        {
+          name: 'roles',
+          type: 'select',
+          hasMany: true,
+          defaultValue: ['public'],
+          required: true,
+          options: [
+            {
+              label: 'Administrator',
+              value: 'admin',
+            },
+            {
+              label: 'Public',
+              value: 'public',
+            },
+          ],
+        },
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'firstName',
+              type: 'text',
+              required: true,
+            },
+            {
+              name: 'lastName',
+              type: 'text',
+              required: true,
+            },
+            {
+              name: 'fullName',
+              type: 'text',
+              admin: {
+                hidden: true, // hides the field from the admin panel
+              },
+              hooks: {
+                beforeChange: [
+                  ({ siblingData }) => {
+                    // ensures data is not stored in DB
+                    delete siblingData['fullName']
+                  },
+                ],
+                afterRead: [
+                  ({ data }) => {
+                    return `${data?.firstName} ${data?.lastName}`
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    },
+    {
       slug: 'posts',
       fields: [],
     },
