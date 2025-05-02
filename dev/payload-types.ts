@@ -6,25 +6,93 @@
  * and re-run `payload generate:types` to regenerate this file.
  */
 
+/**
+ * Supported timezones in IANA format.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supportedTimezones".
+ */
+export type SupportedTimezones =
+  | 'Pacific/Midway'
+  | 'Pacific/Niue'
+  | 'Pacific/Honolulu'
+  | 'Pacific/Rarotonga'
+  | 'America/Anchorage'
+  | 'Pacific/Gambier'
+  | 'America/Los_Angeles'
+  | 'America/Tijuana'
+  | 'America/Denver'
+  | 'America/Phoenix'
+  | 'America/Chicago'
+  | 'America/Guatemala'
+  | 'America/New_York'
+  | 'America/Bogota'
+  | 'America/Caracas'
+  | 'America/Santiago'
+  | 'America/Buenos_Aires'
+  | 'America/Sao_Paulo'
+  | 'Atlantic/South_Georgia'
+  | 'Atlantic/Azores'
+  | 'Atlantic/Cape_Verde'
+  | 'Europe/London'
+  | 'Europe/Berlin'
+  | 'Africa/Lagos'
+  | 'Europe/Athens'
+  | 'Africa/Cairo'
+  | 'Europe/Moscow'
+  | 'Asia/Riyadh'
+  | 'Asia/Dubai'
+  | 'Asia/Baku'
+  | 'Asia/Karachi'
+  | 'Asia/Tashkent'
+  | 'Asia/Calcutta'
+  | 'Asia/Dhaka'
+  | 'Asia/Almaty'
+  | 'Asia/Jakarta'
+  | 'Asia/Bangkok'
+  | 'Asia/Shanghai'
+  | 'Asia/Singapore'
+  | 'Asia/Tokyo'
+  | 'Asia/Seoul'
+  | 'Australia/Brisbane'
+  | 'Australia/Sydney'
+  | 'Pacific/Guam'
+  | 'Pacific/Noumea'
+  | 'Pacific/Auckland'
+  | 'Pacific/Fiji';
+
 export interface Config {
   auth: {
     users: UserAuthOperations;
   };
+  blocks: {};
   collections: {
+    users: User;
     posts: Post;
     media: Media;
-    'plugin-collection': PluginCollection;
-    users: User;
+    certificates: Certificate;
+    courses: Course;
+    lessons: Lesson;
+    quizzes: Quiz;
+    categories: Category;
+    tags: Tag;
+    questions: Question;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {};
   collectionsSelect: {
+    users: UsersSelect<false> | UsersSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
-    'plugin-collection': PluginCollectionSelect<false> | PluginCollectionSelect<true>;
-    users: UsersSelect<false> | UsersSelect<true>;
+    certificates: CertificatesSelect<false> | CertificatesSelect<true>;
+    courses: CoursesSelect<false> | CoursesSelect<true>;
+    lessons: LessonsSelect<false> | LessonsSelect<true>;
+    quizzes: QuizzesSelect<false> | QuizzesSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
+    questions: QuestionsSelect<false> | QuestionsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -63,11 +131,32 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: string;
+  name?: string | null;
+  roles: ('admin' | 'public' | 'author' | 'student' | 'contributor' | 'editor' | 'subscriber')[];
+  firstName: string;
+  lastName: string;
+  fullName?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  password?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
  */
 export interface Post {
   id: string;
-  addedByPlugin?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -91,29 +180,369 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plugin-collection".
+ * via the `definition` "certificates".
  */
-export interface PluginCollection {
+export interface Certificate {
   id: string;
+  /**
+   * The title of the certificate
+   */
+  title: string;
+  /**
+   * The description of the certificate
+   */
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * The certificate template image
+   */
+  template: string | Media;
+  /**
+   * The course this certificate is for
+   */
+  course: string | Course;
+  /**
+   * The students who earned this certificate
+   */
+  students: (string | User)[];
+  /**
+   * The date the certificate was issued
+   */
+  issueDate: string;
+  /**
+   * The date the certificate expires (if applicable)
+   */
+  expiryDate?: string | null;
+  /**
+   * The unique certificate number
+   */
+  certificateNumber: string;
+  /**
+   * The status of the certificate
+   */
+  status: 'active' | 'expired' | 'revoked';
   updatedAt: string;
   createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
+ * via the `definition` "courses".
  */
-export interface User {
+export interface Course {
   id: string;
+  /**
+   * The title of the course
+   */
+  title: string;
+  /**
+   * The description of the course
+   */
+  description: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * The excerpt of the course
+   */
+  excerpt?: string | null;
+  /**
+   * The featured image of the course
+   */
+  featuredImage?: (string | null) | Media;
+  /**
+   * The students enrolled in the course
+   */
+  students?: (string | User)[] | null;
+  accessMode: 'open' | 'free' | 'buy now' | 'recurring' | 'closed';
+  /**
+   * The price points for this item
+   */
+  prices?:
+    | {
+        /**
+         * The monetary amount
+         */
+        amount: number;
+        currency?: 'AUD' | null;
+        id?: string | null;
+      }[]
+    | null;
+  enrollmentUrl?: string | null;
+  accessExpirationDays?: number | null;
+  /**
+   * The courses that are required to access this course
+   */
+  prerequisiteCourses?: (string | Course)[] | null;
+  requiredPoints?: number | null;
+  coursePoints?: number | null;
+  navigationMode?: ('linear' | 'free') | null;
+  courseMaterials?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  certificate?: (string | null) | Certificate;
+  /**
+   * The lessons that are part of the course
+   */
+  lessons?: (string | Lesson)[] | null;
+  /**
+   * The categories that are part of the course
+   */
+  categories?: (string | Category)[] | null;
+  /**
+   * The tags that are part of the course
+   */
+  tags?: (string | Tag)[] | null;
   updatedAt: string;
   createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  password?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lessons".
+ */
+export interface Lesson {
+  id: string;
+  /**
+   * The title of the lesson
+   */
+  title: string;
+  /**
+   * The excerpt of the lesson
+   */
+  excerpt?: string | null;
+  /**
+   * The content of the lesson
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * The featured image of the lesson
+   */
+  featuredImage?: (string | null) | Media;
+  /**
+   * The course that the lesson belongs to
+   */
+  course?: (string | null) | Course;
+  embeddedVideo?: EmbeddedVideo;
+  /**
+   * The materials of the lesson
+   */
+  lessonMaterials?: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * The progression behavior of the lesson
+   */
+  progressionControl?: ('required' | 'optional') | null;
+  /**
+   * The order of the lesson in the course
+   */
+  lessonOrder?: number | null;
+  /**
+   * The quizzes that are part of the lesson
+   */
+  quizzes?: (string | Quiz)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EmbeddedVideo".
+ */
+export interface EmbeddedVideo {
+  /**
+   * Embeds a Vimeo iframe.
+   */
+  embed?: boolean | null;
+  /**
+   * Maximum upload file size: 4MB. Recommended file size for images is <500KB.
+   */
+  poster?: (string | null) | Media;
+  platform?: ('vimeo' | 'internal' | 'youtube') | null;
+  videoURL?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quizzes".
+ */
+export interface Quiz {
+  id: string;
+  /**
+   * The title of the quiz
+   */
+  title: string;
+  /**
+   * The excerpt of the quiz
+   */
+  excerpt?: string | null;
+  /**
+   * The description of the quiz
+   */
+  description: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * The featured image of the quiz
+   */
+  featuredImage?: (string | null) | Media;
+  /**
+   * The questions in this quiz
+   */
+  questions: (string | Question)[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "questions".
+ */
+export interface Question {
+  id: string;
+  /**
+   * The title of the question
+   */
+  title: string;
+  /**
+   * Points awarded for correct answer
+   */
+  points: number;
+  questionType:
+    | 'multipleChoice'
+    | 'trueFalse'
+    | 'sorting'
+    | 'fillInBlank'
+    | 'assessment'
+    | 'essay'
+    | 'freeChoice'
+    | 'singleChoice';
+  question: string;
+  choices?:
+    | {
+        label: string;
+        isCorrect?: boolean | null;
+        order?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  correctAnswer?: ('true' | 'false') | null;
+  correctAnswers?:
+    | {
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  assessmentCriteria?:
+    | {
+        criterion: string;
+        points: number;
+        id?: string | null;
+      }[]
+    | null;
+  maxLength?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: string;
+  /**
+   * The title of the category
+   */
+  title: string;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: string;
+  /**
+   * The title of the tag
+   */
+  title: string;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -123,6 +552,10 @@ export interface PayloadLockedDocument {
   id: string;
   document?:
     | ({
+        relationTo: 'users';
+        value: string | User;
+      } | null)
+    | ({
         relationTo: 'posts';
         value: string | Post;
       } | null)
@@ -131,12 +564,32 @@ export interface PayloadLockedDocument {
         value: string | Media;
       } | null)
     | ({
-        relationTo: 'plugin-collection';
-        value: string | PluginCollection;
+        relationTo: 'certificates';
+        value: string | Certificate;
       } | null)
     | ({
-        relationTo: 'users';
-        value: string | User;
+        relationTo: 'courses';
+        value: string | Course;
+      } | null)
+    | ({
+        relationTo: 'lessons';
+        value: string | Lesson;
+      } | null)
+    | ({
+        relationTo: 'quizzes';
+        value: string | Quiz;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: string | Category;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: string | Tag;
+      } | null)
+    | ({
+        relationTo: 'questions';
+        value: string | Question;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -182,10 +635,29 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  roles?: T;
+  firstName?: T;
+  lastName?: T;
+  fullName?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
-  addedByPlugin?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -208,27 +680,150 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "plugin-collection_select".
+ * via the `definition` "certificates_select".
  */
-export interface PluginCollectionSelect<T extends boolean = true> {
-  id?: T;
+export interface CertificatesSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  template?: T;
+  course?: T;
+  students?: T;
+  issueDate?: T;
+  expiryDate?: T;
+  certificateNumber?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
+ * via the `definition` "courses_select".
  */
-export interface UsersSelect<T extends boolean = true> {
+export interface CoursesSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  excerpt?: T;
+  featuredImage?: T;
+  students?: T;
+  accessMode?: T;
+  prices?:
+    | T
+    | {
+        amount?: T;
+        currency?: T;
+        id?: T;
+      };
+  enrollmentUrl?: T;
+  accessExpirationDays?: T;
+  prerequisiteCourses?: T;
+  requiredPoints?: T;
+  coursePoints?: T;
+  navigationMode?: T;
+  courseMaterials?: T;
+  certificate?: T;
+  lessons?: T;
+  categories?: T;
+  tags?: T;
   updatedAt?: T;
   createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lessons_select".
+ */
+export interface LessonsSelect<T extends boolean = true> {
+  title?: T;
+  excerpt?: T;
+  content?: T;
+  featuredImage?: T;
+  course?: T;
+  embeddedVideo?: T | EmbeddedVideoSelect<T>;
+  lessonMaterials?: T;
+  progressionControl?: T;
+  lessonOrder?: T;
+  quizzes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EmbeddedVideo_select".
+ */
+export interface EmbeddedVideoSelect<T extends boolean = true> {
+  embed?: T;
+  poster?: T;
+  platform?: T;
+  videoURL?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quizzes_select".
+ */
+export interface QuizzesSelect<T extends boolean = true> {
+  title?: T;
+  excerpt?: T;
+  description?: T;
+  featuredImage?: T;
+  questions?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  slugLock?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  slugLock?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "questions_select".
+ */
+export interface QuestionsSelect<T extends boolean = true> {
+  title?: T;
+  points?: T;
+  questionType?: T;
+  question?: T;
+  choices?:
+    | T
+    | {
+        label?: T;
+        isCorrect?: T;
+        order?: T;
+        id?: T;
+      };
+  correctAnswer?: T;
+  correctAnswers?:
+    | T
+    | {
+        answer?: T;
+        id?: T;
+      };
+  assessmentCriteria?:
+    | T
+    | {
+        criterion?: T;
+        points?: T;
+        id?: T;
+      };
+  maxLength?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

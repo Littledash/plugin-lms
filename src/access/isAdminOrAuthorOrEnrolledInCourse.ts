@@ -1,7 +1,5 @@
 import type { Access, FieldAccess } from 'payload'
 
-import type { User } from 'payload'
-import type { Lesson, Course } from '../types.js'
 import { checkRole } from './checkRole.js'
 
 
@@ -9,7 +7,7 @@ import { checkRole } from './checkRole.js'
  * Access control that allows users with admin role or author role or enrolled in course
  * @returns True if the user is an admin or author or enrolled in course, false otherwise
  */
-export const isAdminOrAuthorOrEnrolledInCourse: Access<Lesson> = async ({ req: { user, payload }, data }) => {
+export const isAdminOrAuthorOrEnrolledInCourse: Access = async ({ req: { user, payload }, data }) => {
   if (user && checkRole(['admin', 'author'], user)) {
     return true
   }
