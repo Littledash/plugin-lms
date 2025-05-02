@@ -11,6 +11,7 @@
  */
 
 import type { Payload } from 'payload'
+import type { GeneratedTypes } from 'payload'
 import dotenv from 'dotenv'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
@@ -101,6 +102,153 @@ describe('LMS Integration Tests', () => {
   })
 
   describe('Course Management', () => {
+    let adminUser: GeneratedTypes['collections']['users']
+    let authorUser: GeneratedTypes['collections']['users']
+    let studentUser: GeneratedTypes['collections']['users']
+
+    beforeEach(async () => {
+      // Create test users with different roles
+      adminUser = await payload.create({
+        collection: 'users',
+        data: {
+          email: 'admin@example.com',
+          password: 'password123',
+          firstName: 'Admin',
+          lastName: 'User',
+          roles: ['admin'],
+        },
+      })
+
+      authorUser = await payload.create({
+        collection: 'users',
+        data: {
+          email: 'author@example.com',
+          password: 'password123',
+          firstName: 'Author',
+          lastName: 'User',
+          roles: ['author'],
+        },
+      })
+
+      studentUser = await payload.create({
+        collection: 'users',
+        data: {
+          email: 'student@example.com',
+          password: 'password123',
+          firstName: 'Student',
+          lastName: 'User',
+          roles: ['student'],
+        },
+      })
+    })
+
+    it('should allow admin to create a course', async () => {
+      const course = await payload.create({
+        collection: 'courses',
+        data: {
+          title: 'Admin Created Course',
+          description: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'A course created by admin',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          accessMode: 'free',
+          navigationMode: 'linear',
+        },
+        user: adminUser,
+      })
+
+      expect(course.title).toBe('Admin Created Course')
+      expect(course.accessMode).toBe('free')
+    })
+
+    it('should allow author to create a course', async () => {
+      const course = await payload.create({
+        collection: 'courses',
+        data: {
+          title: 'Author Created Course',
+          description: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'A course created by author',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          accessMode: 'free',
+          navigationMode: 'linear',
+        },
+        user: authorUser,
+      })
+
+      expect(course.title).toBe('Author Created Course')
+      expect(course.accessMode).toBe('free')
+    })
+
+    it('should not allow student to create a course', async () => {
+      await expect(
+        payload.create({
+          collection: 'courses',
+          data: {
+            title: 'Student Created Course',
+            description: {
+              root: {
+                type: 'root',
+                children: [
+                  {
+                    type: 'paragraph',
+                    children: [
+                      {
+                        type: 'text',
+                        text: 'A course created by student',
+                      },
+                    ],
+                    version: 1,
+                  },
+                ],
+                direction: null,
+                format: '',
+                indent: 0,
+                version: 1,
+              },
+            },
+            accessMode: 'free',
+            navigationMode: 'linear',
+          },
+          user: studentUser,
+        })
+      ).rejects.toThrow()
+    })
+
     it('should create a new course', async () => {
       const course = await payload.create({
         collection: 'courses',
