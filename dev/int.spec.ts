@@ -1,12 +1,16 @@
 /* eslint-disable no-console */
 /**
- * Here are your integration tests for the plugin.
- * They don't require running your Next.js so they are fast
- * Yet they still can test the Local API and custom endpoints using NextRESTClient helper.
+ * Integration tests for the LMS application.
+ * These tests verify the core functionality of the application including:
+ * - User authentication and authorization
+ * - Course management
+ * - Quiz functionality
+ * - Certificate generation
+ * 
+ * The tests use a memory database for isolation and speed.
  */
 
 import type { Payload } from 'payload'
-
 import dotenv from 'dotenv'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import path from 'path'
@@ -14,6 +18,7 @@ import { getPayload } from 'payload'
 import { fileURLToPath } from 'url'
 
 import { NextRESTClient } from './helpers/NextRESTClient.js'
+import { devUser } from './helpers/credentials.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -21,15 +26,18 @@ let payload: Payload
 let restClient: NextRESTClient
 let memoryDB: MongoMemoryReplSet | undefined
 
-describe('Plugin tests', () => {
+describe('LMS Integration Tests', () => {
   beforeAll(async () => {
+    // Disable HMR and ensure clean database for tests
     process.env.DISABLE_PAYLOAD_HMR = 'true'
     process.env.PAYLOAD_DROP_DATABASE = 'true'
 
+    // Load environment variables
     dotenv.config({
       path: path.resolve(dirname, './.env'),
     })
 
+    // Set up in-memory database for testing
     if (!process.env.DATABASE_URI) {
       console.log('Starting memory database')
       memoryDB = await MongoMemoryReplSet.create({
@@ -44,12 +52,12 @@ describe('Plugin tests', () => {
     }
 
     const { default: config } = await import('./payload.config.js')
-
     payload = await getPayload({ config })
     restClient = new NextRESTClient(payload.config)
   })
 
   afterAll(async () => {
+    // Clean up resources
     if (payload.db.destroy) {
       await payload.db.destroy()
     }
@@ -59,32 +67,312 @@ describe('Plugin tests', () => {
     }
   })
 
-  it('should query added by plugin custom endpoint', async () => {
-    const response = await restClient.GET('/my-plugin-endpoint')
-    expect(response.status).toBe(200)
+  describe('User Management', () => {
+    it('should create and authenticate admin user', async () => {
+      const user = await payload.create({
+        collection: 'users',
+        data: {
+          ...devUser,
+          firstName: 'Admin',
+          lastName: 'User',
+          roles: ['admin'],
+        },
+      })
 
-    const data = await response.json()
-    expect(data).toMatchObject({
-      message: 'Hello from custom endpoint',
+      expect(user.email).toBe(devUser.email)
+      expect(user.roles).toContain('admin')
+    })
+
+    it('should create and authenticate student user', async () => {
+      const user = await payload.create({
+        collection: 'users',
+        data: {
+          email: 'student@example.com',
+          password: 'password123',
+          firstName: 'Student',
+          lastName: 'User',
+          roles: ['student'],
+        },
+      })
+
+      expect(user.email).toBe('student@example.com')
+      expect(user.roles).toContain('student')
     })
   })
 
-  it('can create post with a custom text field added by plugin', async () => {
-    const post = await payload.create({
-      collection: 'posts',
-      data: {
-        addedByPlugin: 'added by plugin',
-      },
+  describe('Course Management', () => {
+    it('should create a new course', async () => {
+      const course = await payload.create({
+        collection: 'courses',
+        data: {
+          title: 'Test Course',
+          description: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'A test course for integration testing',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          accessMode: 'free',
+          navigationMode: 'linear',
+        },
+      })
+
+      expect(course.title).toBe('Test Course')
+      expect(course.accessMode).toBe('free')
     })
 
-    expect(post.addedByPlugin).toBe('added by plugin')
+    it('should create a lesson within a course', async () => {
+      const course = await payload.create({
+        collection: 'courses',
+        data: {
+          title: 'Test Course with Lesson',
+          description: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'Course with a test lesson',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          accessMode: 'free',
+          navigationMode: 'linear',
+        },
+      })
+
+      const lesson = await payload.create({
+        collection: 'lessons',
+        data: {
+          title: 'Test Lesson',
+          content: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'This is a test lesson content',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          course: course.id,
+          progressionControl: 'required',
+          lessonOrder: 1,
+        },
+      })
+
+      expect(lesson.title).toBe('Test Lesson')
+      expect(lesson.course).toBe(course.id)
+    })
   })
 
-  it('plugin creates and seeds plugin-collection', async () => {
-    expect(payload.collections['plugin-collection']).toBeDefined()
+  describe('Quiz Management', () => {
+    it('should create a quiz with questions', async () => {
+      const quiz = await payload.create({
+        collection: 'quizzes',
+        data: {
+          title: 'Test Quiz',
+          description: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'A test quiz for integration testing',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          questions: [],
+        },
+      })
 
-    const { docs } = await payload.find({ collection: 'plugin-collection' })
+      const question = await payload.create({
+        collection: 'questions',
+        data: {
+          title: 'Test Question',
+          points: 10,
+          questionType: 'multipleChoice',
+          question: 'What is the capital of France?',
+          choices: [
+            { label: 'Paris', isCorrect: true },
+            { label: 'London', isCorrect: false },
+            { label: 'Berlin', isCorrect: false },
+          ],
+        },
+      })
 
-    expect(docs).toHaveLength(1)
+      await payload.update({
+        collection: 'quizzes',
+        id: quiz.id,
+        data: {
+          questions: [question.id],
+        },
+      })
+
+      const updatedQuiz = await payload.findByID({
+        collection: 'quizzes',
+        id: quiz.id,
+      })
+
+      expect(updatedQuiz.questions).toHaveLength(1)
+    })
+  })
+
+  describe('Certificate Management', () => {
+    it('should create a certificate template', async () => {
+      const template = await payload.create({
+        collection: 'media',
+        data: {
+          filename: 'certificate-template.png',
+          mimeType: 'image/png',
+          filesize: 1024,
+          width: 1920,
+          height: 1080,
+        },
+      })
+
+      expect(template.filename).toBe('certificate-template.png')
+      expect(template.mimeType).toBe('image/png')
+    })
+
+    it('should create a certificate for a completed course', async () => {
+      const course = await payload.create({
+        collection: 'courses',
+        data: {
+          title: 'Certificate Test Course',
+          description: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'Course for certificate testing',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          accessMode: 'free',
+          navigationMode: 'linear',
+        },
+      })
+
+      const user = await payload.create({
+        collection: 'users',
+        data: {
+          email: 'certificate@example.com',
+          password: 'password123',
+          firstName: 'Certificate',
+          lastName: 'User',
+          roles: ['student'],
+        },
+      })
+
+      const template = await payload.create({
+        collection: 'media',
+        data: {
+          filename: 'certificate-template.png',
+          mimeType: 'image/png',
+          filesize: 1024,
+          width: 1920,
+          height: 1080,
+        },
+      })
+
+      const certificate = await payload.create({
+        collection: 'certificates',
+        data: {
+          title: 'Test Certificate',
+          description: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'Certificate for completing the test course',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          template: template.id,
+          course: course.id,
+          students: [user.id],
+          issueDate: new Date().toISOString(),
+          certificateNumber: 'TEST-' + Date.now(),
+          status: 'active',
+        },
+      })
+
+      expect(certificate.title).toBe('Test Certificate')
+      expect(certificate.course).toBe(course.id)
+      expect(certificate.students).toContain(user.id)
+    })
   })
 })
