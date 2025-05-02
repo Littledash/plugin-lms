@@ -1,4 +1,4 @@
-import type { Config, Field, SelectField } from 'payload'
+import type { Config, Field, RelationshipField, SelectField } from 'payload'
 
 import type { LMSPluginConfig } from '../types.js'
 import { AUD } from '../currencies/index.js'
@@ -10,6 +10,8 @@ import { tagsCollection } from '../tags/tagsCollection.js'
 import { certificatesCollection } from '../certificates/certificatesCollection.js'
 import { rolesField, rolesOptions } from '../fields/rolesField.js'
 import { questionsCollection } from '../questions/questionsCollection.js'
+import { enrolledCoursesField } from '../fields/enrolledCoursesField.js'
+import { completedCoursesField } from '../fields/completedCoursesField.js'
 
 export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Config): Config => {
 
@@ -34,6 +36,7 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
       const existingStudentsCollection = incomingConfig.collections.find(
         collection => collection.slug === studentsCollectionSlug
     )
+    // Ensure students collection exists
      if ( existingStudentsCollection ) {
 
 
@@ -48,7 +51,7 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
                 } else if (existingRolesField.type === 'select') {
                     // Merge options if roles field exists
                     const existingOptions = (existingRolesField.options || []) as Array<{ label: string; value: string }>
-                    const rolesFieldConfig = rolesField({})
+                   
                     existingRolesField.options = [
                         ...existingOptions,
                         ...(rolesOptions).filter(
@@ -58,6 +61,28 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
                         )
                     ]
                 }
+
+                // Add enrolledCourses field if it doesn't exist
+                const existingEnrolledCoursesField = existingStudentsCollection?.fields?.find(
+                    (field): field is RelationshipField => 
+                        'name' in field && field.name === 'enrolledCourses' && field.type === 'relationship'
+                )
+
+                if ( !existingEnrolledCoursesField ) {
+                    existingStudentsCollection.fields.push(enrolledCoursesField({}))
+                }
+
+                // Add completedCourses field if it doesn't exist
+                const existingCompletedCoursesField = existingStudentsCollection?.fields?.find(
+                    (field): field is RelationshipField => 
+                        'name' in field && field.name === 'completedCourses' && field.type === 'relationship'
+                )   
+
+                if ( !existingCompletedCoursesField ) {
+                    existingStudentsCollection.fields.push(completedCoursesField({}))
+                }
+                
+                
      }
 
      // Ensure currencies are configured
@@ -124,6 +149,5 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
 
     return {
         ...incomingConfig,
-      
     }
 }

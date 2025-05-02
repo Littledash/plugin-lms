@@ -23,11 +23,13 @@ import { devUser } from './helpers/credentials.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
+// Global test variables
 let payload: Payload
 let restClient: NextRESTClient
 let memoryDB: MongoMemoryReplSet | undefined
 
 describe('LMS Integration Tests', () => {
+  // Setup test environment before all tests
   beforeAll(async () => {
     // Disable HMR and ensure clean database for tests
     process.env.DISABLE_PAYLOAD_HMR = 'true'
@@ -52,13 +54,14 @@ describe('LMS Integration Tests', () => {
       process.env.DATABASE_URI = `${memoryDB.getUri()}&retryWrites=true`
     }
 
+    // Initialize Payload CMS with test configuration
     const { default: config } = await import('./payload.config.js')
     payload = await getPayload({ config })
     restClient = new NextRESTClient(payload.config)
   })
 
+  // Clean up resources after all tests
   afterAll(async () => {
-    // Clean up resources
     if (payload.db.destroy) {
       await payload.db.destroy()
     }
@@ -68,7 +71,12 @@ describe('LMS Integration Tests', () => {
     }
   })
 
+  /**
+   * User Management Tests
+   * Tests user creation, authentication, and role-based access
+   */
   describe('User Management', () => {
+    // Test admin user creation and authentication
     it('should create and authenticate admin user', async () => {
       const user = await payload.create({
         collection: 'users',
@@ -84,6 +92,7 @@ describe('LMS Integration Tests', () => {
       expect(user.roles).toContain('admin')
     })
 
+    // Test student user creation and authentication
     it('should create and authenticate student user', async () => {
       const user = await payload.create({
         collection: 'users',
@@ -101,11 +110,17 @@ describe('LMS Integration Tests', () => {
     })
   })
 
+  /**
+   * Course Management Tests
+   * Tests course creation, lesson management, and role-based access control
+   */
   describe('Course Management', () => {
+    // Test users with different roles for authorization tests
     let adminUser: GeneratedTypes['collections']['users']
     let authorUser: GeneratedTypes['collections']['users']
     let studentUser: GeneratedTypes['collections']['users']
 
+    // Setup test users before each test
     beforeEach(async () => {
       // Create test users with different roles
       adminUser = await payload.create({
@@ -142,6 +157,7 @@ describe('LMS Integration Tests', () => {
       })
     })
 
+    // Test admin course creation permissions
     it('should allow admin to create a course', async () => {
       const course = await payload.create({
         collection: 'courses',
@@ -178,6 +194,7 @@ describe('LMS Integration Tests', () => {
       expect(course.accessMode).toBe('free')
     })
 
+    // Test author course creation permissions
     it('should allow author to create a course', async () => {
       const course = await payload.create({
         collection: 'courses',
@@ -214,6 +231,7 @@ describe('LMS Integration Tests', () => {
       expect(course.accessMode).toBe('free')
     })
 
+    // Test student course creation restrictions
     it('should not allow student to create a course', async () => {
       await expect(
         payload.create({
@@ -249,6 +267,7 @@ describe('LMS Integration Tests', () => {
       ).rejects.toThrow()
     })
 
+    // Test basic course creation functionality
     it('should create a new course', async () => {
       const course = await payload.create({
         collection: 'courses',
@@ -284,6 +303,7 @@ describe('LMS Integration Tests', () => {
       expect(course.accessMode).toBe('free')
     })
 
+    // Test lesson creation within a course
     it('should create a lesson within a course', async () => {
       const course = await payload.create({
         collection: 'courses',
@@ -351,7 +371,12 @@ describe('LMS Integration Tests', () => {
     })
   })
 
+  /**
+   * Quiz Management Tests
+   * Tests quiz creation, question management, and quiz-course relationships
+   */
   describe('Quiz Management', () => {
+    // Test quiz creation with questions
     it('should create a quiz with questions', async () => {
       const quiz = await payload.create({
         collection: 'quizzes',
@@ -414,7 +439,12 @@ describe('LMS Integration Tests', () => {
     })
   })
 
+  /**
+   * Certificate Management Tests
+   * Tests certificate template creation and certificate generation
+   */
   describe('Certificate Management', () => {
+    // Test certificate template creation
     it('should create a certificate template', async () => {
       const template = await payload.create({
         collection: 'media',
@@ -431,6 +461,7 @@ describe('LMS Integration Tests', () => {
       expect(template.mimeType).toBe('image/png')
     })
 
+    // Test certificate generation for completed course
     it('should create a certificate for a completed course', async () => {
       const course = await payload.create({
         collection: 'courses',
