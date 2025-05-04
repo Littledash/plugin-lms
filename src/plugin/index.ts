@@ -1,4 +1,4 @@
-import type { Config, Field, RelationshipField, SelectField } from 'payload'
+import type { ArrayField, Config, RelationshipField, SelectField } from 'payload'
 
 import type { LMSPluginConfig } from '../types.js'
 import { AUD } from '../currencies/index.js'
@@ -12,7 +12,7 @@ import { rolesField, rolesOptions } from '../fields/rolesField.js'
 import { questionsCollection } from '../questions/questionsCollection.js'
 import { enrolledCoursesField } from '../fields/enrolledCoursesField.js'
 import { completedCoursesField } from '../fields/completedCoursesField.js'
-
+import { coursesProgressField } from '../fields/coursesProgressField.js'
 export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Config): Config => {
 
     if (!pluginConfig) {
@@ -81,6 +81,17 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
                 if ( !existingCompletedCoursesField ) {
                     existingStudentsCollection.fields.push(completedCoursesField({}))
                 }
+
+                // Add coursesProgress field if it doesn't exist
+                const existingCoursesProgressField = existingStudentsCollection?.fields?.find(
+                    (field): field is ArrayField => 
+                        'name' in field && field.name === 'coursesProgress' && field.type === 'array'
+                )
+
+                if ( !existingCoursesProgressField ) {
+                    existingStudentsCollection.fields.push(coursesProgressField({}))
+                }
+                
                 
                 
      }

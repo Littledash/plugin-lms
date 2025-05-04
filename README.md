@@ -6,34 +6,49 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
 
 - **Course Management**
   - Create and organize courses with rich content
-  - Support for multiple course types and formats
-  - Course progress tracking
-  - Course enrollment and access control
+  - Support for multiple access modes (open, free, buy now, recurring, closed)
+  - Course navigation modes (linear, free form)
+  - Course prerequisites and points system
+  - Course materials and resources
+  - Certificate generation
 
-- **Content Types**
-  - Text-based lessons
-  - Video content with embedded support
-  - Quizzes and assessments
-  - Interactive exercises
-  - Downloadable resources
+- **Lesson Management**
+  - Rich text content support
+  - Embedded video support
+  - Lesson materials and resources
+  - Progression control (required/optional)
+  - Lesson ordering
+  - Quiz integration
+
+- **Quiz System**
+  - Multiple question types:
+    - Multiple Choice
+    - True/False
+    - Sorting
+    - Fill in the Blank
+    - Assessment
+    - Essay/Open Answer
+    - Free Choice
+    - Single Choice
+  - Points-based scoring
+  - Quiz integration with lessons
 
 - **User Management**
   - Role-based access control (Admin, Author, Student)
-  - User progress tracking
-  - Course enrollment management
-  - Student performance analytics
+  - Course enrollment tracking
+  - Course completion tracking
+  - Student progress monitoring
 
-- **Assessment System**
-  - Multiple question types (Multiple Choice, True/False, etc.)
-  - Quiz creation and management
-  - Automatic grading
-  - Performance tracking
+- **Content Organization**
+  - Categories for course classification
+  - Tags for content organization
+  - Media management for course assets
 
 - **Monetization**
-  - Flexible pricing system
-  - Multiple currency support
-  - Course bundling
-  - Discount management
+  - Flexible pricing system with multiple currencies
+  - Access expiration settings
+  - Enrollment URL for closed courses
+  - Course bundling through prerequisites
 
 ## Installation
 
@@ -51,62 +66,66 @@ export default buildConfig({
   plugins: [
     lmsPlugin({
       // Plugin configuration options
+      currencies: {
+        defaultCurrency: 'AUD',
+        supportedCurrencies: [AUD],
+      },
+      courses: true,
+      lessons: true,
+      quizzes: true,
+      categories: true,
+      tags: true,
+      certificates: true,
+      questions: true,
     }),
   ],
 })
 ```
 
-## Configuration
+## Collections
+
+The plugin provides the following collections:
+
+- **Courses**: Manages course content, access, and organization
+- **Lessons**: Handles lesson content and progression
+- **Quizzes**: Manages assessments and questions
+- **Questions**: Stores quiz questions and answers
+- **Categories**: Organizes courses by category
+- **Tags**: Provides additional content organization
+- **Certificates**: Manages course completion certificates
+- **Media**: Handles course assets and resources
+
+## Configuration Options
 
 The plugin supports various configuration options:
 
 ```typescript
 {
-  // Course settings
-  courseSettings: {
-    // Configuration options
-  },
-  
-  // Quiz settings
-  quizSettings: {
-    // Configuration options
-  },
-  
-  // User role settings
-  roleSettings: {
-    // Configuration options
+  // Currency settings
+  currencies?: {
+    defaultCurrency: string
+    supportedCurrencies: Currency[]
   }
+  
+  // Collection slugs
+  studentsCollectionSlug?: string
+  certificatesCollectionSlug?: string
+  coursesCollectionSlug?: string
+  categoriesCollectionSlug?: string
+  lessonsCollectionSlug?: string
+  mediaCollectionSlug?: string
+  tagsCollectionSlug?: string
+  quizzesCollectionSlug?: string
+
+  // Enable/disable collections
+  courses?: boolean | CoursesConfig
+  lessons?: boolean | LessonsConfig
+  quizzes?: boolean | QuizzesConfig
+  categories?: boolean
+  tags?: boolean
+  certificates?: boolean
+  questions?: boolean
 }
-```
-
-## Usage
-
-### Creating a Course
-
-```typescript
-// Example course creation
-const course = await payload.create({
-  collection: 'courses',
-  data: {
-    title: 'Introduction to Programming',
-    description: 'Learn the basics of programming',
-    // Additional course fields
-  },
-})
-```
-
-### Managing Users
-
-```typescript
-// Example user management
-const user = await payload.create({
-  collection: 'users',
-  data: {
-    email: 'student@example.com',
-    password: 'securepassword',
-    roles: ['student'],
-  },
-})
 ```
 
 ## Access Control
@@ -117,7 +136,9 @@ The plugin includes several access control utilities:
 - `isAuthor`: Author-only access
 - `isAdminOrAuthor`: Admin or author access
 - `isAdminOrStudent`: Admin or student access
-- `isAdminOrLoggedIn`: Admin or any logged-in user access
+- `isAdminOrPublished`: Admin or published content access
+- `isAdminOrAuthorOrEnrolledInCourse`: Admin, author, or enrolled student access
+- `isAdminOrAuthorOrStudent`: Admin, author, or student access
 
 ## Contributing
 
