@@ -5,6 +5,7 @@ import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
 
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
+import { videoProgression } from '../fields/videoProgression.js';
 /**
  * Props interface for configuring the lessons collection
  * @property coursesCollectionSlug - Slug for the courses collection (default: 'courses')
@@ -81,6 +82,20 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     embeddedVideo({
       mediaCollectionSlug,
       overrides: {
+        name: 'lessonVideo',
+        access: {
+          read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+        },
+        admin: {
+         description: 'The below video is tied to Course progression',
+        },
+      },
+    }),
+    videoProgression({
+      overrides: {
+        admin: {
+          condition: (data, { lessonVideo }) => Boolean(lessonVideo.embed),
+        },
         access: {
           read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
         },
