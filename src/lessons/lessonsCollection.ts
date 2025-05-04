@@ -111,14 +111,6 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       },
     },
     {
-      name: 'lessonOrder',
-      type: 'number',
-      label: 'Lesson Order',
-      admin: {
-        description: 'The order of the lesson in the course', // TODO: Not sure if this is needed
-      },
-    },
-    {
       name: 'quizzes',
       type: 'relationship',
       relationTo: quizzesCollectionSlug,

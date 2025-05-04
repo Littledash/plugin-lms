@@ -100,19 +100,25 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
         { label: 'Closed', value: 'closed' },
       ],
       required: true,
+      admin: {
+        description: 'Controls how students gain access to the course',
+      },
     },
     ...( currenciesConfig ? [pricesField({ currenciesConfig, overrides: { admin: { condition: (_, siblingData) => ['buy now', 'recurring', 'closed'].includes(siblingData?.accessMode) } } })] : []),
     {
       name: 'enrollmentUrl',
       type: 'text',
       admin: {
+        description: 'The URL for the enrollment page',
         condition: (_, siblingData) => siblingData?.accessMode === 'closed',
       },
     },
     {
       name: 'accessExpirationDays',
       type: 'number',
-      label: 'Access Expiration (Days)',
+      admin: {
+        description: 'The number of days after which the access to the course will expire',
+      },
     },
     {
       name: 'prerequisiteCourses',
@@ -121,16 +127,23 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
       hasMany: true,
       admin: {
         allowCreate: false,
-        description: 'The courses that are required to access this course',
+        description: 'Courses that a student must complete before enrolling in this course.',
       },
     },
     {
       name: 'requiredPoints',
       type: 'number',
+      admin: {
+        description: 'The points that are required to access this course',
+      },
     },
     {
       name: 'coursePoints',
       type: 'number',
+      label: 'Course completion points',
+      admin: {
+        description: 'The points that are awarded to the students who complete the course',
+      },
     },
     {
       name: 'navigationMode',
@@ -140,12 +153,50 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
         { label: 'Linear', value: 'linear' },
         { label: 'Free Form', value: 'free' },
       ],
+      admin: {
+        description: 'Controls how students interact with the content and their navigational experience',
+      },
     },
     {
       name: 'courseMaterials',
       type: 'richText',
+      admin: {
+        description: 'The materials that are part of the course',
+      },
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+      },
+    },
+    {
+      name: 'duration',
+      type: 'group',
+      fields: [
+       {
+        type: 'row',
+        fields: [
+          {
+            name: 'hours',
+            type: 'number',
+            label: 'hour(s)',
+            admin: {
+              description: 'The number of hours in the course',
+              width: '50%',
+            },
+          },
+          {
+            name: 'minutes',
+            type: 'number',
+            label: 'minute(s)',
+            admin: {
+              width: '50%',
+              description: 'The number of minutes in the course',
+            },
+          },
+        ],
+       }
+      ],
+      admin: {
+        description: 'The duration of the course',
       },
     },
     {
@@ -153,6 +204,9 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
       type: 'relationship',
       relationTo: certificatesCollectionSlug,
       hasMany: false,
+      admin: {
+        description: 'The certificate that is awarded to the students who complete the course',
+      },
     },
     {
       name: 'lessons',
