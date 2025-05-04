@@ -123,6 +123,7 @@ export default buildConfig({
       lessons: true,
       quizzes: true,
       categories: true,
+      topics: true,
       tags: true,
       certificates: true,
       questions: true,

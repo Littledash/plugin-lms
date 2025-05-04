@@ -554,4 +554,108 @@ describe('LMS Integration Tests', () => {
       expect(certificate.students).toContain(user.id)
     })
   })
+
+  describe('Topic Management', () => {
+    // Test topic creation within a lesson
+    it('should create a topic within a lesson', async () => {
+      const course = await payload.create({
+        collection: 'courses',
+        data: {
+          title: 'Test Course with Topic',
+          description: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'Course with a test topic',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          accessMode: 'free',
+          navigationMode: 'linear',
+        },
+      })
+
+      const lesson = await payload.create({
+        collection: 'lessons',
+        data: {
+          title: 'Test Lesson with Topic',
+          content: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'This is a test lesson with a topic',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          course: course.id,
+          progressionControl: 'required',
+          lessonOrder: 1,
+        },
+      })
+
+      const topic = await payload.create({
+        collection: 'topics',
+        data: {
+          title: 'Test Topic',
+          content: {
+            root: {
+              type: 'root',
+              children: [
+                {
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: 'This is a test topic content',
+                    },
+                  ],
+                  version: 1,
+                },
+              ],
+              direction: null,
+              format: '',
+              indent: 0,
+              version: 1,
+            },
+          },
+          course: course.id,
+          lesson: lesson.id,
+          topicVideo: {
+            embed: 'https://example.com/video',
+          },
+        },
+      })
+
+      expect(topic.title).toBe('Test Topic')
+      expect(topic.course).toBe(course.id)
+      expect(topic.lesson).toBe(lesson.id)
+      expect(topic.topicVideo.embed).toBe('https://example.com/video')
+    })
+  })
 })

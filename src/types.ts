@@ -70,6 +70,10 @@ export type Currency = {
     questionsCollection?: CollectionOverride
   }
 
+  export type TopicsConfig = {
+    topicsCollection?: CollectionOverride
+  }
+
   export type LMSPluginConfig = {
     /**
      * Configure supported currencies and default settings.
@@ -109,6 +113,12 @@ export type Currency = {
      */
     lessonsCollectionSlug?: string
     /**
+     * Slug of the collection to use for topics. Referenced in places such as lessons.
+     *
+     * @default 'topics'
+     */
+    topicsCollectionSlug?: string
+    /**
      * Slug of the collection to use for media. Referenced in places such as courses and lessons.
      *
      * @default 'media'
@@ -127,7 +137,6 @@ export type Currency = {
      */
     quizzesCollectionSlug?: string
 
-
     /** 
      * Enable courses collection.
      *
@@ -141,6 +150,13 @@ export type Currency = {
      * @default true
      */
     lessons?: boolean | LessonsConfig
+
+    /**
+     * Enable topics collection.
+     *
+     * @default true
+     */
+    topics?: boolean | TopicsConfig
 
     /**
      * Enable quizzes collection.

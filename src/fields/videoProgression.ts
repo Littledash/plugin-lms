@@ -24,6 +24,7 @@ export const videoProgression: (props?: Props) => GroupField = (props) => {
         name: 'displayTiming',
         type: 'select',
         required: true,
+        defaultValue: 'before',
         options: [
           { label: 'Before completed sub-steps', value: 'before' },
           { label: 'After completed sub-steps', value: 'after' },

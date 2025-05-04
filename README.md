@@ -19,6 +19,14 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
   - Progression control (required/optional)
   - Lesson ordering
   - Quiz integration
+  - Topic organization
+
+- **Topic Management**
+  - Rich text content support
+  - Embedded video support with progression tracking
+  - Topic materials and resources
+  - Course and lesson relationships
+  - Video progression control
 
 - **Quiz System**
   - Multiple question types:
@@ -72,6 +80,7 @@ export default buildConfig({
       },
       courses: true,
       lessons: true,
+      topics: true,
       quizzes: true,
       categories: true,
       tags: true,
@@ -88,6 +97,7 @@ The plugin provides the following collections:
 
 - **Courses**: Manages course content, access, and organization
 - **Lessons**: Handles lesson content and progression
+- **Topics**: Manages topic content and video progression
 - **Quizzes**: Manages assessments and questions
 - **Questions**: Stores quiz questions and answers
 - **Categories**: Organizes courses by category
@@ -113,6 +123,7 @@ The plugin supports various configuration options:
   coursesCollectionSlug?: string
   categoriesCollectionSlug?: string
   lessonsCollectionSlug?: string
+  topicsCollectionSlug?: string
   mediaCollectionSlug?: string
   tagsCollectionSlug?: string
   quizzesCollectionSlug?: string
@@ -120,6 +131,7 @@ The plugin supports various configuration options:
   // Enable/disable collections
   courses?: boolean | CoursesConfig
   lessons?: boolean | LessonsConfig
+  topics?: boolean | TopicsConfig
   quizzes?: boolean | QuizzesConfig
   categories?: boolean
   tags?: boolean

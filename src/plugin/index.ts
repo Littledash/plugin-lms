@@ -13,6 +13,8 @@ import { questionsCollection } from '../questions/questionsCollection.js'
 import { enrolledCoursesField } from '../fields/enrolledCoursesField.js'
 import { completedCoursesField } from '../fields/completedCoursesField.js'
 import { coursesProgressField } from '../fields/coursesProgressField.js'
+import { topicsCollection } from '../topics/topicsCollection.js'
+
 export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Config): Config => {
 
     if (!pluginConfig) {
@@ -27,7 +29,7 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
      const mediaCollectionSlug = pluginConfig.mediaCollectionSlug || 'media'
      const tagsCollectionSlug = pluginConfig.tagsCollectionSlug || 'tags'
      const quizzesCollectionSlug = pluginConfig.quizzesCollectionSlug || 'quizzes'
-
+     const topicsCollectionSlug = pluginConfig.topicsCollectionSlug || 'topics'
 
     // Ensure collections exists
     if (!incomingConfig.collections) {
@@ -134,6 +136,16 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
             quizzesCollectionSlug,
         })
         incomingConfig.collections.push(lessons)
+    }
+
+    if ( pluginConfig.topics) {
+        const topics = topicsCollection({
+            coursesCollectionSlug,
+            mediaCollectionSlug,
+            quizzesCollectionSlug,
+            lessonsCollectionSlug,
+        })
+        incomingConfig.collections.push(topics)
     }
 
     if ( pluginConfig.quizzes) {

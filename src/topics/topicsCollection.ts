@@ -2,38 +2,40 @@ import { CollectionConfig, Field } from 'payload';
 import { FieldsOverride } from '../types.js';
 import { embeddedVideo } from '../fields/embeddedVideo.js';
 import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
-
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
 import { videoProgression } from '../fields/videoProgression.js';
+
 /**
- * Props interface for configuring the lessons collection
+ * Props interface for configuring the topics collection
  * @property coursesCollectionSlug - Slug for the courses collection (default: 'courses')
  * @property mediaCollectionSlug - Slug for the media collection (default: 'media')
  * @property quizzesCollectionSlug - Slug for the quizzes collection (default: 'quizzes')
+ * @property lessonsCollectionSlug - Slug for the lessons collection (default: 'lessons')
  * @property overrides - Optional configuration overrides for fields and collection settings
  */
 type Props = {
     coursesCollectionSlug?: string
     mediaCollectionSlug?: string
     quizzesCollectionSlug?: string
+    lessonsCollectionSlug?: string
     overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
 /**
- * Creates a lessons collection configuration for Payload CMS
- * This collection manages individual lessons within courses, including content, media, and assessments
+ * Creates a topics collection configuration for Payload CMS
+ * This collection manages individual topics within lessons, including content, media, and assessments
  * 
- * @param props - Configuration properties for the lessons collection
- * @returns CollectionConfig object for lessons
+ * @param props - Configuration properties for the topics collection
+ * @returns CollectionConfig object for topics
  */
-export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> = (props) => {
-  const { overrides, mediaCollectionSlug = 'media', coursesCollectionSlug = 'courses', quizzesCollectionSlug = 'quizzes' } = props || {}
+export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (props) => {
+  const { overrides, mediaCollectionSlug = 'media', coursesCollectionSlug = 'courses', quizzesCollectionSlug = 'quizzes', lessonsCollectionSlug = 'lessons' } = props || {}
   const fieldsOverride = overrides?.fields
 
   /**
-   * Default fields for the lessons collection
-   * Includes lesson content, media, progression control, and assessment relationships
+   * Default fields for the topics collection
+   * Includes topic content, media, video progression, and assessment relationships
    */
   const defaultFields: Field[] = [
     {
@@ -41,14 +43,14 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       type: 'text',
       required: true,
       admin: {
-        description: 'The title of the lesson',
+        description: 'The title of the topic',
       },
     },
     {
       name: 'excerpt',
       type: 'text',
       admin: {
-        description: 'The excerpt of the lesson',
+        description: 'The excerpt of the topic',
       },
     },
     {
@@ -56,7 +58,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       type: 'richText',
       required: true,
       admin: {
-        description: 'The content of the lesson',
+        description: 'The content of the topic',
       },
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
@@ -68,26 +70,26 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       relationTo: mediaCollectionSlug,
       admin: {
         position: 'sidebar',
-        description: 'The featured image of the lesson',
+        description: 'The featured image of the topic',
       },
     },
  
     embeddedVideo({
       mediaCollectionSlug,
       overrides: {
-        name: 'lessonVideo',
+        name: 'topicVideo',
         access: {
           read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
         },
         admin: {
-         description: 'The below video is tied to Course progression',
+         description: 'The video content for this topic',
         },
       },
     }),
     videoProgression({
       overrides: {
         admin: {
-          condition: (data, { lessonVideo }) => Boolean(lessonVideo.embed),
+          condition: (data, { topicVideo }) => Boolean(topicVideo.embed),
         },
         access: {
           read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
@@ -95,28 +97,15 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       },
     }),
     {
-      name: 'lessonMaterials',
+      name: 'topicMaterials',
       type: 'richText',
-      label: 'Lesson Materials',
+      label: 'Topic Materials',
       admin: {
-        description: 'The materials of the lesson',
+        description: 'Additional materials and resources for the topic',
       },
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
       }, 
-    },
-    {
-      name: 'progressionControl',
-      type: 'select',
-      label: 'Progression Behavior',
-      options: [
-        { label: 'Required to complete', value: 'required' },
-        { label: 'Optional', value: 'optional' },
-      ],
-      defaultValue: 'required',
-      admin: {
-        description: 'The progression behavior of the lesson',
-      },
     },
     {
       name: 'course',
@@ -125,20 +114,19 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       admin: {
         position: 'sidebar',
         allowCreate: false,
-        description: 'The course that the lesson belongs to',
+        description: 'The course that the topic is associated with',
       },
     },
     {
-      name: 'quizzes',
+      name: 'lesson',
       type: 'relationship',
-      relationTo: quizzesCollectionSlug,
-      hasMany: true,
+      relationTo: lessonsCollectionSlug,
       admin: {
         position: 'sidebar',
         allowCreate: false,
-        description: 'The quizzes that are part of the lesson',
+        description: 'The lesson that the topic is associated with',
       },
-    },
+    }, 
   ]
 
   // Apply field overrides if provided
@@ -148,11 +136,11 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     : defaultFields
 
   /**
-   * Base configuration for the lessons collection
+   * Base configuration for the topics collection
    * Includes slug, access control, timestamps, and admin settings
    */
   const baseConfig: CollectionConfig = {
-    slug: 'lessons',
+    slug: 'topics',
     access: {
       create: isAdminOrAuthor,
       read: isAdminOrPublished,
@@ -169,4 +157,4 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
   }
 
   return { ...baseConfig }
-}
+} 
