@@ -3,7 +3,7 @@ import { devUser } from './helpers/credentials.js'
 
 /**
  * Seeds the database with initial data for development
- * Creates users, courses, lessons, quizzes, and other necessary collections
+ * Creates users, courses, lessons, topics, quizzes, and other necessary collections
  */
 export const seed = async (payload: Payload) => {
   // Check if dev user exists
@@ -109,8 +109,8 @@ export const seed = async (payload: Payload) => {
       },
     })
 
-    // Create sample lesson
-    const lesson = await payload.create({
+    // Create HTML lesson
+    const htmlLesson = await payload.create({
       collection: 'lessons',
       data: {
         title: 'HTML Basics',
@@ -139,6 +139,245 @@ export const seed = async (payload: Payload) => {
         course: course.id,
         progressionControl: 'required',
         lessonOrder: 1,
+      },
+    })
+
+    // Create CSS lesson
+    const cssLesson = await payload.create({
+      collection: 'lessons',
+      data: {
+        title: 'CSS Fundamentals',
+        content: {
+          root: {
+            type: 'root',
+            children: [
+              {
+                type: 'paragraph',
+                children: [
+                  {
+                    type: 'text',
+                    text: 'Learn the basics of CSS styling',
+                  },
+                ],
+                version: 1,
+              },
+            ],
+            direction: null,
+            format: '',
+            indent: 0,
+            version: 1,
+          },
+        },
+        excerpt: 'Introduction to CSS styling and layout',
+        course: course.id,
+        progressionControl: 'required',
+        lessonOrder: 2,
+      },
+    })
+
+    // Create HTML topics
+    const htmlStructureTopic = await payload.create({
+      collection: 'topics',
+      data: {
+        title: 'HTML Document Structure',
+        content: {
+          root: {
+            type: 'root',
+            children: [
+              {
+                type: 'paragraph',
+                children: [
+                  {
+                    type: 'text',
+                    text: 'Understanding the basic structure of an HTML document',
+                  },
+                ],
+                version: 1,
+              },
+            ],
+            direction: null,
+            format: '',
+            indent: 0,
+            version: 1,
+          },
+        },
+        excerpt: 'Learn about HTML document structure and essential elements',
+        course: course.id,
+        lesson: htmlLesson.id,
+        topicVideo: {
+          embed: 'https://example.com/video/html-structure',
+        },
+      },
+    })
+
+    const htmlElementsTopic = await payload.create({
+      collection: 'topics',
+      data: {
+        title: 'HTML Elements and Tags',
+        content: {
+          root: {
+            type: 'root',
+            children: [
+              {
+                type: 'paragraph',
+                children: [
+                  {
+                    type: 'text',
+                    text: 'Exploring common HTML elements and their usage',
+                  },
+                ],
+                version: 1,
+              },
+            ],
+            direction: null,
+            format: '',
+            indent: 0,
+            version: 1,
+          },
+        },
+        excerpt: 'Learn about different HTML elements and how to use them',
+        course: course.id,
+        lesson: htmlLesson.id,
+        topicVideo: {
+          embed: 'https://example.com/video/html-elements',
+        },
+      },
+    })
+
+    const htmlFormsTopic = await payload.create({
+      collection: 'topics',
+      data: {
+        title: 'HTML Forms and Input',
+        content: {
+          root: {
+            type: 'root',
+            children: [
+              {
+                type: 'paragraph',
+                children: [
+                  {
+                    type: 'text',
+                    text: 'Creating interactive forms with HTML',
+                  },
+                ],
+                version: 1,
+              },
+            ],
+            direction: null,
+            format: '',
+            indent: 0,
+            version: 1,
+          },
+        },
+        excerpt: 'Learn how to create and style HTML forms',
+        course: course.id,
+        lesson: htmlLesson.id,
+        topicVideo: {
+          embed: 'https://example.com/video/html-forms',
+        },
+      },
+    })
+
+    // Create CSS topics
+    const cssSelectorsTopic = await payload.create({
+      collection: 'topics',
+      data: {
+        title: 'CSS Selectors and Properties',
+        content: {
+          root: {
+            type: 'root',
+            children: [
+              {
+                type: 'paragraph',
+                children: [
+                  {
+                    type: 'text',
+                    text: 'Understanding CSS selectors and common properties',
+                  },
+                ],
+                version: 1,
+              },
+            ],
+            direction: null,
+            format: '',
+            indent: 0,
+            version: 1,
+          },
+        },
+        excerpt: 'Learn about CSS selectors and how to style elements',
+        course: course.id,
+        lesson: cssLesson.id,
+        topicVideo: {
+          embed: 'https://example.com/video/css-selectors',
+        },
+      },
+    })
+
+    const cssBoxModelTopic = await payload.create({
+      collection: 'topics',
+      data: {
+        title: 'CSS Box Model',
+        content: {
+          root: {
+            type: 'root',
+            children: [
+              {
+                type: 'paragraph',
+                children: [
+                  {
+                    type: 'text',
+                    text: 'Understanding the CSS box model and layout',
+                  },
+                ],
+                version: 1,
+              },
+            ],
+            direction: null,
+            format: '',
+            indent: 0,
+            version: 1,
+          },
+        },
+        excerpt: 'Learn about the CSS box model and how it affects layout',
+        course: course.id,
+        lesson: cssLesson.id,
+        topicVideo: {
+          embed: 'https://example.com/video/css-box-model',
+        },
+      },
+    })
+
+    const cssFlexboxTopic = await payload.create({
+      collection: 'topics',
+      data: {
+        title: 'CSS Flexbox Layout',
+        content: {
+          root: {
+            type: 'root',
+            children: [
+              {
+                type: 'paragraph',
+                children: [
+                  {
+                    type: 'text',
+                    text: 'Creating flexible layouts with CSS Flexbox',
+                  },
+                ],
+                version: 1,
+              },
+            ],
+            direction: null,
+            format: '',
+            indent: 0,
+            version: 1,
+          },
+        },
+        excerpt: 'Learn how to create responsive layouts with Flexbox',
+        course: course.id,
+        lesson: cssLesson.id,
+        topicVideo: {
+          embed: 'https://example.com/video/css-flexbox',
+        },
       },
     })
 
