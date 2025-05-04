@@ -266,6 +266,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     ...overrides,
     admin: {
       useAsTitle: 'title',
+      group: 'LMS',
       ...overrides?.admin,
     },
     fields,

@@ -143,6 +143,7 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     ...overrides,
     admin: {
       useAsTitle: 'title',
+      group: 'LMS',
       ...overrides?.admin,
     },
     fields,

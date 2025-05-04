@@ -151,6 +151,7 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
     ...overrides,
     admin: {
       useAsTitle: 'title',
+      group: 'LMS', 
       ...overrides?.admin,
     },
     fields,

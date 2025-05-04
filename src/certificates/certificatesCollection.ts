@@ -138,6 +138,7 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
         ...overrides,
         admin: {
             useAsTitle: 'title',
+            group: 'LMS',
             ...overrides?.admin,
         },
         fields,
