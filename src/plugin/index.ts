@@ -15,90 +15,87 @@ import { completedCoursesField } from '../fields/completedCoursesField.js'
 import { coursesProgressField } from '../fields/coursesProgressField.js'
 import { topicsCollection } from '../topics/topicsCollection.js'
 
-export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Config): Config => {
-
+export const lmsPlugin =
+  (pluginConfig?: LMSPluginConfig) =>
+  (incomingConfig: Config): Config => {
     if (!pluginConfig) {
-        return incomingConfig
-      }
+      return incomingConfig
+    }
 
-     const studentsCollectionSlug = pluginConfig.studentsCollectionSlug || 'users'
-     const categoriesCollectionSlug = pluginConfig.categoriesCollectionSlug || 'categories'
-     const certificatesCollectionSlug = pluginConfig.certificatesCollectionSlug || 'certificates'
-     const coursesCollectionSlug = pluginConfig.coursesCollectionSlug || 'courses'
-     const lessonsCollectionSlug = pluginConfig.lessonsCollectionSlug || 'lessons'
-     const mediaCollectionSlug = pluginConfig.mediaCollectionSlug || 'media'
-     const tagsCollectionSlug = pluginConfig.tagsCollectionSlug || 'tags'
-     const quizzesCollectionSlug = pluginConfig.quizzesCollectionSlug || 'quizzes'
-     const topicsCollectionSlug = pluginConfig.topicsCollectionSlug || 'topics'
+    const studentsCollectionSlug = pluginConfig.studentsCollectionSlug || 'users'
+    const categoriesCollectionSlug = pluginConfig.categoriesCollectionSlug || 'categories'
+    const certificatesCollectionSlug = pluginConfig.certificatesCollectionSlug || 'certificates'
+    const coursesCollectionSlug = pluginConfig.coursesCollectionSlug || 'courses'
+    const lessonsCollectionSlug = pluginConfig.lessonsCollectionSlug || 'lessons'
+    const mediaCollectionSlug = pluginConfig.mediaCollectionSlug || 'media'
+    const tagsCollectionSlug = pluginConfig.tagsCollectionSlug || 'tags'
+    const quizzesCollectionSlug = pluginConfig.quizzesCollectionSlug || 'quizzes'
+    const topicsCollectionSlug = pluginConfig.topicsCollectionSlug || 'topics'
 
     // Ensure collections exists
     if (!incomingConfig.collections) {
-        incomingConfig.collections = []
-      }
-      const existingStudentsCollection = incomingConfig.collections.find(
-        collection => collection.slug === studentsCollectionSlug
+      incomingConfig.collections = []
+    }
+    const existingStudentsCollection = incomingConfig.collections.find(
+      (collection) => collection.slug === studentsCollectionSlug,
     )
     // Ensure students collection exists
-     if ( existingStudentsCollection ) {
+    if (existingStudentsCollection) {
+      const existingRolesField = existingStudentsCollection?.fields?.find(
+        (field): field is SelectField =>
+          'name' in field && field.name === 'roles' && field.type === 'select',
+      )
 
+      if (!existingRolesField) {
+        // Add roles field if it doesn't exist
+        existingStudentsCollection.fields.push(rolesField({}))
+      } else if (existingRolesField.type === 'select') {
+        // Merge options if roles field exists
+        const existingOptions = (existingRolesField.options || []) as Array<{
+          label: string
+          value: string
+        }>
 
-                const existingRolesField = existingStudentsCollection?.fields?.find(
-                    (field): field is SelectField => 
-                        'name' in field && field.name === 'roles' && field.type === 'select'
-                )
+        existingRolesField.options = [
+          ...existingOptions,
+          ...rolesOptions.filter(
+            (newOpt) => !existingOptions.find((existingOpt) => existingOpt.value === newOpt.value),
+          ),
+        ]
+      }
 
-                if (!existingRolesField) {
-                    // Add roles field if it doesn't exist
-                    existingStudentsCollection.fields.push(rolesField({}))
-                } else if (existingRolesField.type === 'select') {
-                    // Merge options if roles field exists
-                    const existingOptions = (existingRolesField.options || []) as Array<{ label: string; value: string }>
-                   
-                    existingRolesField.options = [
-                        ...existingOptions,
-                        ...(rolesOptions).filter(
-                            newOpt => !existingOptions.find(
-                                existingOpt => existingOpt.value === newOpt.value
-                            )
-                        )
-                    ]
-                }
+      // Add enrolledCourses field if it doesn't exist
+      const existingEnrolledCoursesField = existingStudentsCollection?.fields?.find(
+        (field): field is RelationshipField =>
+          'name' in field && field.name === 'enrolledCourses' && field.type === 'relationship',
+      )
 
-                // Add enrolledCourses field if it doesn't exist
-                const existingEnrolledCoursesField = existingStudentsCollection?.fields?.find(
-                    (field): field is RelationshipField => 
-                        'name' in field && field.name === 'enrolledCourses' && field.type === 'relationship'
-                )
+      if (!existingEnrolledCoursesField) {
+        existingStudentsCollection.fields.push(enrolledCoursesField({}))
+      }
 
-                if ( !existingEnrolledCoursesField ) {
-                    existingStudentsCollection.fields.push(enrolledCoursesField({}))
-                }
+      // Add completedCourses field if it doesn't exist
+      const existingCompletedCoursesField = existingStudentsCollection?.fields?.find(
+        (field): field is RelationshipField =>
+          'name' in field && field.name === 'completedCourses' && field.type === 'relationship',
+      )
 
-                // Add completedCourses field if it doesn't exist
-                const existingCompletedCoursesField = existingStudentsCollection?.fields?.find(
-                    (field): field is RelationshipField => 
-                        'name' in field && field.name === 'completedCourses' && field.type === 'relationship'
-                )   
+      if (!existingCompletedCoursesField) {
+        existingStudentsCollection.fields.push(completedCoursesField({}))
+      }
 
-                if ( !existingCompletedCoursesField ) {
-                    existingStudentsCollection.fields.push(completedCoursesField({}))
-                }
+      // Add coursesProgress field if it doesn't exist
+      const existingCoursesProgressField = existingStudentsCollection?.fields?.find(
+        (field): field is ArrayField =>
+          'name' in field && field.name === 'coursesProgress' && field.type === 'array',
+      )
 
-                // Add coursesProgress field if it doesn't exist
-                const existingCoursesProgressField = existingStudentsCollection?.fields?.find(
-                    (field): field is ArrayField => 
-                        'name' in field && field.name === 'coursesProgress' && field.type === 'array'
-                )
+      if (!existingCoursesProgressField) {
+        existingStudentsCollection.fields.push(coursesProgressField({}))
+      }
+    }
 
-                if ( !existingCoursesProgressField ) {
-                    existingStudentsCollection.fields.push(coursesProgressField({}))
-                }
-                
-                
-                
-     }
-
-     // Ensure currencies are configured
+    // Ensure currencies are configured
     const currenciesConfig: NonNullable<LMSPluginConfig['currencies']> =
       pluginConfig.currencies ?? {
         defaultCurrency: 'AUD',
@@ -109,68 +106,68 @@ export const lmsPlugin = (pluginConfig?: LMSPluginConfig) => (incomingConfig: Co
       currenciesConfig.defaultCurrency = currenciesConfig.supportedCurrencies[0]?.code
     }
 
-    if ( pluginConfig.certificates) {
-        const certificates = certificatesCollection({
-            mediaCollectionSlug,
-        })
-        incomingConfig.collections.push(certificates)
-    }   
-   
-    if ( pluginConfig.courses) {
-        const courses = coursesCollection({
-            categoriesCollectionSlug,
-            certificatesCollectionSlug,
-            currenciesConfig,
-            lessonsCollectionSlug,
-            mediaCollectionSlug,
-            studentsCollectionSlug,
-            tagsCollectionSlug,
-        })
-        incomingConfig.collections.push(courses)
+    if (pluginConfig.certificates) {
+      const certificates = certificatesCollection({
+        mediaCollectionSlug,
+      })
+      incomingConfig.collections.push(certificates)
     }
 
-    if ( pluginConfig.lessons) {
-        const lessons = lessonsCollection({
-            coursesCollectionSlug,
-            mediaCollectionSlug,
-            quizzesCollectionSlug,
-        })
-        incomingConfig.collections.push(lessons)
+    if (pluginConfig.courses) {
+      const courses = coursesCollection({
+        categoriesCollectionSlug,
+        certificatesCollectionSlug,
+        currenciesConfig,
+        lessonsCollectionSlug,
+        mediaCollectionSlug,
+        studentsCollectionSlug,
+        tagsCollectionSlug,
+      })
+      incomingConfig.collections.push(courses)
     }
 
-    if ( pluginConfig.topics) {
-        const topics = topicsCollection({
-            coursesCollectionSlug,
-            mediaCollectionSlug,
-            quizzesCollectionSlug,
-            lessonsCollectionSlug,
-        })
-        incomingConfig.collections.push(topics)
+    if (pluginConfig.lessons) {
+      const lessons = lessonsCollection({
+        coursesCollectionSlug,
+        mediaCollectionSlug,
+        quizzesCollectionSlug,
+      })
+      incomingConfig.collections.push(lessons)
     }
 
-    if ( pluginConfig.quizzes) {
-        const quizzes = quizzesCollection({
-            mediaCollectionSlug,
-        })
-        incomingConfig.collections.push(quizzes)
-    }   
-
-    if ( pluginConfig.categories) {
-        const categories = categoriesCollection()
-        incomingConfig.collections.push(categories)
+    if (pluginConfig.topics) {
+      const topics = topicsCollection({
+        coursesCollectionSlug,
+        mediaCollectionSlug,
+        quizzesCollectionSlug,
+        lessonsCollectionSlug,
+      })
+      incomingConfig.collections.push(topics)
     }
 
-    if ( pluginConfig.tags) {
-        const tags = tagsCollection()
-        incomingConfig.collections.push(tags)
+    if (pluginConfig.quizzes) {
+      const quizzes = quizzesCollection({
+        mediaCollectionSlug,
+      })
+      incomingConfig.collections.push(quizzes)
     }
 
-    if ( pluginConfig.questions) {
-        const questions = questionsCollection()
-        incomingConfig.collections.push(questions)
+    if (pluginConfig.categories) {
+      const categories = categoriesCollection()
+      incomingConfig.collections.push(categories)
+    }
+
+    if (pluginConfig.tags) {
+      const tags = tagsCollection()
+      incomingConfig.collections.push(tags)
+    }
+
+    if (pluginConfig.questions) {
+      const questions = questionsCollection()
+      incomingConfig.collections.push(questions)
     }
 
     return {
-        ...incomingConfig,
+      ...incomingConfig,
     }
-}
+  }

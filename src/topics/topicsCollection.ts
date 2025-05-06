@@ -1,10 +1,10 @@
-import { CollectionConfig, Field } from 'payload';
-import { FieldsOverride } from '../types.js';
-import { embeddedVideo } from '../fields/embeddedVideo.js';
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
-import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
-import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
-import { videoProgression } from '../fields/videoProgression.js';
+import { CollectionConfig, Field } from 'payload'
+import { FieldsOverride } from '../types.js'
+import { embeddedVideo } from '../fields/embeddedVideo.js'
+import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js'
+import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
+import { isAdminOrPublished } from '../access/isAdminOrPublished.js'
+import { videoProgression } from '../fields/videoProgression.js'
 
 /**
  * Props interface for configuring the topics collection
@@ -15,22 +15,28 @@ import { videoProgression } from '../fields/videoProgression.js';
  * @property overrides - Optional configuration overrides for fields and collection settings
  */
 type Props = {
-    coursesCollectionSlug?: string
-    mediaCollectionSlug?: string
-    quizzesCollectionSlug?: string
-    lessonsCollectionSlug?: string
-    overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
+  coursesCollectionSlug?: string
+  mediaCollectionSlug?: string
+  quizzesCollectionSlug?: string
+  lessonsCollectionSlug?: string
+  overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
 /**
  * Creates a topics collection configuration for Payload CMS
  * This collection manages individual topics within lessons, including content, media, and assessments
- * 
+ *
  * @param props - Configuration properties for the topics collection
  * @returns CollectionConfig object for topics
  */
 export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (props) => {
-  const { overrides, mediaCollectionSlug = 'media', coursesCollectionSlug = 'courses', quizzesCollectionSlug = 'quizzes', lessonsCollectionSlug = 'lessons' } = props || {}
+  const {
+    overrides,
+    mediaCollectionSlug = 'media',
+    coursesCollectionSlug = 'courses',
+    quizzesCollectionSlug = 'quizzes',
+    lessonsCollectionSlug = 'lessons',
+  } = props || {}
   const fieldsOverride = overrides?.fields
 
   /**
@@ -56,13 +62,14 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
     {
       name: 'content',
       type: 'richText',
+      label: 'Topic Content',
       required: true,
       admin: {
         description: 'The content of the topic',
       },
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
-      },  
+      },
     },
     {
       name: 'featuredImage',
@@ -73,7 +80,7 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
         description: 'The featured image of the topic',
       },
     },
- 
+
     embeddedVideo({
       mediaCollectionSlug,
       overrides: {
@@ -82,7 +89,7 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
           read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
         },
         admin: {
-         description: 'The video content for this topic',
+          description: 'The video content for this topic',
         },
       },
     }),
@@ -105,7 +112,7 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
       },
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
-      }, 
+      },
     },
     {
       name: 'course',
@@ -126,14 +133,14 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
         allowCreate: false,
         description: 'The lesson that the topic is associated with',
       },
-    }, 
+    },
   ]
 
   // Apply field overrides if provided
   const fields =
-  fieldsOverride && typeof fieldsOverride === 'function'
-    ? fieldsOverride({ defaultFields })
-    : defaultFields
+    fieldsOverride && typeof fieldsOverride === 'function'
+      ? fieldsOverride({ defaultFields })
+      : defaultFields
 
   /**
    * Base configuration for the topics collection
@@ -151,11 +158,11 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
     ...overrides,
     admin: {
       useAsTitle: 'title',
-      group: 'LMS', 
+      group: 'LMS',
       ...overrides?.admin,
     },
     fields,
   }
 
   return { ...baseConfig }
-} 
+}

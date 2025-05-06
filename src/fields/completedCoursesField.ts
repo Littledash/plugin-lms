@@ -20,10 +20,9 @@ export const completedCoursesField: (props: Props) => RelationshipField = ({ ove
     relationTo: 'courses',
     hasMany: true,
     ...overrides,
-    admin: { 
+    admin: {
       allowCreate: false,
-      ...overrides?.admin, 
-     
+      ...overrides?.admin,
     },
   }
 

@@ -79,8 +79,8 @@ export const embeddedVideo: (props?: Props) => GroupField = (props) => {
         localized: true,
       },
     ],
-    ...overrides
+    ...overrides,
   }
 
-  return field 
+  return field
 }

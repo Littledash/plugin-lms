@@ -1,0 +1,8 @@
+# Run lint and typecheck on pushes to staging or production
+
+while read oldrev newrev refname; do
+	branch=$(git rev-parse --symbolic --abbrev-ref $refname)
+	if [ "$branch" == "staging" ] || [ "$branch" == "production" ]; then
+		npm run lint:ts -- --max-warnings=0 && npm run typecheck
+	fi
+done

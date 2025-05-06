@@ -15,8 +15,12 @@ type Props = {
  * @param props - Configuration overrides for the field
  * @returns A configured field for the courses progress
  */
-export const coursesProgressField: (props: Props) => ArrayField = ({ coursesCollectionSlug = 'courses', lessonsCollectionSlug = 'lessons', quizzesCollectionSlug = 'quizzes', overrides }) => {
-
+export const coursesProgressField: (props: Props) => ArrayField = ({
+  coursesCollectionSlug = 'courses',
+  lessonsCollectionSlug = 'lessons',
+  quizzesCollectionSlug = 'quizzes',
+  overrides,
+}) => {
   const field: ArrayField = {
     name: 'coursesProgress',
     type: 'array',
@@ -59,7 +63,7 @@ export const coursesProgressField: (props: Props) => ArrayField = ({ coursesColl
             name: 'completedAt',
             type: 'date',
             required: true,
-          }
+          },
         ],
       },
       {
@@ -82,14 +86,13 @@ export const coursesProgressField: (props: Props) => ArrayField = ({ coursesColl
             name: 'completedAt',
             type: 'date',
             required: true,
-          }
+          },
         ],
       },
     ],
     ...overrides,
-    admin: { 
-      ...overrides?.admin, 
-     
+    admin: {
+      ...overrides?.admin,
     },
   }
 

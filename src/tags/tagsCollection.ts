@@ -1,11 +1,10 @@
-import { CollectionConfig, Field } from 'payload';
-import { FieldsOverride } from '../types.js';
-import { slugField } from '../fields/slug.js';
+import { CollectionConfig, Field } from 'payload'
+import { FieldsOverride } from '../types.js'
+import { slugField } from '../fields/slug.js'
 
 type Props = {
-    overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
+  overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
-
 
 export const tagsCollection: (props?: Props) => CollectionConfig<'tags'> = (props) => {
   const { overrides } = props || {}
@@ -21,29 +20,27 @@ export const tagsCollection: (props?: Props) => CollectionConfig<'tags'> = (prop
       },
     },
     ...slugField(),
-    
   ]
 
   const fields =
-  fieldsOverride && typeof fieldsOverride === 'function'
-    ? fieldsOverride({ defaultFields })
-    : defaultFields
+    fieldsOverride && typeof fieldsOverride === 'function'
+      ? fieldsOverride({ defaultFields })
+      : defaultFields
 
-    const baseConfig: CollectionConfig = {
-      slug: 'tags',
-      access: {
-        // TODO: Add access control
-        read: () => true,
-      },
-      timestamps: true,
-      ...overrides,
-      admin: {
-        useAsTitle: 'title',
-        ...overrides?.admin,
-      },
-      fields,
-    }
-  
-    return { ...baseConfig }
+  const baseConfig: CollectionConfig = {
+    slug: 'tags',
+    access: {
+      // TODO: Add access control
+      read: () => true,
+    },
+    timestamps: true,
+    ...overrides,
+    admin: {
+      useAsTitle: 'title',
+      ...overrides?.admin,
+    },
+    fields,
+  }
 
+  return { ...baseConfig }
 }

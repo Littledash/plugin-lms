@@ -26,7 +26,10 @@ export const isAdminOrSelf: Access = ({ req: { user } }) => {
   return false
 }
 
-export const isAdminOrSelfFieldLevel: FieldAccess<{ id: string }, User> = ({ req: { user }, id }) => {
+export const isAdminOrSelfFieldLevel: FieldAccess<{ id: string }, User> = ({
+  req: { user },
+  id,
+}) => {
   // Return true or false based on if the user has an admin role
   if (checkRole(['admin'], user)) return true
   if (user?.id === id) return true

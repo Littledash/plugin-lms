@@ -7,11 +7,10 @@ import { checkRole } from './checkRole.js'
  * @returns True if the user has author role, false otherwise
  */
 export const isAuthor: Access = ({ req: { user } }) => {
-   return Boolean(user && checkRole(['author'], user))
+  return Boolean(user && checkRole(['author'], user))
 }
 
 export const isAuthorFieldLevel: FieldAccess<{ id: string }, User> = ({ req: { user } }) => {
-   // Return true or false based on if the user has an admin role
-   return Boolean(checkRole(['author'], user))
- }
-    
+  // Return true or false based on if the user has an admin role
+  return Boolean(checkRole(['author'], user))
+}

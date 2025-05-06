@@ -24,11 +24,10 @@ export const isAdminOrStudent: Access = ({ req: { user } }) => {
   return false
 }
 
-
-export const isAdminOrStudentFieldLevel: FieldAccess<{ id: string; students?: (string | number)[] }, User> = ({
-  req: { user },
-  doc,
-}) => {
+export const isAdminOrStudentFieldLevel: FieldAccess<
+  { id: string; students?: (string | number)[] },
+  User
+> = ({ req: { user }, doc }) => {
   if (!user) return false
   if (checkRole(['admin', 'student'], user)) return true
   return doc?.students?.includes(String(user.id)) ?? false

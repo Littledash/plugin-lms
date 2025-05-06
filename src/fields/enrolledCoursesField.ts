@@ -20,10 +20,9 @@ export const enrolledCoursesField: (props: Props) => RelationshipField = ({ over
     relationTo: 'courses',
     hasMany: true,
     ...overrides,
-    admin: { 
+    admin: {
       allowCreate: false,
-      ...overrides?.admin, 
-     
+      ...overrides?.admin,
     },
   }
 

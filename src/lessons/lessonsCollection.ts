@@ -1,11 +1,11 @@
-import { CollectionConfig, Field } from 'payload';
-import { FieldsOverride } from '../types.js';
-import { embeddedVideo } from '../fields/embeddedVideo.js';
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
+import { CollectionConfig, Field } from 'payload'
+import { FieldsOverride } from '../types.js'
+import { embeddedVideo } from '../fields/embeddedVideo.js'
+import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js'
 
-import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
-import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
-import { videoProgression } from '../fields/videoProgression.js';
+import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
+import { isAdminOrPublished } from '../access/isAdminOrPublished.js'
+import { videoProgression } from '../fields/videoProgression.js'
 /**
  * Props interface for configuring the lessons collection
  * @property coursesCollectionSlug - Slug for the courses collection (default: 'courses')
@@ -14,21 +14,26 @@ import { videoProgression } from '../fields/videoProgression.js';
  * @property overrides - Optional configuration overrides for fields and collection settings
  */
 type Props = {
-    coursesCollectionSlug?: string
-    mediaCollectionSlug?: string
-    quizzesCollectionSlug?: string
-    overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
+  coursesCollectionSlug?: string
+  mediaCollectionSlug?: string
+  quizzesCollectionSlug?: string
+  overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
 /**
  * Creates a lessons collection configuration for Payload CMS
  * This collection manages individual lessons within courses, including content, media, and assessments
- * 
+ *
  * @param props - Configuration properties for the lessons collection
  * @returns CollectionConfig object for lessons
  */
 export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> = (props) => {
-  const { overrides, mediaCollectionSlug = 'media', coursesCollectionSlug = 'courses', quizzesCollectionSlug = 'quizzes' } = props || {}
+  const {
+    overrides,
+    mediaCollectionSlug = 'media',
+    coursesCollectionSlug = 'courses',
+    quizzesCollectionSlug = 'quizzes',
+  } = props || {}
   const fieldsOverride = overrides?.fields
 
   /**
@@ -60,7 +65,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       },
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
-      },  
+      },
     },
     {
       name: 'featuredImage',
@@ -71,7 +76,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
         description: 'The featured image of the lesson',
       },
     },
- 
+
     embeddedVideo({
       mediaCollectionSlug,
       overrides: {
@@ -80,7 +85,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
           read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
         },
         admin: {
-         description: 'The below video is tied to Course progression',
+          description: 'The below video is tied to Course progression',
         },
       },
     }),
@@ -103,7 +108,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       },
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
-      }, 
+      },
     },
     {
       name: 'progressionControl',
@@ -143,9 +148,9 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
 
   // Apply field overrides if provided
   const fields =
-  fieldsOverride && typeof fieldsOverride === 'function'
-    ? fieldsOverride({ defaultFields })
-    : defaultFields
+    fieldsOverride && typeof fieldsOverride === 'function'
+      ? fieldsOverride({ defaultFields })
+      : defaultFields
 
   /**
    * Base configuration for the lessons collection

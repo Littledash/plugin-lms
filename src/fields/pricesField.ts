@@ -22,10 +22,7 @@ type Props = {
  * @param props - Configuration overrides for the field
  * @returns A configured array field for prices
  */
-export const pricesField: (props: Props) => ArrayField = ({
-  currenciesConfig,
-  overrides,
-}) => {
+export const pricesField: (props: Props) => ArrayField = ({ currenciesConfig, overrides }) => {
   const minRows = 1
   const maxRows = currenciesConfig.supportedCurrencies.length ?? 1
 

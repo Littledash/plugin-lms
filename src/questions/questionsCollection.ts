@@ -1,7 +1,7 @@
-import { CollectionConfig, Field } from 'payload';
-import { FieldsOverride } from '../types.js';
-import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
+import { CollectionConfig, Field } from 'payload'
+import { FieldsOverride } from '../types.js'
+import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js'
+import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js'
 
 /**
  * Props interface for configuring the questions collection
@@ -14,9 +14,9 @@ type Props = {
 /**
  * Creates a questions collection configuration for Payload CMS
  * This collection manages questions for quizzes and assessments
- * 
+ *
  * @param props - Configuration properties for the questions collection
- * @returns CollectionConfig object for questions 
+ * @returns CollectionConfig object for questions
  */
 export const questionsCollection: (props?: Props) => CollectionConfig<'questions'> = (props) => {
   const { overrides } = props || {}
@@ -70,13 +70,17 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       name: 'choices',
       type: 'array',
       admin: {
-        condition: (_, siblingData) => 
+        condition: (_, siblingData) =>
           ['multipleChoice', 'singleChoice', 'sorting'].includes(siblingData.questionType),
       },
       fields: [
         { name: 'label', type: 'text', required: true },
         { name: 'isCorrect', type: 'checkbox' },
-        { name: 'order', type: 'number', admin: { condition: (_, siblingData) => siblingData.questionType === 'sorting' } },
+        {
+          name: 'order',
+          type: 'number',
+          admin: { condition: (_, siblingData) => siblingData.questionType === 'sorting' },
+        },
       ],
     },
     {
@@ -96,9 +100,7 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       admin: {
         condition: (_, siblingData) => siblingData.questionType === 'fillInBlank',
       },
-      fields: [
-        { name: 'answer', type: 'text', required: true },
-      ],
+      fields: [{ name: 'answer', type: 'text', required: true }],
     },
     {
       name: 'assessmentCriteria',
@@ -150,4 +152,4 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
   }
 
   return { ...baseConfig }
-} 
+}

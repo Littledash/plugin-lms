@@ -4,8 +4,14 @@ export { isAdminOrLoggedIn, isAdminOrLoggedInFieldLevel } from '../access/isAdmi
 export { checkRole } from '../access/checkRole.js'
 export { isAdminOrAuthor, isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
 export { isAuthor } from '../access/isAuthor.js'
-export { isAdminOrAuthorOrStudent, isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js'
+export {
+  isAdminOrAuthorOrStudent,
+  isAdminOrAuthorOrStudentFieldLevel,
+} from '../access/isAdminOrAuthorOrStudent.js'
 export { anyone } from '../access/anyone.js'
 export { isAdminOrSelf, isAdminOrSelfFieldLevel } from '../access/isAdminOrSelf.js'
-export { isAdminOrAuthorOrEnrolledInCourse, isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
+export {
+  isAdminOrAuthorOrEnrolledInCourse,
+  isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+} from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
 export { isAdminOrPublished } from '../access/isAdminOrPublished.js'

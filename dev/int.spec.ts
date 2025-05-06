@@ -6,7 +6,7 @@
  * - Course management
  * - Quiz functionality
  * - Certificate generation
- * 
+ *
  * The tests use a memory database for isolation and speed.
  */
 
@@ -263,7 +263,7 @@ describe('LMS Integration Tests', () => {
             navigationMode: 'linear',
           },
           user: studentUser,
-        })
+        }),
       ).rejects.toThrow()
     })
 

@@ -5,6 +5,7 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
 ## Features
 
 - **Course Management**
+
   - Create and organize courses with rich content
   - Support for multiple access modes (open, free, buy now, recurring, closed)
   - Course navigation modes (linear, free form)
@@ -13,6 +14,7 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
   - Certificate generation
 
 - **Lesson Management**
+
   - Rich text content support
   - Embedded video support
   - Lesson materials and resources
@@ -22,6 +24,7 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
   - Topic organization
 
 - **Topic Management**
+
   - Rich text content support
   - Embedded video support with progression tracking
   - Topic materials and resources
@@ -29,6 +32,7 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
   - Video progression control
 
 - **Quiz System**
+
   - Multiple question types:
     - Multiple Choice
     - True/False
@@ -42,12 +46,14 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
   - Quiz integration with lessons
 
 - **User Management**
+
   - Role-based access control (Admin, Author, Student)
   - Course enrollment tracking
   - Course completion tracking
   - Student progress monitoring
 
 - **Content Organization**
+
   - Categories for course classification
   - Tags for content organization
   - Media management for course assets
@@ -61,11 +67,13 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
 ## Installation
 
 1. Install the plugin:
+
 ```bash
 npm install @payloadcms/plugin-lms
 ```
 
 2. Add the plugin to your Payload config:
+
 ```typescript
 import { buildConfig } from 'payload/config'
 import lmsPlugin from '@payloadcms/plugin-lms'
@@ -116,7 +124,7 @@ The plugin supports various configuration options:
     defaultCurrency: string
     supportedCurrencies: Currency[]
   }
-  
+
   // Collection slugs
   studentsCollectionSlug?: string
   certificatesCollectionSlug?: string
