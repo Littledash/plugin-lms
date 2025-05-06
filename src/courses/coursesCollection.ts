@@ -132,8 +132,13 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
                     currenciesConfig,
                     overrides: {
                       admin: {
-                        condition: (_, siblingData) =>
-                          ['buy now', 'recurring', 'closed'].includes(siblingData?.accessMode),
+                        condition: (_, siblingData) => {
+                          console.log(siblingData, 'siblingData')
+                          
+                          return ['buy now', 'recurring', 'closed'].includes(
+                            siblingData?.accessMode,
+                          )
+                        },
                       },
                     },
                   }),

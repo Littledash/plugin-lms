@@ -46,6 +46,7 @@ export const pricesField: (props: Props) => ArrayField = ({ currenciesConfig, ov
     ...(defaultValue && { defaultValue }),
     ...overrides,
     admin: {
+      ...overrides?.admin,
       components: {
         RowLabel: {
           clientProps: {
@@ -53,6 +54,7 @@ export const pricesField: (props: Props) => ArrayField = ({ currenciesConfig, ov
           },
           path: '../src/ui/PriceRowLabel#PriceRowLabel',
         },
+        ...overrides?.admin?.components,
       },
       initCollapsed: true,
       readOnly: maxRows === minRows,

@@ -19,12 +19,19 @@ export const amountField: (props: Props) => NumberField = ({ currenciesConfig, o
   const field: NumberField = {
     name: 'amount',
     type: 'number',
-    required: true,
-    min: 0,
-    admin: {
-      description: 'The monetary amount',
-    },
     ...overrides,
+    admin: {
+      components: {
+        Field: {
+          clientProps: {
+            currenciesConfig,
+          },
+          path: '../src/ui/PriceInput#PriceInput',
+        },
+        ...overrides?.admin?.components,
+      },
+      ...overrides?.admin,
+    },
   }
 
   return field
