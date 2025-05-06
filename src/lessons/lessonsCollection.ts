@@ -51,7 +51,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     },
     {
       name: 'excerpt',
-      type: 'text',
+      type: 'textarea',
       admin: {
         description: 'The excerpt of the lesson',
       },
@@ -76,53 +76,92 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
         description: 'The featured image of the lesson',
       },
     },
-
-    embeddedVideo({
-      mediaCollectionSlug,
-      overrides: {
-        name: 'lessonVideo',
-        access: {
-          read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
-        },
-        admin: {
-          description: 'The below video is tied to Course progression',
-        },
-      },
-    }),
-    videoProgression({
-      overrides: {
-        admin: {
-          condition: (data, { lessonVideo }) => Boolean(lessonVideo.embed),
-        },
-        access: {
-          read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
-        },
-      },
-    }),
     {
-      name: 'lessonMaterials',
-      type: 'richText',
-      label: 'Lesson Materials',
-      admin: {
-        description: 'The materials of the lesson',
-      },
-      access: {
-        read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
-      },
-    },
-    {
-      name: 'progressionControl',
-      type: 'select',
-      label: 'Progression Behavior',
-      options: [
-        { label: 'Required to complete', value: 'required' },
-        { label: 'Optional', value: 'optional' },
+      type: 'tabs',
+      tabs: [
+        {
+          name: 'lessonSettings',
+          label: 'Lesson Settings',
+          description: 'Controls the look and feel of the lesson and optional content settings',
+          fields: [
+            {
+              name: 'lessonMaterials',
+              type: 'richText',
+              label: 'Lesson Materials',
+              admin: {
+                description: 'The materials of the lesson',
+              },
+              access: {
+                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+              },
+            },
+            embeddedVideo({
+              mediaCollectionSlug,
+              overrides: {
+                name: 'lessonVideo',
+                access: {
+                  read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+                },
+                admin: {
+                  description: 'The below video is tied to Course progression',
+                },
+              },
+            }),
+            videoProgression({
+              overrides: {
+                admin: {
+                  condition: (data, { lessonVideo }) => Boolean(lessonVideo.embed),
+                },
+                access: {
+                  read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+                },
+              },
+            }),
+          ],
+        },
+        {
+          label: 'Access Settings',
+          name: 'accessSettings',
+          description: 'Controls the timing and way lessons can be accessed.',
+          fields: [
+            {
+              name: 'lessonReleaseSchedule',
+              type: 'select',
+              label: 'Progression Behavior',
+              options: [
+                { label: 'Immediately', value: 'immediately' },
+                { label: 'Enrollment', value: 'enrollment' },
+                { label: 'Specific Date', value: 'specificDate' },
+              ],
+              defaultValue: 'immediately',
+              admin: {
+                description: 'The progression behavior of the lesson',
+              },
+            },  
+            {
+              name: 'lessonRelaseDays',
+              type: 'number',
+              label: 'Day(s) after enrollment',
+              admin: {
+                description: 'The number of days after enrollment the lesson will be released',
+                condition: (data, { lessonReleaseSchedule }) => lessonReleaseSchedule === 'enrollment',
+              },
+            },
+            {
+              name: 'lessonReleaseDate',
+              type: 'date',
+              admin: {
+                description: 'The date the lesson will be released',
+                condition: (data, { lessonReleaseSchedule }) => lessonReleaseSchedule === 'specificDate',
+              },
+            },
+          ],
+        },
       ],
-      defaultValue: 'required',
-      admin: {
-        description: 'The progression behavior of the lesson',
-      },
     },
+
+
+
     {
       name: 'course',
       type: 'relationship',

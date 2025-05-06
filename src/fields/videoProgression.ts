@@ -52,6 +52,7 @@ export const videoProgression: (props?: Props) => GroupField = (props) => {
       },
     ],
     admin: {
+      ...overrides?.admin,
       hideGutter: true,
     },
     ...overrides,

@@ -280,6 +280,8 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
               name: 'navigationMode',
               type: 'select',
               label: 'Course Navigation Mode',
+              defaultValue: 'linear',
+              required: true,
               options: [
                 { label: 'Linear', value: 'linear' },
                 { label: 'Free Form', value: 'free' },
