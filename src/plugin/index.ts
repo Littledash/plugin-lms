@@ -15,6 +15,22 @@ import { completedCoursesField } from '../fields/completedCoursesField.js'
 import { coursesProgressField } from '../fields/coursesProgressField.js'
 import { topicsCollection } from '../topics/topicsCollection.js'
 
+/**
+ * 
+ *@TODO add groups collection and fields
+  - fields 
+  name
+  description
+  members (relationship)
+  createdBy (relationship)
+  updatedBy (relationship)
+  createdAt
+  updatedAt
+
+  @TODO - than add groups to courses collection as a relationship
+ */
+
+
 export const lmsPlugin =
   (pluginConfig?: LMSPluginConfig) =>
   (incomingConfig: Config): Config => {
