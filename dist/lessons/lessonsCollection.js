@@ -1,0 +1,197 @@
+import { embeddedVideo } from '../fields/embeddedVideo.js';
+import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
+import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
+import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
+import { videoProgression } from '../fields/videoProgression.js';
+/**
+ * Creates a lessons collection configuration for Payload CMS
+ * This collection manages individual lessons within courses, including content, media, and assessments
+ *
+ * @param props - Configuration properties for the lessons collection
+ * @returns CollectionConfig object for lessons
+ */ export const lessonsCollection = (props)=>{
+    const { overrides, mediaCollectionSlug = 'media', coursesCollectionSlug = 'courses', quizzesCollectionSlug = 'quizzes' } = props || {};
+    const fieldsOverride = overrides?.fields;
+    /**
+   * Default fields for the lessons collection
+   * Includes lesson content, media, progression control, and assessment relationships
+   */ const defaultFields = [
+        {
+            name: 'title',
+            type: 'text',
+            required: true,
+            admin: {
+                description: 'The title of the lesson'
+            }
+        },
+        {
+            name: 'excerpt',
+            type: 'textarea',
+            admin: {
+                description: 'The excerpt of the lesson'
+            }
+        },
+        {
+            name: 'content',
+            type: 'richText',
+            required: true,
+            admin: {
+                description: 'The content of the lesson'
+            },
+            access: {
+                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+            }
+        },
+        {
+            name: 'featuredImage',
+            type: 'upload',
+            relationTo: mediaCollectionSlug,
+            admin: {
+                position: 'sidebar',
+                description: 'The featured image of the lesson'
+            }
+        },
+        {
+            type: 'tabs',
+            tabs: [
+                {
+                    name: 'lessonSettings',
+                    label: 'Lesson Settings',
+                    description: 'Controls the look and feel of the lesson and optional content settings',
+                    fields: [
+                        {
+                            name: 'lessonMaterials',
+                            type: 'richText',
+                            label: 'Lesson Materials',
+                            admin: {
+                                description: 'The materials of the lesson'
+                            },
+                            access: {
+                                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                            }
+                        },
+                        embeddedVideo({
+                            mediaCollectionSlug,
+                            overrides: {
+                                name: 'lessonVideo',
+                                access: {
+                                    read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                                },
+                                admin: {
+                                    description: 'The below video is tied to Course progression'
+                                }
+                            }
+                        }),
+                        videoProgression({
+                            overrides: {
+                                admin: {
+                                    condition: (data, { lessonVideo })=>Boolean(lessonVideo.embed)
+                                },
+                                access: {
+                                    read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                                }
+                            }
+                        })
+                    ]
+                },
+                {
+                    label: 'Access Settings',
+                    name: 'accessSettings',
+                    description: 'Controls the timing and way lessons can be accessed.',
+                    fields: [
+                        {
+                            name: 'lessonReleaseSchedule',
+                            type: 'select',
+                            label: 'Progression Behavior',
+                            options: [
+                                {
+                                    label: 'Immediately',
+                                    value: 'immediately'
+                                },
+                                {
+                                    label: 'Enrollment',
+                                    value: 'enrollment'
+                                },
+                                {
+                                    label: 'Specific Date',
+                                    value: 'specificDate'
+                                }
+                            ],
+                            defaultValue: 'immediately',
+                            admin: {
+                                description: 'The progression behavior of the lesson'
+                            }
+                        },
+                        {
+                            name: 'lessonRelaseDays',
+                            type: 'number',
+                            label: 'Day(s) after enrollment',
+                            admin: {
+                                description: 'The number of days after enrollment the lesson will be released',
+                                condition: (data, { lessonReleaseSchedule })=>lessonReleaseSchedule === 'enrollment'
+                            }
+                        },
+                        {
+                            name: 'lessonReleaseDate',
+                            type: 'date',
+                            admin: {
+                                description: 'The date the lesson will be released',
+                                condition: (data, { lessonReleaseSchedule })=>lessonReleaseSchedule === 'specificDate'
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            name: 'course',
+            type: 'relationship',
+            relationTo: coursesCollectionSlug,
+            admin: {
+                position: 'sidebar',
+                allowCreate: false,
+                description: 'The course that the lesson belongs to'
+            }
+        },
+        {
+            name: 'quizzes',
+            type: 'relationship',
+            relationTo: quizzesCollectionSlug,
+            hasMany: true,
+            admin: {
+                position: 'sidebar',
+                allowCreate: false,
+                description: 'The quizzes that are part of the lesson'
+            }
+        }
+    ];
+    // Apply field overrides if provided
+    const fields = fieldsOverride && typeof fieldsOverride === 'function' ? fieldsOverride({
+        defaultFields
+    }) : defaultFields;
+    /**
+   * Base configuration for the lessons collection
+   * Includes slug, access control, timestamps, and admin settings
+   */ const baseConfig = {
+        slug: 'lessons',
+        access: {
+            create: isAdminOrAuthor,
+            read: isAdminOrPublished,
+            update: isAdminOrAuthor,
+            delete: isAdminOrAuthor
+        },
+        timestamps: true,
+        ...overrides,
+        admin: {
+            useAsTitle: 'title',
+            group: 'LMS',
+            ...overrides?.admin
+        },
+        fields
+    };
+    return {
+        ...baseConfig
+    };
+};
+
+//# sourceMappingURL=lessonsCollection.js.map

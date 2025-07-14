@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/quizzes.ts"],"sourcesContent":["export { quizzesCollection } from '../quizzes/quizzesCollection.js'\n"],"names":["quizzesCollection"],"mappings":"AAAA,SAASA,iBAAiB,QAAQ,kCAAiC"}

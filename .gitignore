@@ -18,7 +18,7 @@
 
 # production
 /build
-/dist
+# /dist - commented out to allow GitHub imports to work
 
 # misc
 .DS_Store

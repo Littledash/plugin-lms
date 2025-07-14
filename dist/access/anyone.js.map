@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/access/anyone.ts"],"sourcesContent":["import type { Access } from 'payload'\n\n/**\n * Access control that allows anyone to read or write\n * @returns True if the user is authenticated, false otherwise\n */\nexport const anyone: Access = () => true\n"],"names":["anyone"],"mappings":"AAEA;;;CAGC,GACD,OAAO,MAAMA,SAAiB,IAAM,KAAI"}

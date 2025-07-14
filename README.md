@@ -66,11 +66,39 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
 
 ## Installation
 
+### From NPM (if published)
+
 1. Install the plugin:
 
 ```bash
 npm install @payloadcms/plugin-lms
 ```
+
+### From Private GitHub Repository
+
+1. Add the plugin to your project's `package.json`:
+
+```json
+{
+  "dependencies": {
+    "@littledash/plugin-lms": "github:littledash/plugin-lms#main"
+  }
+}
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+# or
+pnpm install
+# or
+yarn install
+```
+
+For detailed GitHub installation instructions, see [GITHUB_INSTALLATION.md](./GITHUB_INSTALLATION.md).
+
+### Configuration
 
 2. Add the plugin to your Payload config:
 

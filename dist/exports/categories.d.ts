@@ -1,0 +1,1 @@
+export { categoriesCollection } from '../categoires/categoriesCollection.js';

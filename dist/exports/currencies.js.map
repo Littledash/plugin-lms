@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/currencies.ts"],"sourcesContent":["export { AUD, GBP, JPY, USD } from '../currencies/index.js'\n"],"names":["AUD","GBP","JPY","USD"],"mappings":"AAAA,SAASA,GAAG,EAAEC,GAAG,EAAEC,GAAG,EAAEC,GAAG,QAAQ,yBAAwB"}

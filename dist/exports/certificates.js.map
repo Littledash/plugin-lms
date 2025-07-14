@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/certificates.ts"],"sourcesContent":["export { certificatesCollection } from '../certificates/certificatesCollection.js'\n"],"names":["certificatesCollection"],"mappings":"AAAA,SAASA,sBAAsB,QAAQ,4CAA2C"}

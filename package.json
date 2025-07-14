@@ -1,8 +1,12 @@
 {
   "name": "@littledash/plugin-lms",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A comprehensive Learning Management System (LMS) plugin for Payload CMS with courses, lessons, quizzes, certificates, and more.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/littledash/plugin-lms.git"
+  },
   "type": "module",
   "exports": {
     ".": {
@@ -102,7 +106,8 @@
     "test": "jest",
     "format": "prettier --write .",
     "pre-commit": "lint-staged",
-    "prepare": "pnpm build"
+    "prepare": "pnpm build",
+    "postinstall": "pnpm build"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

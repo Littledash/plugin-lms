@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/courses.ts"],"sourcesContent":["export { coursesCollection } from '../courses/coursesCollection.js'\n"],"names":["coursesCollection"],"mappings":"AAAA,SAASA,iBAAiB,QAAQ,kCAAiC"}

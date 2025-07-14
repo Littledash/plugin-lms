@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/categories.ts"],"sourcesContent":["export { categoriesCollection } from '../categoires/categoriesCollection.js'\n"],"names":["categoriesCollection"],"mappings":"AAAA,SAASA,oBAAoB,QAAQ,wCAAuC"}

@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/tags.ts"],"sourcesContent":["export { tagsCollection } from '../tags/tagsCollection.js'\n"],"names":["tagsCollection"],"mappings":"AAAA,SAASA,cAAc,QAAQ,4BAA2B"}

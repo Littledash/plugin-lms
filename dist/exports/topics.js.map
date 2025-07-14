@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/topics.ts"],"sourcesContent":["export { topicsCollection } from '../topics/topicsCollection.js'\n"],"names":["topicsCollection"],"mappings":"AAAA,SAASA,gBAAgB,QAAQ,gCAA+B"}

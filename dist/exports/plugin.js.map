@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/plugin.ts"],"sourcesContent":["export { lmsPlugin } from '../plugin/index.js'\n"],"names":["lmsPlugin"],"mappings":"AAAA,SAASA,SAAS,QAAQ,qBAAoB"}
