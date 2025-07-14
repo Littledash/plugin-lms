@@ -13,6 +13,12 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
   - Course materials and resources
   - Certificate generation
 
+- **UI Components**
+
+  - `PriceInput`: Custom price input component with currency formatting
+  - `PriceRowLabel`: Price display component for table rows
+  - `SlugInput`: Auto-generating slug input with lock/unlock functionality
+
 - **Lesson Management**
 
   - Rich text content support
@@ -175,6 +181,25 @@ The plugin supports various configuration options:
   questions?: boolean
 }
 ```
+
+## UI Components
+
+The plugin provides several reusable UI components that can be imported directly:
+
+```typescript
+import { PriceInput } from '@littledash/plugin-lms/ui/PriceInput'
+import { PriceRowLabel } from '@littledash/plugin-lms/ui/PriceRowLabel'
+import { SlugInput } from '@littledash/plugin-lms/ui/SlugInput'
+```
+
+### PriceInput
+A custom price input component with currency formatting and validation.
+
+### PriceRowLabel
+A price display component designed for use in table rows.
+
+### SlugInput
+An auto-generating slug input component with lock/unlock functionality for manual editing.
 
 ## Access Control
 
