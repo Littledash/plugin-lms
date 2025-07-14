@@ -1,1 +1,1 @@
-export { lmsPlugin } from './plugin';
+export { lmsPlugin } from './plugin/index.js';

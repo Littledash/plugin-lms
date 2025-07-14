@@ -1,6 +1,6 @@
 {
   "name": "@littledash/plugin-lms",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A comprehensive Learning Management System (LMS) plugin for Payload CMS with courses, lessons, quizzes, certificates, and more.",
   "license": "MIT",
   "repository": {
@@ -10,83 +10,83 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./fields": {
-      "import": "./src/exports/fields.ts",
-      "types": "./src/exports/fields.ts",
-      "default": "./src/exports/fields.ts"
+      "import": "./dist/exports/fields.js",
+      "types": "./dist/exports/fields.d.ts",
+      "default": "./dist/exports/fields.js"
     },
     "./access": {
-      "import": "./src/exports/access.ts",
-      "types": "./src/exports/access.ts",
-      "default": "./src/exports/access.ts"
+      "import": "./dist/exports/access.js",
+      "types": "./dist/exports/access.d.ts",
+      "default": "./dist/exports/access.js"
     },
     "./utilities": {
-      "import": "./src/exports/utilities.ts",
-      "types": "./src/exports/utilities.ts",
-      "default": "./src/exports/utilities.ts"
+      "import": "./dist/exports/utilities.js",
+      "types": "./dist/exports/utilities.d.ts",
+      "default": "./dist/exports/utilities.js"
     },
     "./ui": {
-      "import": "./src/exports/ui.ts",
-      "types": "./src/exports/ui.ts",
-      "default": "./src/exports/ui.ts"
+      "import": "./dist/exports/ui.js",
+      "types": "./dist/exports/ui.d.ts",
+      "default": "./dist/exports/ui.js"
     },
     "./categories": {
-      "import": "./src/exports/categories.ts",
-      "types": "./src/exports/categories.ts",
-      "default": "./src/exports/categories.ts"
+      "import": "./dist/exports/categories.js",
+      "types": "./dist/exports/categories.d.ts",
+      "default": "./dist/exports/categories.js"
     },
     "./courses": {
-      "import": "./src/exports/courses.ts",
-      "types": "./src/exports/courses.ts",
-      "default": "./src/exports/courses.ts"
+      "import": "./dist/exports/courses.js",
+      "types": "./dist/exports/courses.d.ts",
+      "default": "./dist/exports/courses.js"
     },
     "./lessons": {
-      "import": "./src/exports/lessons.ts",
-      "types": "./src/exports/lessons.ts",
-      "default": "./src/exports/lessons.ts"
+      "import": "./dist/exports/lessons.js",
+      "types": "./dist/exports/lessons.d.ts",
+      "default": "./dist/exports/lessons.js"
     },
     "./quizzes": {
-      "import": "./src/exports/quizzes.ts",
-      "types": "./src/exports/quizzes.ts",
-      "default": "./src/exports/quizzes.ts"
+      "import": "./dist/exports/quizzes.js",
+      "types": "./dist/exports/quizzes.d.ts",
+      "default": "./dist/exports/quizzes.js"
     },
     "./questions": {
-      "import": "./src/exports/questions.ts",
-      "types": "./src/exports/questions.ts",
-      "default": "./src/exports/questions.ts"
+      "import": "./dist/exports/questions.js",
+      "types": "./dist/exports/questions.d.ts",
+      "default": "./dist/exports/questions.js"
     },
     "./tags": {
-      "import": "./src/exports/tags.ts",
-      "types": "./src/exports/tags.ts",
-      "default": "./src/exports/tags.ts"
+      "import": "./dist/exports/tags.js",
+      "types": "./dist/exports/tags.d.ts",
+      "default": "./dist/exports/tags.js"
     },
     "./topics": {
-      "import": "./src/exports/topics.ts",
-      "types": "./src/exports/topics.ts",
-      "default": "./src/exports/topics.ts"
+      "import": "./dist/exports/topics.js",
+      "types": "./dist/exports/topics.d.ts",
+      "default": "./dist/exports/topics.js"
     },
     "./certificates": {
-      "import": "./src/exports/certificates.ts",
-      "types": "./src/exports/certificates.ts",
-      "default": "./src/exports/certificates.ts"
+      "import": "./dist/exports/certificates.js",
+      "types": "./dist/exports/certificates.d.ts",
+      "default": "./dist/exports/certificates.js"
     },
     "./currencies": {
-      "import": "./src/exports/currencies.ts",
-      "types": "./src/exports/currencies.ts",
-      "default": "./src/exports/currencies.ts"
+      "import": "./dist/exports/currencies.js",
+      "types": "./dist/exports/currencies.d.ts",
+      "default": "./dist/exports/currencies.js"
     },
     "./plugin": {
-      "import": "./src/exports/plugin.ts",
-      "types": "./src/exports/plugin.ts",
-      "default": "./src/exports/plugin.ts"
+      "import": "./dist/exports/plugin.js",
+      "types": "./dist/exports/plugin.d.ts",
+      "default": "./dist/exports/plugin.js"
     }
   },
-  "main": "./src/index.ts",
-  "types": "./src/types.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/types.d.ts",
   "files": [
     "dist"
   ],
