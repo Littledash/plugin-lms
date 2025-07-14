@@ -1,6 +1,6 @@
 {
   "name": "@littledash/plugin-lms",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A comprehensive Learning Management System (LMS) plugin for Payload CMS with courses, lessons, quizzes, certificates, and more.",
   "license": "MIT",
   "repository": {
@@ -33,6 +33,21 @@
       "import": "./dist/exports/ui.js",
       "types": "./dist/exports/ui.d.ts",
       "default": "./dist/exports/ui.js"
+    },
+    "./ui/PriceInput": {
+      "import": "./dist/ui/PriceInput/index.js",
+      "types": "./dist/ui/PriceInput/index.d.ts",
+      "default": "./dist/ui/PriceInput/index.js"
+    },
+    "./ui/PriceRowLabel": {
+      "import": "./dist/ui/PriceRowLabel/index.js",
+      "types": "./dist/ui/PriceRowLabel/index.d.ts",
+      "default": "./dist/ui/PriceRowLabel/index.js"
+    },
+    "./ui/SlugInput": {
+      "import": "./dist/ui/SlugInput/index.js",
+      "types": "./dist/ui/SlugInput/index.d.ts",
+      "default": "./dist/ui/SlugInput/index.js"
     },
     "./categories": {
       "import": "./dist/exports/categories.js",
@@ -177,6 +192,21 @@
         "import": "./dist/exports/ui.js",
         "types": "./dist/exports/ui.d.ts",
         "default": "./dist/exports/ui.js"
+      },
+      "./ui/PriceInput": {
+        "import": "./dist/ui/PriceInput/index.js",
+        "types": "./dist/ui/PriceInput/index.d.ts",
+        "default": "./dist/ui/PriceInput/index.js"
+      },
+      "./ui/PriceRowLabel": {
+        "import": "./dist/ui/PriceRowLabel/index.js",
+        "types": "./dist/ui/PriceRowLabel/index.d.ts",
+        "default": "./dist/ui/PriceRowLabel/index.js"
+      },
+      "./ui/SlugInput": {
+        "import": "./dist/ui/SlugInput/index.js",
+        "types": "./dist/ui/SlugInput/index.d.ts",
+        "default": "./dist/ui/SlugInput/index.js"
       },
       "./categories": {
         "import": "./dist/exports/categories.js",
