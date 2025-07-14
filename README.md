@@ -71,7 +71,7 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
 1. Install the plugin:
 
 ```bash
-npm install @payloadcms/plugin-lms
+npm install @littedash/plugin-lms
 ```
 
 ### From Private GitHub Repository
