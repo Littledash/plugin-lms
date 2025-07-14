@@ -62,10 +62,7 @@ export const lmsPlugin =
           'name' in field && field.name === 'roles' && field.type === 'select',
       )
 
-      if (!existingRolesField) {
-        // Add roles field if it doesn't exist
-        existingStudentsCollection.fields.push(rolesField({}))
-      } else if (existingRolesField.type === 'select') {
+      if (existingRolesField && existingRolesField.type === 'select') {
         // Merge options if roles field exists
         const existingOptions = (existingRolesField.options || []) as Array<{
           label: string
@@ -78,6 +75,9 @@ export const lmsPlugin =
             (newOpt) => !existingOptions.find((existingOpt) => existingOpt.value === newOpt.value),
           ),
         ]
+      } else {
+        // Add roles field if it doesn't exist
+        existingStudentsCollection.fields.push(rolesField({}))
       }
 
       // Add enrolledCourses field if it doesn't exist
