@@ -11,7 +11,7 @@ Add this to your project's `package.json`:
 ```json
 {
   "dependencies": {
-    "@littledash/plugin-lms": "github:littledash/plugin-lms#main"
+    "@littledash/plugin-lms": "github:Littledash/plugin-lms#main"
   }
 }
 ```
@@ -30,7 +30,7 @@ yarn install
 ```json
 {
   "dependencies": {
-    "@littledash/plugin-lms": "git+ssh://git@github.com/littledash/plugin-lms.git#main"
+    "@littledash/plugin-lms": "git+ssh://git@github.com/Littledash/plugin-lms.git#main"
   }
 }
 ```
@@ -42,7 +42,7 @@ If you need to use a personal access token:
 ```json
 {
   "dependencies": {
-    "@littledash/plugin-lms": "https://YOUR_TOKEN@github.com/littledash/plugin-lms.git#main"
+    "@littledash/plugin-lms": "https://YOUR_TOKEN@github.com/Littledash/plugin-lms.git#main"
   }
 }
 ```
@@ -107,7 +107,7 @@ If you need to make changes to the plugin:
 ```json
 {
   "dependencies": {
-    "@littledash/plugin-lms": "github:littledash/plugin-lms#commit-hash"
+    "@littledash/plugin-lms": "github:Littledash/plugin-lms#commit-hash"
   }
 }
 ``` 

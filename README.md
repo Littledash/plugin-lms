@@ -81,7 +81,7 @@ npm install @littedash/plugin-lms
 ```json
 {
   "dependencies": {
-    "@littledash/plugin-lms": "github:littledash/plugin-lms#main"
+    "@littledash/plugin-lms": "github:Littledash/plugin-lms#main"
   }
 }
 ```
