@@ -1,4 +1,4 @@
-import type { ArrayField, Config, RelationshipField, SelectField } from 'payload'
+import type { ArrayField, Config, Field, RelationshipField, SelectField } from 'payload'
 
 import type { LMSPluginConfig } from '../types.js'
 import { AUD } from '../currencies/index.js'
@@ -57,10 +57,23 @@ export const lmsPlugin =
     )
     // Ensure students collection exists
     if (existingStudentsCollection) {
+      // Handle fields that may be nested within tabs
+      const findFieldInTabs = (fields: Field[]) => {
+        for (const field of fields) {
+          if (field.type === 'tabs') {
+            for (const tab of field.tabs) {
+              const found = tab.fields?.find(f => 'name' in f && f.name === 'roles' && f.type === 'select');
+              if (found) return found;
+            }
+          }
+        }
+        return null;
+      };
+
+      // Check for roles field in tabs
       const existingRolesField = existingStudentsCollection?.fields?.find(
-        (field): field is SelectField =>
-          'name' in field && field.name === 'roles' && field.type === 'select',
-      )
+        field => 'name' in field && field.name === 'roles' && field.type === 'select'
+      ) || findFieldInTabs(existingStudentsCollection?.fields || [])
 
       if (existingRolesField && existingRolesField.type === 'select') {
         // Merge options if roles field exists
@@ -168,12 +181,40 @@ export const lmsPlugin =
       incomingConfig.collections.push(quizzes)
     }
 
-    if (pluginConfig.categories) {
+    if (incomingConfig.collections?.find((col) => col.slug === 'categories') && pluginConfig.categories) {
+      const existingCategories = incomingConfig.collections.find((col) => col.slug === 'categories')
+      const newCategories = categoriesCollection()
+      
+      // Merge fields from both collections
+      const mergedFields = [
+        ...(existingCategories?.fields || []),
+        ...(newCategories.fields || [])
+      ]
+
+      // Update existing collection with merged fields
+      if (existingCategories) {
+        existingCategories.fields = mergedFields
+      }
+    } else if (pluginConfig.categories) {
       const categories = categoriesCollection()
       incomingConfig.collections.push(categories)
     }
 
-    if (pluginConfig.tags) {
+    if (incomingConfig.collections?.find((col) => col.slug === 'tags') && pluginConfig.tags) {
+      const existingTags = incomingConfig.collections.find((col) => col.slug === 'tags')
+      const newTags = tagsCollection()
+      
+      // Merge fields from both collections
+      const mergedFields = [
+        ...(existingTags?.fields || []),
+        ...(newTags.fields || [])
+      ]
+
+      // Update existing collection with merged fields
+      if (existingTags) {
+        existingTags.fields = mergedFields  
+      }
+    } else if (pluginConfig.tags) {
       const tags = tagsCollection()
       incomingConfig.collections.push(tags)
     }
