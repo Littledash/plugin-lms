@@ -50,7 +50,7 @@ export const slugField: Slug = (fieldToUse = 'title', overrides = {}) => {
       ...(slugOverrides?.admin || {}),
       components: {
         Field: {
-          path: '../src/ui/SlugInput#SlugInput',
+          path: '@littledash/plugin-lms/ui/SlugInput#SlugInput',
           clientProps: {
             fieldToUse,
             checkboxFieldPath: checkBoxField.name,

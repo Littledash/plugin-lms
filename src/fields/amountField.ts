@@ -26,7 +26,7 @@ export const amountField: (props: Props) => NumberField = ({ currenciesConfig, o
           clientProps: {
             currenciesConfig,
           },
-          path: '../src/ui/PriceInput#PriceInput',
+          path: '@littledash/plugin-lms/ui/PriceInput#PriceInput',
         },
         ...overrides?.admin?.components,
       },

@@ -14,6 +14,7 @@ import { enrolledCoursesField } from '../fields/enrolledCoursesField.js'
 import { completedCoursesField } from '../fields/completedCoursesField.js'
 import { coursesProgressField } from '../fields/coursesProgressField.js'
 import { topicsCollection } from '../topics/topicsCollection.js'
+import deepMerge from '../utilities/deepMerge.js'
 
 /**
  * 
@@ -181,19 +182,14 @@ export const lmsPlugin =
       incomingConfig.collections.push(quizzes)
     }
 
+
     if (incomingConfig.collections?.find((col) => col.slug === 'categories') && pluginConfig.categories) {
       const existingCategories = incomingConfig.collections.find((col) => col.slug === 'categories')
       const newCategories = categoriesCollection()
       
-      // Merge fields from both collections
-      const mergedFields = [
-        ...(existingCategories?.fields || []),
-        ...(newCategories.fields || [])
-      ]
-
-      // Update existing collection with merged fields
+      // Deep merge the collections
       if (existingCategories) {
-        existingCategories.fields = mergedFields
+        existingCategories.fields = deepMerge(existingCategories.fields || [], newCategories.fields || [])
       }
     } else if (pluginConfig.categories) {
       const categories = categoriesCollection()
@@ -204,15 +200,9 @@ export const lmsPlugin =
       const existingTags = incomingConfig.collections.find((col) => col.slug === 'tags')
       const newTags = tagsCollection()
       
-      // Merge fields from both collections
-      const mergedFields = [
-        ...(existingTags?.fields || []),
-        ...(newTags.fields || [])
-      ]
-
-      // Update existing collection with merged fields
+      // Deep merge the collections
       if (existingTags) {
-        existingTags.fields = mergedFields  
+        existingTags.fields = deepMerge(existingTags.fields || [], newTags.fields || [])
       }
     } else if (pluginConfig.tags) {
       const tags = tagsCollection()

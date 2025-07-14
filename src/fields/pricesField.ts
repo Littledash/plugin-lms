@@ -52,7 +52,7 @@ export const pricesField: (props: Props) => ArrayField = ({ currenciesConfig, ov
           clientProps: {
             currenciesConfig,
           },
-          path: '../src/ui/PriceRowLabel#PriceRowLabel',
+          path: '@littledash/plugin-lms/ui/PriceRowLabel#PriceRowLabel',
         },
         ...overrides?.admin?.components,
       },
