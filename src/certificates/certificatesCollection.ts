@@ -68,7 +68,6 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
       name: 'course',
       type: 'relationship',
       relationTo: coursesCollectionSlug,
-      required: true,
       admin: {
         description: 'The course this certificate is for',
       },
@@ -77,18 +76,9 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
       name: 'students',
       type: 'relationship',
       relationTo: studentsCollectionSlug,
-      required: true,
       hasMany: true,
       admin: {
         description: 'The students who earned this certificate',
-      },
-    },
-    {
-      name: 'issueDate',
-      type: 'date',
-      required: true,
-      admin: {
-        description: 'The date the certificate was issued',
       },
     },
     {

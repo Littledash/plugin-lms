@@ -37,6 +37,7 @@ export const tagsCollection: (props?: Props) => CollectionConfig<'tags'> = (prop
     ...overrides,
     admin: {
       useAsTitle: 'title',
+      group: 'Taxonomy',
       ...overrides?.admin,
     },
     fields,

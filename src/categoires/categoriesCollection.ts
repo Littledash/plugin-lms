@@ -61,6 +61,7 @@ export const categoriesCollection: (props?: Props) => CollectionConfig<'categori
     ...overrides,
     admin: {
       useAsTitle: 'title',
+      group: 'Taxonomy',
       ...overrides?.admin,
     },
     fields,
