@@ -89,15 +89,6 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
       },
     },
     {
-      name: 'certificateNumber',
-      type: 'text',
-      required: true,
-      unique: true,
-      admin: {
-        description: 'The unique certificate number',
-      },
-    },
-    {
       name: 'status',
       type: 'select',
       defaultValue: 'active',
