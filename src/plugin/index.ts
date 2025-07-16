@@ -14,8 +14,8 @@ import { enrolledCoursesField } from '../fields/enrolledCoursesField.js'
 import { completedCoursesField } from '../fields/completedCoursesField.js'
 import { coursesProgressField } from '../fields/coursesProgressField.js'
 import { topicsCollection } from '../topics/topicsCollection.js'
-import { deepMerge } from '../exports/utilities.js'
-import { address } from 'src/fields/addressFields.js'
+import { deepMerge } from '../utilities/deepMerge.js'
+import { address } from '../fields/addressFields.js'
 
 /**
  * 
@@ -135,8 +135,6 @@ export const lmsPlugin =
           interfaceName: 'ShippingAddress',   
         }}))
       }
-
-
       
     }
 
