@@ -15,6 +15,30 @@ export const address: AddressType = ({ overrides = {} } = {}) => {
         type: 'row',
         fields: [
           {
+            name: 'firstName',
+            type: 'text',
+            label: 'First Name',
+            admin: {
+              width: '50%',
+            },
+          },
+          {
+            name: 'lastName',
+            type: 'text',
+            label: 'Last Name',
+            admin: {
+              width: '50%',
+            },
+          },
+          {
+            name: 'company',
+            type: 'text',
+            label: 'Company',
+            admin: {
+              width: '100%',
+            },
+          },
+          {
             name: 'addressLineOne',
             type: 'text',
             label: 'Address Line 1',
