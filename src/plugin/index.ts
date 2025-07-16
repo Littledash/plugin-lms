@@ -14,7 +14,8 @@ import { enrolledCoursesField } from '../fields/enrolledCoursesField.js'
 import { completedCoursesField } from '../fields/completedCoursesField.js'
 import { coursesProgressField } from '../fields/coursesProgressField.js'
 import { topicsCollection } from '../topics/topicsCollection.js'
-import deepMerge from '../utilities/deepMerge.js'
+import { deepMerge } from '../exports/utilities.js'
+import { address } from 'src/fields/addressFields.js'
 
 /**
  * 
@@ -58,23 +59,23 @@ export const lmsPlugin =
     )
     // Ensure students collection exists
     if (existingStudentsCollection) {
-      // Handle fields that may be nested within tabs
-      const findFieldInTabs = (fields: Field[]) => {
+      // Generic function to find any field by name and type
+      const findFieldByNameAndType = (fields: Field[], fieldName: string, fieldType: string): Field | null => {
         for (const field of fields) {
           if (field.type === 'tabs') {
             for (const tab of field.tabs) {
-              const found = tab.fields?.find(f => 'name' in f && f.name === 'roles' && f.type === 'select');
+              const found = tab.fields?.find(f => 'name' in f && f.name === fieldName && f.type === fieldType);
               if (found) return found;
             }
+          } else if ('name' in field && field.name === fieldName && field.type === fieldType) {
+            return field;
           }
         }
         return null;
       };
 
       // Check for roles field in tabs
-      const existingRolesField = existingStudentsCollection?.fields?.find(
-        field => 'name' in field && field.name === 'roles' && field.type === 'select'
-      ) || findFieldInTabs(existingStudentsCollection?.fields || [])
+      const existingRolesField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'roles', 'select')
 
       if (existingRolesField && existingRolesField.type === 'select') {
         // Merge options if roles field exists
@@ -95,34 +96,48 @@ export const lmsPlugin =
       }
 
       // Add enrolledCourses field if it doesn't exist
-      const existingEnrolledCoursesField = existingStudentsCollection?.fields?.find(
-        (field): field is RelationshipField =>
-          'name' in field && field.name === 'enrolledCourses' && field.type === 'relationship',
-      )
+      const existingEnrolledCoursesField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'enrolledCourses', 'relationship') as RelationshipField | null
 
       if (!existingEnrolledCoursesField) {
         existingStudentsCollection.fields.push(enrolledCoursesField({}))
       }
 
       // Add completedCourses field if it doesn't exist
-      const existingCompletedCoursesField = existingStudentsCollection?.fields?.find(
-        (field): field is RelationshipField =>
-          'name' in field && field.name === 'completedCourses' && field.type === 'relationship',
-      )
+      const existingCompletedCoursesField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'completedCourses', 'relationship') as RelationshipField | null
 
       if (!existingCompletedCoursesField) {
         existingStudentsCollection.fields.push(completedCoursesField({}))
       }
 
       // Add coursesProgress field if it doesn't exist
-      const existingCoursesProgressField = existingStudentsCollection?.fields?.find(
-        (field): field is ArrayField =>
-          'name' in field && field.name === 'coursesProgress' && field.type === 'array',
-      )
+      const existingCoursesProgressField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'coursesProgress', 'array') as ArrayField | null
 
       if (!existingCoursesProgressField) {
         existingStudentsCollection.fields.push(coursesProgressField({}))
       }
+
+      // Add billing address field if it doesn't exist
+      const existingBillingAddressField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'billingAddress', 'group')
+
+      if (!existingBillingAddressField) {
+        existingStudentsCollection.fields.push(address({overrides: {
+          name: 'billingAddress',
+          interfaceName: 'BillingAddress',   
+        }}))
+      }
+
+      // Add shipping address field if it doesn't exist
+      const existingShippingAddressField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'shippingAddress', 'group')
+
+      if (!existingShippingAddressField) {
+        existingStudentsCollection.fields.push(address({overrides: {
+          name: 'shippingAddress',
+          interfaceName: 'ShippingAddress',   
+        }}))
+      }
+
+
+      
     }
 
     // Ensure currencies are configured
