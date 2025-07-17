@@ -17,6 +17,7 @@ type Props = {
   coursesCollectionSlug?: string
   mediaCollectionSlug?: string
   quizzesCollectionSlug?: string
+  categoriesCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
@@ -33,6 +34,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     mediaCollectionSlug = 'media',
     coursesCollectionSlug = 'courses',
     quizzesCollectionSlug = 'quizzes',
+    categoriesCollectionSlug = 'categories',
   } = props || {}
   const fieldsOverride = overrides?.fields
 
@@ -159,9 +161,16 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
         },
       ],
     },
-
-
-
+    {
+      name: 'categories',
+      type: 'relationship',
+      relationTo: categoriesCollectionSlug,
+      admin: {
+        position: 'sidebar',
+        allowCreate: false,
+        description: 'The categories that the lesson belongs to',
+      },
+    },
     {
       name: 'course',
       type: 'relationship',
@@ -183,6 +192,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
         description: 'The quizzes that are part of the lesson',
       },
     },
+    
   ]
 
   // Apply field overrides if provided

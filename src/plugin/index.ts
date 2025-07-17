@@ -174,6 +174,7 @@ export const lmsPlugin =
         coursesCollectionSlug,
         mediaCollectionSlug,
         quizzesCollectionSlug,
+        categoriesCollectionSlug,
       })
       incomingConfig.collections.push(lessons)
     }
