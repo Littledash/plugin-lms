@@ -178,8 +178,42 @@ The plugin supports various configuration options:
   categories?: boolean
   tags?: boolean
   certificates?: boolean
-  questions?: boolean
+  questions?: boolean,
+
+  // Add custom fields to collections
+  customFields?: {
+    [key: string]: Field[]
+  }
 }
+```
+
+### Custom Fields
+
+You can add custom fields to any of the collections provided by the plugin. This is useful for extending the functionality of the plugin to meet your specific needs.
+
+Here's an example of how to add a custom field to the `courses` collection:
+
+```typescript
+import { buildConfig } from 'payload/config'
+import lmsPlugin from '@payloadcms/plugin-lms'
+import type { Field } from 'payload'
+
+export default buildConfig({
+  plugins: [
+    lmsPlugin({
+      // ... other options
+      customFields: {
+        courses: [
+          {
+            name: 'customField',
+            type: 'text',
+            label: 'Custom Field',
+          },
+        ],
+      },
+    }),
+  ],
+})
 ```
 
 ## UI Components

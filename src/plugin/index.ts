@@ -227,6 +227,17 @@ export const lmsPlugin =
       incomingConfig.collections.push(questions)
     }
 
+    // Add custom fields to collections
+    if (pluginConfig.customFields) {
+      Object.entries(pluginConfig.customFields).forEach(([collectionSlug, fields]) => {
+        const collection = incomingConfig.collections?.find((col) => col.slug === collectionSlug)
+
+        if (collection) {
+          collection.fields = [...collection.fields, ...fields]
+        }
+      })
+    }
+
     return {
       ...incomingConfig,
     }
