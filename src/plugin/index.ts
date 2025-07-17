@@ -174,6 +174,7 @@ export const lmsPlugin =
         coursesCollectionSlug,
         mediaCollectionSlug,
         quizzesCollectionSlug,
+        categoriesCollectionSlug,
       })
       incomingConfig.collections.push(lessons)
     }
@@ -225,6 +226,17 @@ export const lmsPlugin =
     if (pluginConfig.questions) {
       const questions = questionsCollection()
       incomingConfig.collections.push(questions)
+    }
+
+    // Add custom fields to collections
+    if (pluginConfig.customFields) {
+      Object.entries(pluginConfig.customFields).forEach(([collectionSlug, fields]) => {
+        const collection = incomingConfig.collections?.find((col) => col.slug === collectionSlug)
+
+        if (collection) {
+          collection.fields = [...collection.fields, ...fields]
+        }
+      })
     }
 
     return {
