@@ -61,7 +61,6 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     {
       name: 'content',
       type: 'richText',
-      required: true,
       admin: {
         description: 'The content of the lesson',
       },
