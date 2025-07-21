@@ -102,6 +102,16 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
         description: 'The status of the certificate',
       },
     },
+    {
+      name: 'authors',
+      type: 'relationship',
+      relationTo: studentsCollectionSlug,
+      hasMany: true,
+      admin: {
+        allowCreate: false,
+        description: 'The authors of the certificate',
+      },
+    },
   ]
 
   // Apply field overrides if provided

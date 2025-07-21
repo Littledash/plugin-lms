@@ -8,6 +8,7 @@ import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js'
  * @property overrides - Optional configuration overrides for fields and collection settings
  */
 type Props = {
+  studentsCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
@@ -19,7 +20,7 @@ type Props = {
  * @returns CollectionConfig object for questions
  */
 export const questionsCollection: (props?: Props) => CollectionConfig<'questions'> = (props) => {
-  const { overrides } = props || {}
+  const { overrides, studentsCollectionSlug = 'users' } = props || {}
   const fieldsOverride = overrides?.fields
 
   /**
@@ -120,6 +121,16 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
         condition: (_, siblingData) => siblingData.questionType === 'essay',
       },
       defaultValue: 500,
+    },
+    {
+      name: 'authors',
+      type: 'relationship',
+      relationTo: studentsCollectionSlug,
+      hasMany: true,
+      admin: {
+        allowCreate: false,
+        description: 'The authors of the question',
+      },
     },
   ]
 

@@ -152,6 +152,7 @@ export const lmsPlugin =
     if (pluginConfig.certificates) {
       const certificates = certificatesCollection({
         mediaCollectionSlug,
+        studentsCollectionSlug,
       })
       incomingConfig.collections.push(certificates)
     }
@@ -175,6 +176,7 @@ export const lmsPlugin =
         mediaCollectionSlug,
         quizzesCollectionSlug,
         categoriesCollectionSlug,
+        studentsCollectionSlug,
       })
       incomingConfig.collections.push(lessons)
     }
@@ -192,6 +194,7 @@ export const lmsPlugin =
     if (pluginConfig.quizzes) {
       const quizzes = quizzesCollection({
         mediaCollectionSlug,
+        studentsCollectionSlug,
       })
       incomingConfig.collections.push(quizzes)
     }

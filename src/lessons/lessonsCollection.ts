@@ -18,6 +18,7 @@ type Props = {
   mediaCollectionSlug?: string
   quizzesCollectionSlug?: string
   categoriesCollectionSlug?: string
+  studentsCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
@@ -35,6 +36,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     coursesCollectionSlug = 'courses',
     quizzesCollectionSlug = 'quizzes',
     categoriesCollectionSlug = 'categories',
+    studentsCollectionSlug = 'users',
   } = props || {}
   const fieldsOverride = overrides?.fields
 
@@ -66,6 +68,16 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       },
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+      },
+    },
+    {
+      name: 'authors',
+      type: 'relationship',
+      relationTo: studentsCollectionSlug,
+      hasMany: true,
+      admin: {
+        allowCreate: false,
+        description: 'The authors of the lesson',
       },
     },
     {

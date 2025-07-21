@@ -315,7 +315,19 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
         },
       ],
     },
-
+      {
+        name: 'authors',
+        type: 'relationship',
+        relationTo: studentsCollectionSlug,
+        hasMany: true,
+        admin: {
+          allowCreate: false,
+          description: 'The authors of the course',
+        },
+        access: {
+          read: isAdminOrAuthorFieldLevel,
+        },
+      },
     {
       name: 'categories',
       type: 'relationship',

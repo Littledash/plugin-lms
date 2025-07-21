@@ -10,6 +10,7 @@ import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOr
  */
 type Props = {
   mediaCollectionSlug?: string
+  studentsCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
@@ -21,7 +22,7 @@ type Props = {
  * @returns CollectionConfig object for quizzes
  */
 export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> = (props) => {
-  const { overrides, mediaCollectionSlug = 'media' } = props || {}
+  const { overrides, mediaCollectionSlug = 'media', studentsCollectionSlug = 'users' } = props || {}
   const fieldsOverride = overrides?.fields
 
   /**
@@ -77,6 +78,12 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
       },
+    },
+    {
+      name: 'authors',
+      type: 'relationship',
+      relationTo: studentsCollectionSlug,
+      hasMany: true,
     },
   ]
 
