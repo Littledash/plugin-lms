@@ -65,20 +65,13 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
       },
     },
     {
-      name: 'course',
+      name: 'courses',
       type: 'relationship',
       relationTo: coursesCollectionSlug,
-      admin: {
-        description: 'The course this certificate is for',
-      },
-    },
-    {
-      name: 'students',
-      type: 'relationship',
-      relationTo: studentsCollectionSlug,
       hasMany: true,
       admin: {
-        description: 'The students who earned this certificate',
+        allowCreate: false,
+        description: 'The courses this certificate is for',
       },
     },
     {

@@ -63,7 +63,6 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
       name: 'content',
       type: 'richText',
       label: 'Topic Content',
-      required: true,
       admin: {
         description: 'The content of the topic',
       },

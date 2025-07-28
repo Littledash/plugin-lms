@@ -135,6 +135,23 @@ export const lmsPlugin =
           interfaceName: 'ShippingAddress',   
         }}))
       }
+
+      const exisitingCertificatesField = findFieldByNameAndType(existingStudentsCollection?.fields || [],  'certificates', 'relationship') as RelationshipField | null
+
+      if (!exisitingCertificatesField) {
+        existingStudentsCollection.fields.push(
+          {
+            name: 'certificates',
+            type: 'relationship',
+            relationTo: certificatesCollectionSlug,
+            hasMany: true,
+            admin: {
+              allowCreate: false,
+              description: 'The certificates the student has earned',
+            },
+          }
+        )
+      }
       
     }
 
