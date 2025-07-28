@@ -9,4 +9,4 @@ export declare function isObject(item: unknown): item is object;
  * @param target
  * @param ...sources
  */
-export default function deepMerge<T, R>(target: T, source: R): T;
+export declare function deepMerge<T, R>(target: T, source: R): T;

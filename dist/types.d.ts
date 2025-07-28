@@ -173,4 +173,10 @@ export type LMSPluginConfig = {
      * @default true
      */
     questions?: boolean | QuestionsConfig;
+    /**
+     * Add custom fields to collections
+     */
+    customFields?: {
+        [key: string]: Field[];
+    };
 };

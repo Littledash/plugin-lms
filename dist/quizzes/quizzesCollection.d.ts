@@ -7,6 +7,7 @@ import { FieldsOverride } from '../types.js';
  */
 type Props = {
     mediaCollectionSlug?: string;
+    studentsCollectionSlug?: string;
     overrides?: {
         fields?: FieldsOverride;
     } & Partial<Omit<CollectionConfig, 'fields'>>;

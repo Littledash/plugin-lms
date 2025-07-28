@@ -5,6 +5,7 @@ import { FieldsOverride } from '../types.js';
  * @property overrides - Optional configuration overrides for fields and collection settings
  */
 type Props = {
+    studentsCollectionSlug?: string;
     overrides?: {
         fields?: FieldsOverride;
     } & Partial<Omit<CollectionConfig, 'fields'>>;

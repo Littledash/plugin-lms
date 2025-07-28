@@ -167,6 +167,12 @@ export interface User {
         id?: string | null;
       }[]
     | null;
+  billingAddress?: BillingAddress;
+  shippingAddress?: ShippingAddress;
+  /**
+   * The certificates the student has earned
+   */
+  certificates?: (string | Certificate)[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -319,6 +325,10 @@ export interface Course {
     students?: (string | User)[] | null;
   };
   /**
+   * The authors of the course
+   */
+  authors?: (string | User)[] | null;
+  /**
    * The categories that are part of the course
    */
   categories?: (string | Category)[] | null;
@@ -346,7 +356,7 @@ export interface Lesson {
   /**
    * The content of the lesson
    */
-  content: {
+  content?: {
     root: {
       type: string;
       children: {
@@ -360,7 +370,11 @@ export interface Lesson {
       version: number;
     };
     [k: string]: unknown;
-  };
+  } | null;
+  /**
+   * The authors of the lesson
+   */
+  authors?: (string | User)[] | null;
   /**
    * The featured image of the lesson
    */
@@ -401,6 +415,10 @@ export interface Lesson {
      */
     lessonReleaseDate?: string | null;
   };
+  /**
+   * The categories that the lesson belongs to
+   */
+  categories?: (string | null) | Category;
   /**
    * The course that the lesson belongs to
    */
@@ -468,6 +486,21 @@ export interface VideoProgression {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: string;
+  /**
+   * The title of the category
+   */
+  title: string;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "quizzes".
  */
 export interface Quiz {
@@ -506,6 +539,7 @@ export interface Quiz {
    * The questions in this quiz
    */
   questions: (string | Question)[];
+  authors?: (string | User)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -556,6 +590,10 @@ export interface Question {
       }[]
     | null;
   maxLength?: number | null;
+  /**
+   * The authors of the question
+   */
+  authors?: (string | User)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -592,40 +630,21 @@ export interface Certificate {
    */
   template: string | Media;
   /**
-   * The course this certificate is for
+   * The courses this certificate is for
    */
-  course?: (string | null) | Course;
-  /**
-   * The students who earned this certificate
-   */
-  students?: (string | User)[] | null;
+  courses?: (string | Course)[] | null;
   /**
    * The date the certificate expires (if applicable)
    */
   expiryDate?: string | null;
   /**
-   * The unique certificate number
-   */
-  certificateNumber: string;
-  /**
    * The status of the certificate
    */
   status: 'active' | 'expired' | 'revoked';
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "categories".
- */
-export interface Category {
-  id: string;
   /**
-   * The title of the category
+   * The authors of the certificate
    */
-  title: string;
-  slug?: string | null;
-  slugLock?: boolean | null;
+  authors?: (string | User)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -643,6 +662,532 @@ export interface Tag {
   slugLock?: boolean | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BillingAddress".
+ */
+export interface BillingAddress {
+  firstName?: string | null;
+  lastName?: string | null;
+  company?: string | null;
+  addressLineOne?: string | null;
+  addressLineTwo?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postcode?: string | null;
+  country?:
+    | (
+        | 'AF'
+        | 'AX'
+        | 'AL'
+        | 'DZ'
+        | 'AS'
+        | 'AD'
+        | 'AO'
+        | 'AI'
+        | 'AQ'
+        | 'AG'
+        | 'AR'
+        | 'AM'
+        | 'AW'
+        | 'AU'
+        | 'AT'
+        | 'AZ'
+        | 'BS'
+        | 'BH'
+        | 'BD'
+        | 'BB'
+        | 'BY'
+        | 'BE'
+        | 'BZ'
+        | 'BJ'
+        | 'BM'
+        | 'BT'
+        | 'BO'
+        | 'BA'
+        | 'BW'
+        | 'BV'
+        | 'BR'
+        | 'IO'
+        | 'BN'
+        | 'BG'
+        | 'BF'
+        | 'BI'
+        | 'KH'
+        | 'CM'
+        | 'CA'
+        | 'CV'
+        | 'KY'
+        | 'CF'
+        | 'TD'
+        | 'CL'
+        | 'CN'
+        | 'CX'
+        | 'CC'
+        | 'CO'
+        | 'KM'
+        | 'CG'
+        | 'CD'
+        | 'CK'
+        | 'CR'
+        | 'CI'
+        | 'HR'
+        | 'CU'
+        | 'CY'
+        | 'CZ'
+        | 'DK'
+        | 'DJ'
+        | 'DM'
+        | 'DO'
+        | 'EC'
+        | 'EG'
+        | 'SV'
+        | 'GQ'
+        | 'ER'
+        | 'EE'
+        | 'ET'
+        | 'FK'
+        | 'FO'
+        | 'FJ'
+        | 'FI'
+        | 'FR'
+        | 'GF'
+        | 'PF'
+        | 'TF'
+        | 'GA'
+        | 'GM'
+        | 'GE'
+        | 'DE'
+        | 'GH'
+        | 'GI'
+        | 'GR'
+        | 'GL'
+        | 'GD'
+        | 'GP'
+        | 'GU'
+        | 'GT'
+        | 'GG'
+        | 'GN'
+        | 'GW'
+        | 'GY'
+        | 'HT'
+        | 'HM'
+        | 'VA'
+        | 'HN'
+        | 'HK'
+        | 'HU'
+        | 'IS'
+        | 'IN'
+        | 'ID'
+        | 'IR'
+        | 'IQ'
+        | 'IE'
+        | 'IM'
+        | 'IL'
+        | 'IT'
+        | 'JM'
+        | 'JP'
+        | 'JE'
+        | 'JO'
+        | 'KZ'
+        | 'KE'
+        | 'KI'
+        | 'KP'
+        | 'KR'
+        | 'XK'
+        | 'KW'
+        | 'KG'
+        | 'LA'
+        | 'LV'
+        | 'LB'
+        | 'LS'
+        | 'LR'
+        | 'LY'
+        | 'LI'
+        | 'LT'
+        | 'LU'
+        | 'MO'
+        | 'MK'
+        | 'MG'
+        | 'MW'
+        | 'MY'
+        | 'MV'
+        | 'ML'
+        | 'MT'
+        | 'MH'
+        | 'MQ'
+        | 'MR'
+        | 'MU'
+        | 'YT'
+        | 'MX'
+        | 'FM'
+        | 'MD'
+        | 'MC'
+        | 'MN'
+        | 'ME'
+        | 'MS'
+        | 'MA'
+        | 'MZ'
+        | 'MM'
+        | 'NA'
+        | 'NR'
+        | 'NP'
+        | 'NL'
+        | 'AN'
+        | 'NC'
+        | 'NZ'
+        | 'NI'
+        | 'NE'
+        | 'NG'
+        | 'NU'
+        | 'NF'
+        | 'MP'
+        | 'NO'
+        | 'OM'
+        | 'PK'
+        | 'PW'
+        | 'PS'
+        | 'PA'
+        | 'PG'
+        | 'PY'
+        | 'PE'
+        | 'PH'
+        | 'PN'
+        | 'PL'
+        | 'PT'
+        | 'PR'
+        | 'QA'
+        | 'RE'
+        | 'RO'
+        | 'RU'
+        | 'RW'
+        | 'SH'
+        | 'KN'
+        | 'LC'
+        | 'PM'
+        | 'VC'
+        | 'WS'
+        | 'SM'
+        | 'ST'
+        | 'SA'
+        | 'SN'
+        | 'RS'
+        | 'SC'
+        | 'SL'
+        | 'SG'
+        | 'SK'
+        | 'SI'
+        | 'SB'
+        | 'SO'
+        | 'ZA'
+        | 'GS'
+        | 'ES'
+        | 'LK'
+        | 'SD'
+        | 'SR'
+        | 'SJ'
+        | 'SZ'
+        | 'SE'
+        | 'CH'
+        | 'SY'
+        | 'TW'
+        | 'TJ'
+        | 'TZ'
+        | 'TH'
+        | 'TL'
+        | 'TG'
+        | 'TK'
+        | 'TO'
+        | 'TT'
+        | 'TN'
+        | 'TR'
+        | 'TM'
+        | 'TC'
+        | 'TV'
+        | 'UG'
+        | 'UA'
+        | 'AE'
+        | 'GB'
+        | 'US'
+        | 'UM'
+        | 'UY'
+        | 'UZ'
+        | 'VU'
+        | 'VE'
+        | 'VN'
+        | 'VG'
+        | 'VI'
+        | 'WF'
+        | 'EH'
+        | 'YE'
+        | 'ZM'
+        | 'ZW'
+      )
+    | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShippingAddress".
+ */
+export interface ShippingAddress {
+  firstName?: string | null;
+  lastName?: string | null;
+  company?: string | null;
+  addressLineOne?: string | null;
+  addressLineTwo?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postcode?: string | null;
+  country?:
+    | (
+        | 'AF'
+        | 'AX'
+        | 'AL'
+        | 'DZ'
+        | 'AS'
+        | 'AD'
+        | 'AO'
+        | 'AI'
+        | 'AQ'
+        | 'AG'
+        | 'AR'
+        | 'AM'
+        | 'AW'
+        | 'AU'
+        | 'AT'
+        | 'AZ'
+        | 'BS'
+        | 'BH'
+        | 'BD'
+        | 'BB'
+        | 'BY'
+        | 'BE'
+        | 'BZ'
+        | 'BJ'
+        | 'BM'
+        | 'BT'
+        | 'BO'
+        | 'BA'
+        | 'BW'
+        | 'BV'
+        | 'BR'
+        | 'IO'
+        | 'BN'
+        | 'BG'
+        | 'BF'
+        | 'BI'
+        | 'KH'
+        | 'CM'
+        | 'CA'
+        | 'CV'
+        | 'KY'
+        | 'CF'
+        | 'TD'
+        | 'CL'
+        | 'CN'
+        | 'CX'
+        | 'CC'
+        | 'CO'
+        | 'KM'
+        | 'CG'
+        | 'CD'
+        | 'CK'
+        | 'CR'
+        | 'CI'
+        | 'HR'
+        | 'CU'
+        | 'CY'
+        | 'CZ'
+        | 'DK'
+        | 'DJ'
+        | 'DM'
+        | 'DO'
+        | 'EC'
+        | 'EG'
+        | 'SV'
+        | 'GQ'
+        | 'ER'
+        | 'EE'
+        | 'ET'
+        | 'FK'
+        | 'FO'
+        | 'FJ'
+        | 'FI'
+        | 'FR'
+        | 'GF'
+        | 'PF'
+        | 'TF'
+        | 'GA'
+        | 'GM'
+        | 'GE'
+        | 'DE'
+        | 'GH'
+        | 'GI'
+        | 'GR'
+        | 'GL'
+        | 'GD'
+        | 'GP'
+        | 'GU'
+        | 'GT'
+        | 'GG'
+        | 'GN'
+        | 'GW'
+        | 'GY'
+        | 'HT'
+        | 'HM'
+        | 'VA'
+        | 'HN'
+        | 'HK'
+        | 'HU'
+        | 'IS'
+        | 'IN'
+        | 'ID'
+        | 'IR'
+        | 'IQ'
+        | 'IE'
+        | 'IM'
+        | 'IL'
+        | 'IT'
+        | 'JM'
+        | 'JP'
+        | 'JE'
+        | 'JO'
+        | 'KZ'
+        | 'KE'
+        | 'KI'
+        | 'KP'
+        | 'KR'
+        | 'XK'
+        | 'KW'
+        | 'KG'
+        | 'LA'
+        | 'LV'
+        | 'LB'
+        | 'LS'
+        | 'LR'
+        | 'LY'
+        | 'LI'
+        | 'LT'
+        | 'LU'
+        | 'MO'
+        | 'MK'
+        | 'MG'
+        | 'MW'
+        | 'MY'
+        | 'MV'
+        | 'ML'
+        | 'MT'
+        | 'MH'
+        | 'MQ'
+        | 'MR'
+        | 'MU'
+        | 'YT'
+        | 'MX'
+        | 'FM'
+        | 'MD'
+        | 'MC'
+        | 'MN'
+        | 'ME'
+        | 'MS'
+        | 'MA'
+        | 'MZ'
+        | 'MM'
+        | 'NA'
+        | 'NR'
+        | 'NP'
+        | 'NL'
+        | 'AN'
+        | 'NC'
+        | 'NZ'
+        | 'NI'
+        | 'NE'
+        | 'NG'
+        | 'NU'
+        | 'NF'
+        | 'MP'
+        | 'NO'
+        | 'OM'
+        | 'PK'
+        | 'PW'
+        | 'PS'
+        | 'PA'
+        | 'PG'
+        | 'PY'
+        | 'PE'
+        | 'PH'
+        | 'PN'
+        | 'PL'
+        | 'PT'
+        | 'PR'
+        | 'QA'
+        | 'RE'
+        | 'RO'
+        | 'RU'
+        | 'RW'
+        | 'SH'
+        | 'KN'
+        | 'LC'
+        | 'PM'
+        | 'VC'
+        | 'WS'
+        | 'SM'
+        | 'ST'
+        | 'SA'
+        | 'SN'
+        | 'RS'
+        | 'SC'
+        | 'SL'
+        | 'SG'
+        | 'SK'
+        | 'SI'
+        | 'SB'
+        | 'SO'
+        | 'ZA'
+        | 'GS'
+        | 'ES'
+        | 'LK'
+        | 'SD'
+        | 'SR'
+        | 'SJ'
+        | 'SZ'
+        | 'SE'
+        | 'CH'
+        | 'SY'
+        | 'TW'
+        | 'TJ'
+        | 'TZ'
+        | 'TH'
+        | 'TL'
+        | 'TG'
+        | 'TK'
+        | 'TO'
+        | 'TT'
+        | 'TN'
+        | 'TR'
+        | 'TM'
+        | 'TC'
+        | 'TV'
+        | 'UG'
+        | 'UA'
+        | 'AE'
+        | 'GB'
+        | 'US'
+        | 'UM'
+        | 'UY'
+        | 'UZ'
+        | 'VU'
+        | 'VE'
+        | 'VN'
+        | 'VG'
+        | 'VI'
+        | 'WF'
+        | 'EH'
+        | 'YE'
+        | 'ZM'
+        | 'ZW'
+      )
+    | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -670,7 +1215,7 @@ export interface Topic {
   /**
    * The content of the topic
    */
-  content: {
+  content?: {
     root: {
       type: string;
       children: {
@@ -684,7 +1229,7 @@ export interface Topic {
       version: number;
     };
     [k: string]: unknown;
-  };
+  } | null;
   /**
    * The featured image of the topic
    */
@@ -848,6 +1393,9 @@ export interface UsersSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  billingAddress?: T | BillingAddressSelect<T>;
+  shippingAddress?: T | ShippingAddressSelect<T>;
+  certificates?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -864,6 +1412,36 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "BillingAddress_select".
+ */
+export interface BillingAddressSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  company?: T;
+  addressLineOne?: T;
+  addressLineTwo?: T;
+  city?: T;
+  state?: T;
+  postcode?: T;
+  country?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ShippingAddress_select".
+ */
+export interface ShippingAddressSelect<T extends boolean = true> {
+  firstName?: T;
+  lastName?: T;
+  company?: T;
+  addressLineOne?: T;
+  addressLineTwo?: T;
+  city?: T;
+  state?: T;
+  postcode?: T;
+  country?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -898,11 +1476,10 @@ export interface CertificatesSelect<T extends boolean = true> {
   title?: T;
   description?: T;
   template?: T;
-  course?: T;
-  students?: T;
+  courses?: T;
   expiryDate?: T;
-  certificateNumber?: T;
   status?: T;
+  authors?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -964,6 +1541,7 @@ export interface CoursesSelect<T extends boolean = true> {
     | {
         students?: T;
       };
+  authors?: T;
   categories?: T;
   tags?: T;
   updatedAt?: T;
@@ -977,6 +1555,7 @@ export interface LessonsSelect<T extends boolean = true> {
   title?: T;
   excerpt?: T;
   content?: T;
+  authors?: T;
   featuredImage?: T;
   lessonSettings?:
     | T
@@ -992,6 +1571,7 @@ export interface LessonsSelect<T extends boolean = true> {
         lessonRelaseDays?: T;
         lessonReleaseDate?: T;
       };
+  categories?: T;
   course?: T;
   quizzes?: T;
   updatedAt?: T;
@@ -1043,6 +1623,7 @@ export interface QuizzesSelect<T extends boolean = true> {
   description?: T;
   featuredImage?: T;
   questions?: T;
+  authors?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1100,6 +1681,7 @@ export interface QuestionsSelect<T extends boolean = true> {
         id?: T;
       };
   maxLength?: T;
+  authors?: T;
   updatedAt?: T;
   createdAt?: T;
 }

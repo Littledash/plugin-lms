@@ -11,6 +11,8 @@ type Props = {
     coursesCollectionSlug?: string;
     mediaCollectionSlug?: string;
     quizzesCollectionSlug?: string;
+    categoriesCollectionSlug?: string;
+    studentsCollectionSlug?: string;
     overrides?: {
         fields?: FieldsOverride;
     } & Partial<Omit<CollectionConfig, 'fields'>>;
