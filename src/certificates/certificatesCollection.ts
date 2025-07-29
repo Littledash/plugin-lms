@@ -59,7 +59,6 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
       name: 'template',
       type: 'upload',
       relationTo: mediaCollectionSlug,
-      required: true,
       admin: {
         description: 'The certificate template image',
       },
