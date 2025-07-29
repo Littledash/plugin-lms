@@ -91,15 +91,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
         read: isAdminOrAuthorOrStudentFieldLevel,
       },
     },
-    {
-      name: 'featuredImage',
-      type: 'upload',
-      relationTo: mediaCollectionSlug,
-      admin: {
-        position: 'sidebar',
-        description: 'The featured image of the course',
-      },
-    },
+
     {
       type: 'tabs',
 
@@ -321,6 +313,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
         relationTo: studentsCollectionSlug,
         hasMany: true,
         admin: {
+          position: 'sidebar',
           allowCreate: false,
           description: 'The authors of the course',
         },
@@ -348,6 +341,15 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
         position: 'sidebar',
         allowCreate: false,
         description: 'The tags that are part of the course',
+      },
+    },
+    {
+      name: 'featuredImage',
+      type: 'upload',
+      relationTo: mediaCollectionSlug,
+      admin: {
+        position: 'sidebar',
+        description: 'The featured image of the course',
       },
     },
   ]
