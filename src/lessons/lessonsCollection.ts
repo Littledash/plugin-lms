@@ -76,6 +76,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       relationTo: studentsCollectionSlug,
       hasMany: true,
       admin: {
+        position: 'sidebar',
         allowCreate: false,
         description: 'The authors of the lesson',
       },

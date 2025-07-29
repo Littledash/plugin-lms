@@ -48,7 +48,6 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
     {
       name: 'description',
       type: 'richText',
-      required: true,
       admin: {
         description: 'The description of the quiz',
       },
@@ -56,23 +55,14 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
       },
     },
-
-    {
-      name: 'featuredImage',
-      type: 'upload',
-      relationTo: mediaCollectionSlug,
-      admin: {
-        position: 'sidebar',
-        description: 'The featured image of the quiz',
-      },
-    },
     {
       name: 'questions',
       type: 'relationship',
       relationTo: 'questions',
       hasMany: true,
-      required: true,
       admin: {
+        position: 'sidebar',
+        allowCreate: false,
         description: 'The questions in this quiz',
       },
       access: {
@@ -84,6 +74,20 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
       type: 'relationship',
       relationTo: studentsCollectionSlug,
       hasMany: true,
+      admin: {
+        position: 'sidebar',
+        allowCreate: false,
+        description: 'The authors of the quiz',
+      },
+    },
+    {
+      name: 'featuredImage',
+      type: 'upload',
+      relationTo: mediaCollectionSlug,
+      admin: {
+        position: 'sidebar',
+        description: 'The featured image of the quiz',
+      },
     },
   ]
 
