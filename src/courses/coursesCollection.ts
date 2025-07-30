@@ -71,7 +71,6 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     {
       name: 'description',
       type: 'richText',
-      required: true,
       admin: {
         description: 'The description of the course',
       },

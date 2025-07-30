@@ -2,6 +2,7 @@ import type { ArrayField, Config, Field, RelationshipField, SelectField } from '
 
 import type { LMSPluginConfig } from '../types.js'
 import { AUD } from '../currencies/index.js'
+import { addressesCollection } from '../addresses/addressesCollection.js'
 import { coursesCollection } from '../courses/coursesCollection.js'
 import { lessonsCollection } from '../lessons/lessonsCollection.js'
 import { quizzesCollection } from '../quizzes/quizzesCollection.js'
@@ -15,7 +16,7 @@ import { completedCoursesField } from '../fields/completedCoursesField.js'
 import { coursesProgressField } from '../fields/coursesProgressField.js'
 import { topicsCollection } from '../topics/topicsCollection.js'
 import { deepMerge } from '../utilities/deepMerge.js'
-import { address } from '../fields/addressFields.js'
+import { defaultAddressFields } from 'src/fields/defaultAddressFields.js'
 
 /**
  * 
@@ -41,6 +42,7 @@ export const lmsPlugin =
     }
 
     const studentsCollectionSlug = pluginConfig.studentsCollectionSlug || 'users'
+    const addressesCollectionSlug = pluginConfig.addressesCollectionSlug || 'addresses'
     const categoriesCollectionSlug = pluginConfig.categoriesCollectionSlug || 'categories'
     const certificatesCollectionSlug = pluginConfig.certificatesCollectionSlug || 'certificates'
     const coursesCollectionSlug = pluginConfig.coursesCollectionSlug || 'courses'
@@ -54,6 +56,25 @@ export const lmsPlugin =
     if (!incomingConfig.collections) {
       incomingConfig.collections = []
     }
+    let addressFields
+
+    const existingAddressesCollection = incomingConfig.collections.find(
+      (collection) => collection.slug === addressesCollectionSlug,
+    )
+    if (existingAddressesCollection) {
+      addressFields = existingAddressesCollection.fields
+    } else {
+      addressFields = defaultAddressFields()
+    }
+
+    if (pluginConfig.addresses) {
+      const addresses = addressesCollection({
+        addressFields,
+        studentsCollectionSlug,
+      })
+      incomingConfig.collections.push(addresses)
+    }
+
     const existingStudentsCollection = incomingConfig.collections.find(
       (collection) => collection.slug === studentsCollectionSlug,
     )
@@ -114,26 +135,6 @@ export const lmsPlugin =
 
       if (!existingCoursesProgressField) {
         existingStudentsCollection.fields.push(coursesProgressField({}))
-      }
-
-      // Add billing address field if it doesn't exist
-      const existingBillingAddressField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'billingAddress', 'group')
-
-      if (!existingBillingAddressField) {
-        existingStudentsCollection.fields.push(address({overrides: {
-          name: 'billingAddress',
-          interfaceName: 'BillingAddress',   
-        }}))
-      }
-
-      // Add shipping address field if it doesn't exist
-      const existingShippingAddressField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'shippingAddress', 'group')
-
-      if (!existingShippingAddressField) {
-        existingStudentsCollection.fields.push(address({overrides: {
-          name: 'shippingAddress',
-          interfaceName: 'ShippingAddress',   
-        }}))
       }
 
       const exisitingCertificatesField = findFieldByNameAndType(existingStudentsCollection?.fields || [],  'certificates', 'relationship') as RelationshipField | null

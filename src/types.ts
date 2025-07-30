@@ -29,6 +29,19 @@ export type Currency = {
   symbol: string
 }
 
+export type CountryType = {
+  /**
+   * A user friendly name for the country.
+   */
+  label: string
+  /**
+   * The ISO 3166-1 alpha-2 country code.
+   * @example 'AU'
+   */
+  value: string
+}
+
+
 export type CurrenciesConfig = {
   /**
    * Defaults to the first supported currency.
@@ -40,6 +53,10 @@ export type CurrenciesConfig = {
    *
    */
   supportedCurrencies: Currency[]
+}
+
+export type AddressesConfig = {
+  addressesCollection?: CollectionOverride
 }
 
 export type CoursesConfig = {
@@ -81,6 +98,13 @@ export type LMSPluginConfig = {
    * Defaults to supporting USD.
    */
   currencies?: CurrenciesConfig
+
+  /**
+   * Slug of the collection to use for addresses. Referenced in places such as courses and lessons.
+   *
+   * @default 'addresses'
+   */
+  addressesCollectionSlug?: string
   /**
    * Slug of the collection to use for customers. Referenced in places such as courses and lessons.
    *
@@ -136,7 +160,12 @@ export type LMSPluginConfig = {
    * @default 'quizzes'
    */
   quizzesCollectionSlug?: string
-
+  /**
+   * Slug of the collection to use for addresses. Referenced in places such as courses and lessons.
+   *
+   * @default 'addresses'
+   */
+  addresses?: string
   /**
    * Enable courses collection.
    *
