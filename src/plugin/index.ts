@@ -83,14 +83,25 @@ export const lmsPlugin =
     }
 
     if (sanitizedPluginConfig.certificates) {
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.certificates === 'object'
+          ? sanitizedPluginConfig.certificates.certificatesCollection
+          : undefined
+
       const certificates = certificatesCollection({
         mediaCollectionSlug: collectionSlugMap.media,
         studentsCollectionSlug: collectionSlugMap.students,
+        overrides: collectionOverrides,
       })
       incomingConfig.collections.push(certificates)
     }
 
     if (sanitizedPluginConfig.courses) {
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.courses === 'object'
+          ? sanitizedPluginConfig.courses.coursesCollection
+          : undefined
+
       const courses = coursesCollection({
         categoriesCollectionSlug: collectionSlugMap.categories,
         certificatesCollectionSlug: collectionSlugMap.certificates,
@@ -99,52 +110,91 @@ export const lmsPlugin =
         mediaCollectionSlug: collectionSlugMap.media,
         studentsCollectionSlug: collectionSlugMap.students,
         tagsCollectionSlug: collectionSlugMap.tags,
+        overrides: collectionOverrides,
       })
       incomingConfig.collections.push(courses)
     }
 
     if (sanitizedPluginConfig.lessons) {
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.lessons === 'object'
+          ? sanitizedPluginConfig.lessons.lessonsCollection
+          : undefined
+
       const lessons = lessonsCollection({
         coursesCollectionSlug: collectionSlugMap.courses,
         mediaCollectionSlug: collectionSlugMap.media,
         quizzesCollectionSlug: collectionSlugMap.quizzes,
         categoriesCollectionSlug: collectionSlugMap.categories,
         studentsCollectionSlug: collectionSlugMap.students,
+        overrides: collectionOverrides,
       })
       incomingConfig.collections.push(lessons)
     }
 
     if (sanitizedPluginConfig.topics) {
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.topics === 'object'
+          ? sanitizedPluginConfig.topics.topicsCollection
+          : undefined
+
       const topics = topicsCollection({
         coursesCollectionSlug: collectionSlugMap.courses,
         mediaCollectionSlug: collectionSlugMap.media,
         quizzesCollectionSlug: collectionSlugMap.quizzes,
         lessonsCollectionSlug: collectionSlugMap.lessons,
+        overrides: collectionOverrides,
       })
       incomingConfig.collections.push(topics)
     }
 
     if (sanitizedPluginConfig.quizzes) {
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.quizzes === 'object'
+          ? sanitizedPluginConfig.quizzes.quizzesCollection
+          : undefined
+
       const quizzes = quizzesCollection({
         mediaCollectionSlug: collectionSlugMap.media,
         studentsCollectionSlug: collectionSlugMap.students,
+        overrides: collectionOverrides,
       })
       incomingConfig.collections.push(quizzes)
     }
 
     if (sanitizedPluginConfig.categories) {
-      const categories = categoriesCollection()
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.categories === 'object'
+          ? sanitizedPluginConfig.categories.categoriesCollection
+          : undefined
+
+      const categories = categoriesCollection({
+        overrides: collectionOverrides,
+      })
       incomingConfig.collections.push(categories)
     }
 
     if (sanitizedPluginConfig.tags) {
-      const tags = tagsCollection()
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.tags === 'object'
+          ? sanitizedPluginConfig.tags.tagsCollection
+          : undefined
+
+      const tags = tagsCollection({
+        overrides: collectionOverrides,
+      })
       incomingConfig.collections.push(tags)
     }
 
     if (sanitizedPluginConfig.questions) {
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.questions === 'object'
+          ? sanitizedPluginConfig.questions.questionsCollection
+          : undefined
+
       const questions = questionsCollection({
         studentsCollectionSlug: collectionSlugMap.students,
+        overrides: collectionOverrides,
       })
       incomingConfig.collections.push(questions)
     }

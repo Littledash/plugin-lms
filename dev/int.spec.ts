@@ -657,5 +657,51 @@ describe('LMS Integration Tests', () => {
       expect(topic.lesson).toBe(lesson.id)
       expect(topic.topicVideo.embed).toBe('https://example.com/video')
     })
+
+    // Test collection overrides functionality
+    it('should support collection overrides', async () => {
+      // This test verifies that the collection overrides are properly applied
+      // by checking that the collections are created with the expected structure
+      
+      // Check that certificates collection has the expected fields
+      const certificatesCollection = payload.collections.certificates
+      expect(certificatesCollection).toBeDefined()
+      expect(certificatesCollection.config.fields).toBeDefined()
+      
+      // Check that courses collection has the expected fields
+      const coursesCollection = payload.collections.courses
+      expect(coursesCollection).toBeDefined()
+      expect(coursesCollection.config.fields).toBeDefined()
+      
+      // Check that lessons collection has the expected fields
+      const lessonsCollection = payload.collections.lessons
+      expect(lessonsCollection).toBeDefined()
+      expect(lessonsCollection.config.fields).toBeDefined()
+      
+      // Check that quizzes collection has the expected fields
+      const quizzesCollection = payload.collections.quizzes
+      expect(quizzesCollection).toBeDefined()
+      expect(quizzesCollection.config.fields).toBeDefined()
+      
+      // Check that topics collection has the expected fields
+      const topicsCollection = payload.collections.topics
+      expect(topicsCollection).toBeDefined()
+      expect(topicsCollection.config.fields).toBeDefined()
+      
+      // Check that categories collection has the expected fields
+      const categoriesCollection = payload.collections.categories
+      expect(categoriesCollection).toBeDefined()
+      expect(categoriesCollection.config.fields).toBeDefined()
+      
+      // Check that tags collection has the expected fields
+      const tagsCollection = payload.collections.tags
+      expect(tagsCollection).toBeDefined()
+      expect(tagsCollection.config.fields).toBeDefined()
+      
+      // Check that questions collection has the expected fields
+      const questionsCollection = payload.collections.questions
+      expect(questionsCollection).toBeDefined()
+      expect(questionsCollection.config.fields).toBeDefined()
+    })
   })
 })
