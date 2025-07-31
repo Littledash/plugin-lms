@@ -1,4 +1,4 @@
 export declare const countryOptions: {
-    label: string;
-    value: string;
-}[];
+  label: string
+  value: string
+}[]

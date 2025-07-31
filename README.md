@@ -5,7 +5,6 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
 ## Features
 
 - **Course Management**
-
   - Create and organize courses with rich content
   - Support for multiple access modes (open, free, buy now, recurring, closed)
   - Course navigation modes (linear, free form)
@@ -14,13 +13,11 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
   - Certificate generation
 
 - **UI Components**
-
   - `PriceInput`: Custom price input component with currency formatting
   - `PriceRowLabel`: Price display component for table rows
   - `SlugInput`: Auto-generating slug input with lock/unlock functionality
 
 - **Lesson Management**
-
   - Rich text content support
   - Embedded video support
   - Lesson materials and resources
@@ -30,7 +27,6 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
   - Topic organization
 
 - **Topic Management**
-
   - Rich text content support
   - Embedded video support with progression tracking
   - Topic materials and resources
@@ -38,7 +34,6 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
   - Video progression control
 
 - **Quiz System**
-
   - Multiple question types:
     - Multiple Choice
     - True/False
@@ -52,14 +47,12 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
   - Quiz integration with lessons
 
 - **User Management**
-
   - Role-based access control (Admin, Author, Student)
   - Course enrollment tracking
   - Course completion tracking
   - Student progress monitoring
 
 - **Content Organization**
-
   - Categories for course classification
   - Tags for content organization
   - Media management for course assets
@@ -227,12 +220,15 @@ import { SlugInput } from '@littledash/plugin-lms/ui/SlugInput'
 ```
 
 ### PriceInput
+
 A custom price input component with currency formatting and validation.
 
 ### PriceRowLabel
+
 A price display component designed for use in table rows.
 
 ### SlugInput
+
 An auto-generating slug input component with lock/unlock functionality for manual editing.
 
 ## Access Control

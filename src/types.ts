@@ -41,6 +41,11 @@ export type CountryType = {
   value: string
 }
 
+export type StudentsConfig = {
+  slug?: string
+  studentsFields?: FieldsOverride
+  studentsCollection?: CollectionOverride
+}
 
 export type CurrenciesConfig = {
   /**
@@ -56,7 +61,9 @@ export type CurrenciesConfig = {
 }
 
 export type AddressesConfig = {
+  addressFields?: FieldsOverride
   addressesCollection?: CollectionOverride
+  supportedCountries?: CountryType[]
 }
 
 export type CoursesConfig = {
@@ -91,6 +98,20 @@ export type TopicsConfig = {
   topicsCollection?: CollectionOverride
 }
 
+export type CollectionSlugMap = {
+  addresses: string
+  courses: string
+  lessons: string
+  quizzes: string
+  categories: string
+  tags: string
+  certificates: string
+  questions: string
+  topics: string
+  media: string
+  students: string
+}
+
 export type LMSPluginConfig = {
   /**
    * Configure supported currencies and default settings.
@@ -99,73 +120,13 @@ export type LMSPluginConfig = {
    */
   currencies?: CurrenciesConfig
 
+  students?: StudentsConfig
   /**
    * Slug of the collection to use for addresses. Referenced in places such as courses and lessons.
    *
    * @default 'addresses'
    */
-  addressesCollectionSlug?: string
-  /**
-   * Slug of the collection to use for customers. Referenced in places such as courses and lessons.
-   *
-   * @default 'users'
-   */
-  studentsCollectionSlug?: string
-  /**
-   * Slug of the collection to use for certificates. Referenced in places such as courses and lessons.
-   *
-   * @default 'certificates'
-   */
-  certificatesCollectionSlug?: string
-
-  /**
-   * Slug of the collection to use for courses. Referenced in places such as courses and lessons.
-   *
-   * @default 'courses'
-   */
-  coursesCollectionSlug?: string
-  /**
-   * Slug of the collection to use for categories. Referenced in places such as courses and lessons.
-   *
-   * @default 'categories'
-   */
-  categoriesCollectionSlug?: string
-  /**
-   * Slug of the collection to use for lessons. Referenced in places such as courses and lessons.
-   *
-   * @default 'lessons'
-   */
-  lessonsCollectionSlug?: string
-  /**
-   * Slug of the collection to use for topics. Referenced in places such as lessons.
-   *
-   * @default 'topics'
-   */
-  topicsCollectionSlug?: string
-  /**
-   * Slug of the collection to use for media. Referenced in places such as courses and lessons.
-   *
-   * @default 'media'
-   */
-  mediaCollectionSlug?: string
-  /**
-   * Slug of the collection to use for tags. Referenced in places such as courses and lessons.
-   *
-   * @default 'tags'
-   */
-  tagsCollectionSlug?: string
-  /**
-   * Slug of the collection to use for quizzes. Referenced in places such as courses and lessons.
-   *
-   * @default 'quizzes'
-   */
-  quizzesCollectionSlug?: string
-  /**
-   * Slug of the collection to use for addresses. Referenced in places such as courses and lessons.
-   *
-   * @default 'addresses'
-   */
-  addresses?: string
+  addresses?: boolean | AddressesConfig
   /**
    * Enable courses collection.
    *
@@ -218,21 +179,13 @@ export type LMSPluginConfig = {
    * @default true
    */
   questions?: boolean | QuestionsConfig
-  /**
-   * Add custom fields to collections
-   */
-  customFields?: {
-    [key: string]: Field[]
-  }
 }
 
 export type SanitizedLMSPluginConfig = {
-  addresses?: { addressFields: Field[] } & Omit<AddressesConfig, 'addressFields'>
-  courses?: CoursesConfig
-  lessons?: LessonsConfig
-  quizzes?: QuizzesConfig
-  categories?: CategoriesConfig
-  tags?: TagsConfig
-  certificates?: CertificateConfig
-  questions?: QuestionsConfig
-} & Omit<Required<LMSPluginConfig>, 'customFields'>
+  students?: { studentsFields: FieldsOverride } & Omit<StudentsConfig, 'studentsFields'>
+  addresses?: { addressFields: FieldsOverride } & Omit<AddressesConfig, 'addressFields'>
+} & Omit<
+  Required<LMSPluginConfig>,
+  | 'students'    
+  | 'addresses'
+>

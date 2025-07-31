@@ -1,1 +1,1 @@
-export { AUD, GBP, JPY, USD } from '../currencies/index.js';
+export { AUD, GBP, JPY, USD } from '../currencies/index.js'

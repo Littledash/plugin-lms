@@ -17,6 +17,7 @@ Add this to your project's `package.json`:
 ```
 
 Then run:
+
 ```bash
 npm install
 # or
@@ -78,20 +79,25 @@ export default buildConfig({
 ## Troubleshooting
 
 ### Issue: Build fails during installation
+
 **Solution**: Make sure you have the required build tools installed:
+
 ```bash
 npm install -g pnpm
 # or ensure you have the latest Node.js version
 ```
 
 ### Issue: TypeScript errors
+
 **Solution**: The plugin should build automatically during installation. If you see TypeScript errors, try:
+
 ```bash
 cd node_modules/@littledash/plugin-lms
 pnpm build
 ```
 
 ### Issue: Permission denied
+
 **Solution**: Ensure you have access to the private repository and your GitHub credentials are properly configured.
 
 ## Development
@@ -110,4 +116,4 @@ If you need to make changes to the plugin:
     "@littledash/plugin-lms": "github:Littledash/plugin-lms#commit-hash"
   }
 }
-``` 
+```

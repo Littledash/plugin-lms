@@ -1,1 +1,1 @@
-export { certificatesCollection } from '../certificates/certificatesCollection.js';
+export { certificatesCollection } from '../certificates/certificatesCollection.js'

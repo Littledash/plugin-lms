@@ -1,14 +1,14 @@
-import type { RelationshipField } from 'payload';
+import type { RelationshipField } from 'payload'
 /**
  * Props for the roles field configuration
  */
 type Props = {
-    overrides?: Partial<RelationshipField>;
-};
+  overrides?: Partial<RelationshipField>
+}
 /**
  * Creates a relationship field for enrolled courses
  * @param props - Configuration overrides for the field
  * @returns A configured relationship field for enrolled courses
  */
-export declare const enrolledCoursesField: (props: Props) => RelationshipField;
-export {};
+export declare const enrolledCoursesField: (props: Props) => RelationshipField
+export {}

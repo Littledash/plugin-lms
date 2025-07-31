@@ -105,7 +105,7 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
     ...overrides,
     admin: {
       useAsTitle: 'title',
-      group: 'LMS',
+      // group: 'LMS',
       ...overrides?.admin,
     },
     fields,

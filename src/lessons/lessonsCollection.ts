@@ -148,14 +148,15 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
               admin: {
                 description: 'The progression behavior of the lesson',
               },
-            },  
+            },
             {
               name: 'lessonRelaseDays',
               type: 'number',
               label: 'Day(s) after enrollment',
               admin: {
                 description: 'The number of days after enrollment the lesson will be released',
-                condition: (data, { lessonReleaseSchedule }) => lessonReleaseSchedule === 'enrollment',
+                condition: (data, { lessonReleaseSchedule }) =>
+                  lessonReleaseSchedule === 'enrollment',
               },
             },
             {
@@ -163,7 +164,8 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
               type: 'date',
               admin: {
                 description: 'The date the lesson will be released',
-                condition: (data, { lessonReleaseSchedule }) => lessonReleaseSchedule === 'specificDate',
+                condition: (data, { lessonReleaseSchedule }) =>
+                  lessonReleaseSchedule === 'specificDate',
               },
             },
           ],
@@ -202,7 +204,6 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
         description: 'The quizzes that are part of the lesson',
       },
     },
-    
   ]
 
   // Apply field overrides if provided
@@ -221,7 +222,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     ...overrides,
     admin: {
       useAsTitle: 'title',
-      group: 'LMS',
+      // group: 'LMS',
       ...overrides?.admin,
     },
     fields,

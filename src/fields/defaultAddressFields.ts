@@ -94,6 +94,6 @@ export const defaultAddressFields: () => Field[] = () => {
           },
         },
       ],
-    }
+    },
   ]
 }

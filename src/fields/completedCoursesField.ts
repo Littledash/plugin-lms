@@ -1,10 +1,12 @@
-import type { RelationshipField } from 'payload'
+import type { JoinField, RelationshipField } from 'payload'
 
 /**
  * Props for the roles field configuration
  */
 type Props = {
-  overrides?: Partial<RelationshipField>
+  coursesCollectionSlug?: string
+  studentsCollectionSlug?: string
+  overrides?: Partial<JoinField>
 }
 
 /**
@@ -12,13 +14,16 @@ type Props = {
  * @param props - Configuration overrides for the field
  * @returns A configured relationship field for completed courses
  */
-export const completedCoursesField: (props: Props) => RelationshipField = ({ overrides }) => {
-  // @ts-expect-error - issue with payload types
-  const field: RelationshipField = {
+export const completedCoursesField: (props: Props) => JoinField = ({
+  overrides,
+  coursesCollectionSlug,
+  studentsCollectionSlug,
+}) => {
+  const field: JoinField = {
     name: 'completedCourses',
-    type: 'relationship',
-    relationTo: 'courses',
-    hasMany: true,
+    type: 'join',
+    collection: coursesCollectionSlug || 'courses',
+    on: studentsCollectionSlug || 'students',
     ...overrides,
     admin: {
       allowCreate: false,

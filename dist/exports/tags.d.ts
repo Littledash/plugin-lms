@@ -1,1 +1,1 @@
-export { tagsCollection } from '../tags/tagsCollection.js';
+export { tagsCollection } from '../tags/tagsCollection.js'

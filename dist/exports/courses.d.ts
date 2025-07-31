@@ -1,1 +1,1 @@
-export { coursesCollection } from '../courses/coursesCollection.js';
+export { coursesCollection } from '../courses/coursesCollection.js'

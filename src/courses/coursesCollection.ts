@@ -45,7 +45,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     studentsCollectionSlug = 'users',
     certificatesCollectionSlug = 'certificates',
   } = props || {}
-  
+
   const fieldsOverride = overrides?.fields
 
   /**
@@ -100,7 +100,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
       ],
       access: {
         read: isAdminOrAuthorOrStudentFieldLevel,
-      },  
+      },
     },
 
     {
@@ -256,7 +256,8 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
                   admin: {
                     width: '50%',
                     description: 'Minimum score required (0-100)',
-                    condition: (_, siblingData) => siblingData?.completionRequirement === 'minimumScore',
+                    condition: (_, siblingData) =>
+                      siblingData?.completionRequirement === 'minimumScore',
                   },
                 },
                 {
@@ -267,7 +268,8 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
                   admin: {
                     width: '50%',
                     description: 'Specific lessons that must be completed',
-                    condition: (_, siblingData) => siblingData?.completionRequirement === 'specificLessons',
+                    condition: (_, siblingData) =>
+                      siblingData?.completionRequirement === 'specificLessons',
                   },
                 },
                 {
@@ -345,42 +347,36 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
             },
           ],
         },
-        {
-          name: 'courseStudents',
-          label: 'Students',
-          description: 'Controls the students enrolled in the course',
-          fields: [
-            {
-              name: 'students',
-              type: 'relationship',
-              relationTo: studentsCollectionSlug,
-              hasMany: true,
-              admin: {
-                allowCreate: false,
-                description: 'The students enrolled in the course',
-              },
-              access: {
-                read: isAdminOrAuthorFieldLevel,
-              },
-            },
-          ],
-        },
       ],
     },
-      {
-        name: 'authors',
-        type: 'relationship',
-        relationTo: studentsCollectionSlug,
-        hasMany: true,
-        admin: {
-          position: 'sidebar',
-          allowCreate: false,
-          description: 'The authors of the course',
-        },
-        access: {
-          read: isAdminOrAuthorFieldLevel,
-        },
+    {
+      name: 'students',
+      type: 'relationship',
+      relationTo: studentsCollectionSlug,
+      hasMany: true,
+      admin: {
+        position: 'sidebar',
+        allowCreate: false,
+        description: 'Controls the students enrolled in the cours',
       },
+      access: {
+        read: isAdminOrAuthorFieldLevel,
+      },
+    },
+    {
+      name: 'authors',
+      type: 'relationship',
+      relationTo: studentsCollectionSlug,
+      hasMany: true,
+      admin: {
+        position: 'sidebar',
+        allowCreate: false,
+        description: 'The authors of the course',
+      },
+      access: {
+        read: isAdminOrAuthorFieldLevel,
+      },
+    },
     {
       name: 'categories',
       type: 'relationship',
@@ -430,7 +426,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     ...overrides,
     admin: {
       useAsTitle: 'title',
-      group: 'LMS',
+      // group: 'LMS',
       ...overrides?.admin,
     },
     fields,

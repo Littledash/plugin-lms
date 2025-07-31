@@ -1,1 +1,1 @@
-export { topicsCollection } from '../topics/topicsCollection.js';
+export { topicsCollection } from '../topics/topicsCollection.js'
