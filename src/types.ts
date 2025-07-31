@@ -184,8 +184,10 @@ export type LMSPluginConfig = {
 export type SanitizedLMSPluginConfig = {
   students?: { studentsFields: FieldsOverride } & Omit<StudentsConfig, 'studentsFields'>
   addresses?: { addressFields: FieldsOverride } & Omit<AddressesConfig, 'addressFields'>
+  currencies: Required<CurrenciesConfig>
 } & Omit<
   Required<LMSPluginConfig>,
   | 'students'    
   | 'addresses'
+  | 'currencies'
 >

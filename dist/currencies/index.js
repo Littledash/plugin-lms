@@ -1,36 +1,38 @@
 export const EUR = {
-  code: 'EUR',
-  decimals: 2,
-  label: 'Euro',
-  symbol: '€',
-}
+    code: 'EUR',
+    decimals: 2,
+    label: 'Euro',
+    symbol: '€'
+};
 export const USD = {
-  code: 'USD',
-  decimals: 2,
-  label: 'US Dollar',
-  symbol: '$',
-}
+    code: 'USD',
+    decimals: 2,
+    label: 'US Dollar',
+    symbol: '$'
+};
 export const GBP = {
-  code: 'GBP',
-  decimals: 2,
-  label: 'British Pound',
-  symbol: '£',
-}
+    code: 'GBP',
+    decimals: 2,
+    label: 'British Pound',
+    symbol: '£'
+};
 export const JPY = {
-  code: 'JPY',
-  decimals: 0,
-  label: 'Japanese Yen',
-  symbol: '¥',
-}
+    code: 'JPY',
+    decimals: 0,
+    label: 'Japanese Yen',
+    symbol: '¥'
+};
 export const AUD = {
-  code: 'AUD',
-  decimals: 2,
-  label: 'Australian Dollar',
-  symbol: 'A$',
-}
+    code: 'AUD',
+    decimals: 2,
+    label: 'Australian Dollar',
+    symbol: 'A$'
+};
 export const currenciesConfig = {
-  defaultCurrency: 'AUD',
-  supportedCurrencies: [AUD],
-}
+    defaultCurrency: 'AUD',
+    supportedCurrencies: [
+        AUD
+    ]
+};
 
 //# sourceMappingURL=index.js.map

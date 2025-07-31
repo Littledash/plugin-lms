@@ -1,1 +1,1 @@
-{"version":3,"sources":["../../src/exports/addressess.ts"],"sourcesContent":["export { addressesCollection } from '../addresses/addressesCollection.js'"],"names":["addressesCollection"],"mappings":"AAAA,SAASA,mBAAmB,QAAQ,sCAAqC"}
+{"version":3,"sources":["../../src/exports/addressess.ts"],"sourcesContent":["export { addressesCollection } from '../addresses/addressesCollection.js'\n"],"names":["addressesCollection"],"mappings":"AAAA,SAASA,mBAAmB,QAAQ,sCAAqC"}

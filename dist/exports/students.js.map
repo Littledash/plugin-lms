@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/students.ts"],"sourcesContent":["export { studentsCollection } from '../students/studentsCollection.js'\n"],"names":["studentsCollection"],"mappings":"AAAA,SAASA,kBAAkB,QAAQ,oCAAmC"}

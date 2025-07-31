@@ -1,3 +1,3 @@
-export { lessonsCollection } from '../lessons/lessonsCollection.js'
+export { lessonsCollection } from '../lessons/lessonsCollection.js';
 
 //# sourceMappingURL=lessons.js.map

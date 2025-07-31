@@ -1,3 +1,3 @@
-export { addressesCollection } from '../addresses/addressesCollection.js'
+export { addressesCollection } from '../addresses/addressesCollection.js';
 
 //# sourceMappingURL=addressess.js.map

@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/types.ts"],"sourcesContent":["export type {\n  CollectionOverride,\n  CurrenciesConfig,\n  LMSPluginConfig,\n  FieldsOverride,\n} from '../types.js'\n"],"names":[],"mappings":"AAAA,WAKoB"}

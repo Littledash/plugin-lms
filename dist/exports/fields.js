@@ -1,13 +1,15 @@
-export { amountField } from '../fields/amountField.js'
-export { currencyField } from '../fields/currencyField.js'
-export { pricesField } from '../fields/pricesField.js'
-export { address } from '../fields/addressFields.js'
-export { defaultAddressFields } from '../fields/defaultAddressFields.js'
-export { slugField } from '../fields/slug.js'
-export { rolesField, rolesOptions } from '../fields/rolesField.js'
-export { enrolledCoursesField } from '../fields/enrolledCoursesField.js'
-export { completedCoursesField } from '../fields/completedCoursesField.js'
-export { coursesProgressField } from '../fields/coursesProgressField.js'
-export { videoProgression } from '../fields/videoProgression.js'
+export { amountField } from '../fields/amountField.js';
+export { currencyField } from '../fields/currencyField.js';
+export { pricesField } from '../fields/pricesField.js';
+export { address } from '../fields/addressFields.js';
+export { defaultAddressFields } from '../fields/defaultAddressFields.js';
+export { slugField } from '../fields/slug.js';
+export { rolesField, rolesOptions } from '../fields/rolesField.js';
+export { enrolledCoursesField } from '../fields/enrolledCoursesField.js';
+export { certificatesField } from '../fields/certifcatesField.js';
+export { completedCoursesField } from '../fields/completedCoursesField.js';
+export { coursesProgressField } from '../fields/coursesProgressField.js';
+export { videoProgression } from '../fields/videoProgression.js';
+export { defaultStudentFields } from '../fields/defaultStudentFields.js';
 
 //# sourceMappingURL=fields.js.map
