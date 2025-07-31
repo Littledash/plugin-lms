@@ -1,5 +1,3 @@
-import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
 /**
  * Creates a questions collection configuration for Payload CMS
  * This collection manages questions for quizzes and assessments
@@ -7,7 +5,7 @@ import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
  * @param props - Configuration properties for the questions collection
  * @returns CollectionConfig object for questions
  */ export const questionsCollection = (props)=>{
-    const { overrides } = props || {};
+    const { overrides, studentsCollectionSlug = 'users' } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the questions collection
@@ -162,6 +160,16 @@ import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
                 condition: (_, siblingData)=>siblingData.questionType === 'essay'
             },
             defaultValue: 500
+        },
+        {
+            name: 'authors',
+            type: 'relationship',
+            relationTo: studentsCollectionSlug,
+            hasMany: true,
+            admin: {
+                allowCreate: false,
+                description: 'The authors of the question'
+            }
         }
     ];
     // Apply field overrides if provided
@@ -173,12 +181,6 @@ import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
    * Includes slug, access control, timestamps, and admin settings
    */ const baseConfig = {
         slug: 'questions',
-        access: {
-            read: isAdminOrAuthorOrStudent,
-            create: isAdminOrAuthor,
-            update: isAdminOrAuthor,
-            delete: isAdminOrAuthor
-        },
         timestamps: true,
         ...overrides,
         admin: {

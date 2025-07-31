@@ -1,9 +1,7 @@
 import { CollectionConfig, Field } from 'payload'
 import { FieldsOverride } from '../types.js'
 import { slugField } from '../fields/slug.js'
-import { anyone } from '../access/anyone.js'
-import { isAdminOrLoggedIn } from '../access/isAdminOrLoggedIn.js'
-import { isAdminOrSelf } from '../access/isAdminOrSelf.js'
+
 /**
  * Props interface for configuring the categories collection
  * @property overrides - Optional configuration overrides for fields and collection settings
@@ -51,12 +49,6 @@ export const categoriesCollection: (props?: Props) => CollectionConfig<'categori
    */
   const baseConfig: CollectionConfig = {
     slug: 'categories',
-    access: {
-      create: isAdminOrLoggedIn,
-      read: anyone,
-      update: isAdminOrSelf,
-      delete: isAdminOrSelf,
-    },
     timestamps: true,
     ...overrides,
     admin: {

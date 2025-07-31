@@ -29,10 +29,6 @@ export const tagsCollection: (props?: Props) => CollectionConfig<'tags'> = (prop
 
   const baseConfig: CollectionConfig = {
     slug: 'tags',
-    access: {
-      // TODO: Add access control
-      read: () => true,
-    },
     timestamps: true,
     ...overrides,
     admin: {

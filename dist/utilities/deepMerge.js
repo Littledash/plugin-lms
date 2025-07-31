@@ -11,7 +11,7 @@
  * Deep merge two objects.
  * @param target
  * @param ...sources
- */ export default function deepMerge(target, source) {
+ */ export function deepMerge(target, source) {
     const output = {
         ...target
     };

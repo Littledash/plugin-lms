@@ -1,10 +1,7 @@
 import { CollectionConfig, Field } from 'payload'
 import { FieldsOverride } from '../types.js'
 import { embeddedVideo } from '../fields/embeddedVideo.js'
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js'
-
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
-import { isAdminOrPublished } from '../access/isAdminOrPublished.js'
 import { videoProgression } from '../fields/videoProgression.js'
 /**
  * Props interface for configuring the lessons collection
@@ -187,6 +184,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       name: 'course',
       type: 'relationship',
       relationTo: coursesCollectionSlug,
+      hasMany: false,
       admin: {
         position: 'sidebar',
         allowCreate: false,
@@ -219,12 +217,6 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
    */
   const baseConfig: CollectionConfig = {
     slug: 'lessons',
-    access: {
-      create: isAdminOrAuthor,
-      read: isAdminOrPublished,
-      update: isAdminOrAuthor,
-      delete: isAdminOrAuthor,
-    },
     timestamps: true,
     ...overrides,
     admin: {

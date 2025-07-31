@@ -26,7 +26,6 @@
                 label: 'Poster Image',
                 type: 'upload',
                 relationTo: mediaCollectionSlug,
-                required: true,
                 admin: {
                     condition: (data, { embed })=>Boolean(embed),
                     description: 'Maximum upload file size: 4MB. Recommended file size for images is <500KB.'

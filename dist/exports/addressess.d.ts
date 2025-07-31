@@ -1,0 +1,1 @@
+export { addressesCollection } from '../addresses/addressesCollection.js';

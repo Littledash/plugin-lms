@@ -1,5 +1,3 @@
-import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 /**
  * Creates a quizzes collection configuration for Payload CMS
@@ -8,7 +6,7 @@ import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOr
  * @param props - Configuration properties for the quizzes collection
  * @returns CollectionConfig object for quizzes
  */ export const quizzesCollection = (props)=>{
-    const { overrides, mediaCollectionSlug = 'media' } = props || {};
+    const { overrides, mediaCollectionSlug = 'media', studentsCollectionSlug = 'users' } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the quizzes collection
@@ -32,12 +30,87 @@ import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOr
         {
             name: 'description',
             type: 'richText',
-            required: true,
             admin: {
                 description: 'The description of the quiz'
             },
             access: {
                 read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+            }
+        },
+        {
+            name: 'questions',
+            type: 'array',
+            admin: {
+                position: 'sidebar',
+                description: 'The questions in this quiz with their order, points, and timing'
+            },
+            access: {
+                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+            },
+            fields: [
+                {
+                    name: 'question',
+                    type: 'join',
+                    collection: 'questions',
+                    on: 'quiz',
+                    required: true
+                },
+                {
+                    name: 'order',
+                    type: 'number',
+                    required: true,
+                    admin: {
+                        width: '50%',
+                        description: 'The order of the question in the quiz'
+                    }
+                },
+                {
+                    name: 'points',
+                    type: 'number',
+                    defaultValue: 1,
+                    required: true,
+                    admin: {
+                        width: '50%',
+                        description: 'Points awarded for this question'
+                    }
+                },
+                {
+                    name: 'timeLimit',
+                    type: 'number',
+                    admin: {
+                        width: '50%',
+                        description: 'Time limit in seconds for this question (optional)'
+                    }
+                },
+                {
+                    name: 'isRequired',
+                    type: 'checkbox',
+                    defaultValue: true,
+                    admin: {
+                        width: '50%',
+                        description: 'Whether this question is required to pass the quiz'
+                    }
+                },
+                {
+                    name: 'randomizeAnswers',
+                    type: 'checkbox',
+                    defaultValue: false,
+                    admin: {
+                        width: '50%',
+                        description: 'Randomize the order of answer choices'
+                    }
+                }
+            ]
+        },
+        {
+            name: 'authors',
+            type: 'relationship',
+            relationTo: studentsCollectionSlug,
+            hasMany: true,
+            admin: {
+                position: 'sidebar',
+                allowCreate: false,
+                description: 'The authors of the quiz'
             }
         },
         {
@@ -47,19 +120,6 @@ import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOr
             admin: {
                 position: 'sidebar',
                 description: 'The featured image of the quiz'
-            }
-        },
-        {
-            name: 'questions',
-            type: 'relationship',
-            relationTo: 'questions',
-            hasMany: true,
-            required: true,
-            admin: {
-                description: 'The questions in this quiz'
-            },
-            access: {
-                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
             }
         }
     ];
@@ -72,12 +132,6 @@ import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOr
    * Includes slug, access control, timestamps, and admin settings
    */ const baseConfig = {
         slug: 'quizzes',
-        access: {
-            read: isAdminOrAuthorOrStudent,
-            create: isAdminOrAuthor,
-            update: isAdminOrAuthor,
-            delete: isAdminOrAuthor
-        },
         timestamps: true,
         ...overrides,
         admin: {

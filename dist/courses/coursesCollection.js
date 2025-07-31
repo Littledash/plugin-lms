@@ -1,8 +1,7 @@
 import { pricesField } from '../fields/pricesField.js';
-import { isAdminOrAuthor, isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
+import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
 import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js';
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
-import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
 /**
  * Creates a courses collection configuration for Payload CMS
  * This collection manages educational courses with various access modes, pricing, and content organization
@@ -34,32 +33,44 @@ import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
         {
             name: 'description',
             type: 'richText',
-            required: true,
             admin: {
                 description: 'The description of the course'
             }
         },
         {
             name: 'lessons',
-            type: 'relationship',
-            relationTo: lessonsCollectionSlug,
-            hasMany: true,
+            type: 'array',
+            label: 'Course Lessons',
             admin: {
-                allowCreate: false,
-                description: 'The lessons that are part of the course'
+                description: 'The lessons that are part of the course in specific order'
             },
+            fields: [
+                {
+                    name: 'lesson',
+                    type: 'join',
+                    collection: lessonsCollectionSlug,
+                    on: 'course',
+                    required: true
+                },
+                {
+                    name: 'order',
+                    type: 'number',
+                    admin: {
+                        width: '50%',
+                        description: 'The order of the lesson in the course'
+                    }
+                },
+                {
+                    name: 'isOptional',
+                    type: 'checkbox',
+                    admin: {
+                        width: '50%',
+                        description: 'Check if this lesson is optional'
+                    }
+                }
+            ],
             access: {
-                // No access control for the lessons field
                 read: isAdminOrAuthorOrStudentFieldLevel
-            }
-        },
-        {
-            name: 'featuredImage',
-            type: 'upload',
-            relationTo: mediaCollectionSlug,
-            admin: {
-                position: 'sidebar',
-                description: 'The featured image of the course'
             }
         },
         {
@@ -191,13 +202,86 @@ import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
                     fields: [
                         {
                             name: 'prerequisiteCourses',
-                            type: 'relationship',
-                            relationTo: 'courses',
-                            hasMany: true,
+                            type: 'array',
                             admin: {
-                                allowCreate: false,
-                                description: 'Courses that a student must complete before enrolling in this course.'
-                            }
+                                description: 'Courses that a student must complete before enrolling in this course with completion criteria.'
+                            },
+                            fields: [
+                                {
+                                    name: 'course',
+                                    type: 'join',
+                                    collection: 'courses',
+                                    on: 'prerequisite',
+                                    required: true
+                                },
+                                {
+                                    name: 'order',
+                                    type: 'number',
+                                    required: true,
+                                    admin: {
+                                        width: '50%',
+                                        description: 'The order this prerequisite should be completed'
+                                    }
+                                },
+                                {
+                                    name: 'completionRequirement',
+                                    type: 'select',
+                                    defaultValue: 'complete',
+                                    options: [
+                                        {
+                                            label: 'Complete Course',
+                                            value: 'complete'
+                                        },
+                                        {
+                                            label: 'Pass Final Quiz',
+                                            value: 'passQuiz'
+                                        },
+                                        {
+                                            label: 'Minimum Score',
+                                            value: 'minimumScore'
+                                        },
+                                        {
+                                            label: 'Complete Specific Lessons',
+                                            value: 'specificLessons'
+                                        }
+                                    ],
+                                    admin: {
+                                        width: '50%',
+                                        description: 'What is required to satisfy this prerequisite'
+                                    }
+                                },
+                                {
+                                    name: 'minimumScore',
+                                    type: 'number',
+                                    min: 0,
+                                    max: 100,
+                                    admin: {
+                                        width: '50%',
+                                        description: 'Minimum score required (0-100)',
+                                        condition: (_, siblingData)=>siblingData?.completionRequirement === 'minimumScore'
+                                    }
+                                },
+                                {
+                                    name: 'requiredLessons',
+                                    type: 'relationship',
+                                    relationTo: lessonsCollectionSlug,
+                                    hasMany: true,
+                                    admin: {
+                                        width: '50%',
+                                        description: 'Specific lessons that must be completed',
+                                        condition: (_, siblingData)=>siblingData?.completionRequirement === 'specificLessons'
+                                    }
+                                },
+                                {
+                                    name: 'isOptional',
+                                    type: 'checkbox',
+                                    defaultValue: false,
+                                    admin: {
+                                        width: '50%',
+                                        description: 'Whether this prerequisite is optional'
+                                    }
+                                }
+                            ]
                         },
                         {
                             name: 'requiredPoints',
@@ -290,6 +374,20 @@ import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
             ]
         },
         {
+            name: 'authors',
+            type: 'relationship',
+            relationTo: studentsCollectionSlug,
+            hasMany: true,
+            admin: {
+                position: 'sidebar',
+                allowCreate: false,
+                description: 'The authors of the course'
+            },
+            access: {
+                read: isAdminOrAuthorFieldLevel
+            }
+        },
+        {
             name: 'categories',
             type: 'relationship',
             relationTo: categoriesCollectionSlug,
@@ -310,6 +408,26 @@ import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
                 allowCreate: false,
                 description: 'The tags that are part of the course'
             }
+        },
+        {
+            name: 'featuredImage',
+            type: 'upload',
+            relationTo: mediaCollectionSlug,
+            admin: {
+                position: 'sidebar',
+                description: 'The featured image of the course'
+            }
+        },
+        {
+            name: 'prerequisite',
+            type: 'relationship',
+            relationTo: 'courses',
+            hasMany: true,
+            admin: {
+                position: 'sidebar',
+                allowCreate: false,
+                description: 'Courses that require this course as a prerequisite'
+            }
         }
     ];
     // Apply field overrides if provided
@@ -321,12 +439,6 @@ import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
    * Includes slug, access control, timestamps, and admin settings
    */ const baseConfig = {
         slug: 'courses',
-        access: {
-            create: isAdminOrAuthor,
-            delete: isAdminOrAuthor,
-            read: isAdminOrPublished,
-            update: isAdminOrAuthor
-        },
         timestamps: true,
         ...overrides,
         admin: {

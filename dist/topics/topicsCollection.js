@@ -1,7 +1,5 @@
 import { embeddedVideo } from '../fields/embeddedVideo.js';
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
-import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
 import { videoProgression } from '../fields/videoProgression.js';
 /**
  * Creates a topics collection configuration for Payload CMS
@@ -35,7 +33,6 @@ import { videoProgression } from '../fields/videoProgression.js';
             name: 'content',
             type: 'richText',
             label: 'Topic Content',
-            required: true,
             admin: {
                 description: 'The content of the topic'
             },
@@ -115,12 +112,6 @@ import { videoProgression } from '../fields/videoProgression.js';
    * Includes slug, access control, timestamps, and admin settings
    */ const baseConfig = {
         slug: 'topics',
-        access: {
-            create: isAdminOrAuthor,
-            read: isAdminOrPublished,
-            update: isAdminOrAuthor,
-            delete: isAdminOrAuthor
-        },
         timestamps: true,
         ...overrides,
         admin: {

@@ -1,9 +1,7 @@
 import { CollectionConfig, Field } from 'payload'
 import { FieldsOverride } from '../types.js'
 import { embeddedVideo } from '../fields/embeddedVideo.js'
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js'
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
-import { isAdminOrPublished } from '../access/isAdminOrPublished.js'
 import { videoProgression } from '../fields/videoProgression.js'
 
 /**
@@ -147,12 +145,6 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
    */
   const baseConfig: CollectionConfig = {
     slug: 'topics',
-    access: {
-      create: isAdminOrAuthor,
-      read: isAdminOrPublished,
-      update: isAdminOrAuthor,
-      delete: isAdminOrAuthor,
-    },
     timestamps: true,
     ...overrides,
     admin: {

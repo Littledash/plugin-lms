@@ -68,6 +68,21 @@
                         name: 'completedAt',
                         type: 'date',
                         required: true
+                    },
+                    {
+                        name: 'timeSpent',
+                        type: 'number',
+                        admin: {
+                            description: 'Time spent on quiz in seconds'
+                        }
+                    },
+                    {
+                        name: 'attempts',
+                        type: 'number',
+                        defaultValue: 1,
+                        admin: {
+                            description: 'Number of attempts taken'
+                        }
                     }
                 ]
             }

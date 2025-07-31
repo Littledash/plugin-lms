@@ -1,7 +1,6 @@
 import { CollectionConfig, Field } from 'payload'
 import { FieldsOverride } from '../types.js'
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js'
-import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js'
+
 /**
  * Props interface for configuring the certificates collection
  * @property coursesCollectionSlug - Slug for the courses collection (default: 'courses')
@@ -118,12 +117,6 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
    */
   const baseConfig: CollectionConfig = {
     slug: 'certificates',
-    access: {
-      read: isAdminOrAuthorOrStudent,
-      create: isAdminOrAuthor,
-      update: isAdminOrAuthor,
-      delete: isAdminOrAuthor,
-    },
     timestamps: true,
     ...overrides,
     admin: {

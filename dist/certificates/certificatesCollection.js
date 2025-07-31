@@ -1,5 +1,3 @@
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
-import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js';
 /**
  * Creates a certificates collection configuration for Payload CMS
  * This collection manages digital certificates for course completion
@@ -33,36 +31,18 @@ import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js'
             name: 'template',
             type: 'upload',
             relationTo: mediaCollectionSlug,
-            required: true,
             admin: {
                 description: 'The certificate template image'
             }
         },
         {
-            name: 'course',
+            name: 'courses',
             type: 'relationship',
             relationTo: coursesCollectionSlug,
-            required: true,
-            admin: {
-                description: 'The course this certificate is for'
-            }
-        },
-        {
-            name: 'students',
-            type: 'relationship',
-            relationTo: studentsCollectionSlug,
-            required: true,
             hasMany: true,
             admin: {
-                description: 'The students who earned this certificate'
-            }
-        },
-        {
-            name: 'issueDate',
-            type: 'date',
-            required: true,
-            admin: {
-                description: 'The date the certificate was issued'
+                allowCreate: false,
+                description: 'The courses this certificate is for'
             }
         },
         {
@@ -70,15 +50,6 @@ import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js'
             type: 'date',
             admin: {
                 description: 'The date the certificate expires (if applicable)'
-            }
-        },
-        {
-            name: 'certificateNumber',
-            type: 'text',
-            required: true,
-            unique: true,
-            admin: {
-                description: 'The unique certificate number'
             }
         },
         {
@@ -103,6 +74,16 @@ import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js'
             admin: {
                 description: 'The status of the certificate'
             }
+        },
+        {
+            name: 'authors',
+            type: 'relationship',
+            relationTo: studentsCollectionSlug,
+            hasMany: true,
+            admin: {
+                allowCreate: false,
+                description: 'The authors of the certificate'
+            }
         }
     ];
     // Apply field overrides if provided
@@ -114,12 +95,6 @@ import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js'
    * Includes slug, access control, timestamps, and admin settings
    */ const baseConfig = {
         slug: 'certificates',
-        access: {
-            read: isAdminOrAuthorOrStudent,
-            create: isAdminOrAuthor,
-            update: isAdminOrAuthor,
-            delete: isAdminOrAuthor
-        },
         timestamps: true,
         ...overrides,
         admin: {

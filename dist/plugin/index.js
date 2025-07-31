@@ -1,4 +1,5 @@
 import { AUD } from '../currencies/index.js';
+import { addressesCollection } from '../addresses/addressesCollection.js';
 import { coursesCollection } from '../courses/coursesCollection.js';
 import { lessonsCollection } from '../lessons/lessonsCollection.js';
 import { quizzesCollection } from '../quizzes/quizzesCollection.js';
@@ -11,7 +12,8 @@ import { enrolledCoursesField } from '../fields/enrolledCoursesField.js';
 import { completedCoursesField } from '../fields/completedCoursesField.js';
 import { coursesProgressField } from '../fields/coursesProgressField.js';
 import { topicsCollection } from '../topics/topicsCollection.js';
-import deepMerge from '../utilities/deepMerge.js';
+import { deepMerge } from '../utilities/deepMerge.js';
+import { defaultAddressFields } from '../fields/defaultAddressFields.js';
 /**
  * 
  *@TODO add groups collection and fields
@@ -30,6 +32,7 @@ import deepMerge from '../utilities/deepMerge.js';
             return incomingConfig;
         }
         const studentsCollectionSlug = pluginConfig.studentsCollectionSlug || 'users';
+        const addressesCollectionSlug = pluginConfig.addressesCollectionSlug || 'addresses';
         const categoriesCollectionSlug = pluginConfig.categoriesCollectionSlug || 'categories';
         const certificatesCollectionSlug = pluginConfig.certificatesCollectionSlug || 'certificates';
         const coursesCollectionSlug = pluginConfig.coursesCollectionSlug || 'courses';
@@ -42,23 +45,39 @@ import deepMerge from '../utilities/deepMerge.js';
         if (!incomingConfig.collections) {
             incomingConfig.collections = [];
         }
+        let addressFields;
+        const existingAddressesCollection = incomingConfig.collections.find((collection)=>collection.slug === addressesCollectionSlug);
+        if (existingAddressesCollection) {
+            addressFields = existingAddressesCollection.fields;
+        } else {
+            addressFields = defaultAddressFields();
+        }
+        if (pluginConfig.addresses) {
+            const addresses = addressesCollection({
+                addressFields,
+                studentsCollectionSlug
+            });
+            incomingConfig.collections.push(addresses);
+        }
         const existingStudentsCollection = incomingConfig.collections.find((collection)=>collection.slug === studentsCollectionSlug);
         // Ensure students collection exists
         if (existingStudentsCollection) {
-            // Handle fields that may be nested within tabs
-            const findFieldInTabs = (fields)=>{
+            // Generic function to find any field by name and type
+            const findFieldByNameAndType = (fields, fieldName, fieldType)=>{
                 for (const field of fields){
                     if (field.type === 'tabs') {
                         for (const tab of field.tabs){
-                            const found = tab.fields?.find((f)=>'name' in f && f.name === 'roles' && f.type === 'select');
+                            const found = tab.fields?.find((f)=>'name' in f && f.name === fieldName && f.type === fieldType);
                             if (found) return found;
                         }
+                    } else if ('name' in field && field.name === fieldName && field.type === fieldType) {
+                        return field;
                     }
                 }
                 return null;
             };
             // Check for roles field in tabs
-            const existingRolesField = existingStudentsCollection?.fields?.find((field)=>'name' in field && field.name === 'roles' && field.type === 'select') || findFieldInTabs(existingStudentsCollection?.fields || []);
+            const existingRolesField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'roles', 'select');
             if (existingRolesField && existingRolesField.type === 'select') {
                 // Merge options if roles field exists
                 const existingOptions = existingRolesField.options || [];
@@ -71,19 +90,32 @@ import deepMerge from '../utilities/deepMerge.js';
                 existingStudentsCollection.fields.push(rolesField({}));
             }
             // Add enrolledCourses field if it doesn't exist
-            const existingEnrolledCoursesField = existingStudentsCollection?.fields?.find((field)=>'name' in field && field.name === 'enrolledCourses' && field.type === 'relationship');
+            const existingEnrolledCoursesField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'enrolledCourses', 'relationship');
             if (!existingEnrolledCoursesField) {
                 existingStudentsCollection.fields.push(enrolledCoursesField({}));
             }
             // Add completedCourses field if it doesn't exist
-            const existingCompletedCoursesField = existingStudentsCollection?.fields?.find((field)=>'name' in field && field.name === 'completedCourses' && field.type === 'relationship');
+            const existingCompletedCoursesField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'completedCourses', 'relationship');
             if (!existingCompletedCoursesField) {
                 existingStudentsCollection.fields.push(completedCoursesField({}));
             }
             // Add coursesProgress field if it doesn't exist
-            const existingCoursesProgressField = existingStudentsCollection?.fields?.find((field)=>'name' in field && field.name === 'coursesProgress' && field.type === 'array');
+            const existingCoursesProgressField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'coursesProgress', 'array');
             if (!existingCoursesProgressField) {
                 existingStudentsCollection.fields.push(coursesProgressField({}));
+            }
+            const exisitingCertificatesField = findFieldByNameAndType(existingStudentsCollection?.fields || [], 'certificates', 'relationship');
+            if (!exisitingCertificatesField) {
+                existingStudentsCollection.fields.push({
+                    name: 'certificates',
+                    type: 'relationship',
+                    relationTo: certificatesCollectionSlug,
+                    hasMany: true,
+                    admin: {
+                        allowCreate: false,
+                        description: 'The certificates the student has earned'
+                    }
+                });
             }
         }
         // Ensure currencies are configured
@@ -98,7 +130,8 @@ import deepMerge from '../utilities/deepMerge.js';
         }
         if (pluginConfig.certificates) {
             const certificates = certificatesCollection({
-                mediaCollectionSlug
+                mediaCollectionSlug,
+                studentsCollectionSlug
             });
             incomingConfig.collections.push(certificates);
         }
@@ -118,7 +151,9 @@ import deepMerge from '../utilities/deepMerge.js';
             const lessons = lessonsCollection({
                 coursesCollectionSlug,
                 mediaCollectionSlug,
-                quizzesCollectionSlug
+                quizzesCollectionSlug,
+                categoriesCollectionSlug,
+                studentsCollectionSlug
             });
             incomingConfig.collections.push(lessons);
         }
@@ -133,7 +168,8 @@ import deepMerge from '../utilities/deepMerge.js';
         }
         if (pluginConfig.quizzes) {
             const quizzes = quizzesCollection({
-                mediaCollectionSlug
+                mediaCollectionSlug,
+                studentsCollectionSlug
             });
             incomingConfig.collections.push(quizzes);
         }
@@ -162,6 +198,18 @@ import deepMerge from '../utilities/deepMerge.js';
         if (pluginConfig.questions) {
             const questions = questionsCollection();
             incomingConfig.collections.push(questions);
+        }
+        // Add custom fields to collections
+        if (pluginConfig.customFields) {
+            Object.entries(pluginConfig.customFields).forEach(([collectionSlug, fields])=>{
+                const collection = incomingConfig.collections?.find((col)=>col.slug === collectionSlug);
+                if (collection) {
+                    collection.fields = [
+                        ...collection.fields,
+                        ...fields
+                    ];
+                }
+            });
         }
         return {
             ...incomingConfig

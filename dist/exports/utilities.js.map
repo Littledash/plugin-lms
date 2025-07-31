@@ -1,1 +1,1 @@
-{"version":3,"sources":["../../src/exports/utilities.ts"],"sourcesContent":["export * from '../utilities/deepMerge.js'"],"names":[],"mappings":"AAAA,cAAc,4BAA2B"}
+{"version":3,"sources":["../../src/exports/utilities.ts"],"sourcesContent":["export { deepMerge } from '../utilities/deepMerge.js'"],"names":["deepMerge"],"mappings":"AAAA,SAASA,SAAS,QAAQ,4BAA2B"}

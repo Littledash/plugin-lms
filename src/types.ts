@@ -225,3 +225,14 @@ export type LMSPluginConfig = {
     [key: string]: Field[]
   }
 }
+
+export type SanitizedLMSPluginConfig = {
+  addresses?: { addressFields: Field[] } & Omit<AddressesConfig, 'addressFields'>
+  courses?: CoursesConfig
+  lessons?: LessonsConfig
+  quizzes?: QuizzesConfig
+  categories?: CategoriesConfig
+  tags?: TagsConfig
+  certificates?: CertificateConfig
+  questions?: QuestionsConfig
+} & Omit<Required<LMSPluginConfig>, 'customFields'>

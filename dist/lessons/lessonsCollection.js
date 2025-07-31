@@ -1,7 +1,5 @@
 import { embeddedVideo } from '../fields/embeddedVideo.js';
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js';
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
-import { isAdminOrPublished } from '../access/isAdminOrPublished.js';
 import { videoProgression } from '../fields/videoProgression.js';
 /**
  * Creates a lessons collection configuration for Payload CMS
@@ -10,7 +8,7 @@ import { videoProgression } from '../fields/videoProgression.js';
  * @param props - Configuration properties for the lessons collection
  * @returns CollectionConfig object for lessons
  */ export const lessonsCollection = (props)=>{
-    const { overrides, mediaCollectionSlug = 'media', coursesCollectionSlug = 'courses', quizzesCollectionSlug = 'quizzes' } = props || {};
+    const { overrides, mediaCollectionSlug = 'media', coursesCollectionSlug = 'courses', quizzesCollectionSlug = 'quizzes', categoriesCollectionSlug = 'categories', studentsCollectionSlug = 'users' } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the lessons collection
@@ -34,12 +32,22 @@ import { videoProgression } from '../fields/videoProgression.js';
         {
             name: 'content',
             type: 'richText',
-            required: true,
             admin: {
                 description: 'The content of the lesson'
             },
             access: {
                 read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+            }
+        },
+        {
+            name: 'authors',
+            type: 'relationship',
+            relationTo: studentsCollectionSlug,
+            hasMany: true,
+            admin: {
+                position: 'sidebar',
+                allowCreate: false,
+                description: 'The authors of the lesson'
             }
         },
         {
@@ -144,9 +152,20 @@ import { videoProgression } from '../fields/videoProgression.js';
             ]
         },
         {
+            name: 'categories',
+            type: 'relationship',
+            relationTo: categoriesCollectionSlug,
+            admin: {
+                position: 'sidebar',
+                allowCreate: false,
+                description: 'The categories that the lesson belongs to'
+            }
+        },
+        {
             name: 'course',
             type: 'relationship',
             relationTo: coursesCollectionSlug,
+            hasMany: false,
             admin: {
                 position: 'sidebar',
                 allowCreate: false,
@@ -155,14 +174,81 @@ import { videoProgression } from '../fields/videoProgression.js';
         },
         {
             name: 'quizzes',
-            type: 'relationship',
-            relationTo: quizzesCollectionSlug,
-            hasMany: true,
+            type: 'array',
             admin: {
                 position: 'sidebar',
-                allowCreate: false,
-                description: 'The quizzes that are part of the lesson'
-            }
+                description: 'The quizzes that are part of the lesson with their order and timing'
+            },
+            fields: [
+                {
+                    name: 'quiz',
+                    type: 'join',
+                    collection: quizzesCollectionSlug,
+                    on: 'lesson',
+                    required: true
+                },
+                {
+                    name: 'order',
+                    type: 'number',
+                    required: true,
+                    admin: {
+                        width: '50%',
+                        description: 'The order of the quiz in the lesson'
+                    }
+                },
+                {
+                    name: 'isRequired',
+                    type: 'checkbox',
+                    defaultValue: true,
+                    admin: {
+                        width: '50%',
+                        description: 'Whether this quiz is required to complete the lesson'
+                    }
+                },
+                {
+                    name: 'releaseSchedule',
+                    type: 'select',
+                    defaultValue: 'immediately',
+                    options: [
+                        {
+                            label: 'Immediately',
+                            value: 'immediately'
+                        },
+                        {
+                            label: 'After Previous Quiz',
+                            value: 'afterPrevious'
+                        },
+                        {
+                            label: 'Specific Date',
+                            value: 'specificDate'
+                        }
+                    ],
+                    admin: {
+                        width: '50%',
+                        description: 'When this quiz becomes available'
+                    }
+                },
+                {
+                    name: 'releaseDate',
+                    type: 'date',
+                    admin: {
+                        width: '50%',
+                        description: 'The date the quiz will be released',
+                        condition: (_, siblingData)=>siblingData?.releaseSchedule === 'specificDate'
+                    }
+                },
+                {
+                    name: 'prerequisiteQuizzes',
+                    type: 'relationship',
+                    relationTo: quizzesCollectionSlug,
+                    hasMany: true,
+                    admin: {
+                        width: '50%',
+                        description: 'Quizzes that must be completed before this one',
+                        condition: (_, siblingData)=>siblingData?.releaseSchedule === 'afterPrevious'
+                    }
+                }
+            ]
         }
     ];
     // Apply field overrides if provided
@@ -174,12 +260,6 @@ import { videoProgression } from '../fields/videoProgression.js';
    * Includes slug, access control, timestamps, and admin settings
    */ const baseConfig = {
         slug: 'lessons',
-        access: {
-            create: isAdminOrAuthor,
-            read: isAdminOrPublished,
-            update: isAdminOrAuthor,
-            delete: isAdminOrAuthor
-        },
         timestamps: true,
         ...overrides,
         admin: {

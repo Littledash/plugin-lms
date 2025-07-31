@@ -16,7 +16,7 @@ import { completedCoursesField } from '../fields/completedCoursesField.js'
 import { coursesProgressField } from '../fields/coursesProgressField.js'
 import { topicsCollection } from '../topics/topicsCollection.js'
 import { deepMerge } from '../utilities/deepMerge.js'
-import { defaultAddressFields } from 'src/fields/defaultAddressFields.js'
+import { defaultAddressFields } from '../fields/defaultAddressFields.js'
 
 /**
  * 

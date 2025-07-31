@@ -21,9 +21,9 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
-import { PriceInput as PriceInput_4d341df171b1c0ad3303aed0bda03271 } from '../../../../src/ui/PriceInput'
-import { PriceRowLabel as PriceRowLabel_5816b34ad9fa1973ce962069d921b62a } from '../../../../src/ui/PriceRowLabel'
-import { SlugInput as SlugInput_34b92f8f7b1809a027d80ae7968003d0 } from '../../../../src/ui/SlugInput'
+import { PriceInput as PriceInput_756a17b03e70a91885aac500631399ef } from '@littledash/plugin-lms/ui/PriceInput'
+import { PriceRowLabel as PriceRowLabel_6fee0210e3b7ac79b9e43bec13e81b6e } from '@littledash/plugin-lms/ui/PriceRowLabel'
+import { SlugInput as SlugInput_d43170cfa357939fd5f7fa383ad4fcb2 } from '@littledash/plugin-lms/ui/SlugInput'
 
 export const importMap = {
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -49,7 +49,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "../src/ui/PriceInput#PriceInput": PriceInput_4d341df171b1c0ad3303aed0bda03271,
-  "../src/ui/PriceRowLabel#PriceRowLabel": PriceRowLabel_5816b34ad9fa1973ce962069d921b62a,
-  "../src/ui/SlugInput#SlugInput": SlugInput_34b92f8f7b1809a027d80ae7968003d0
+  "@littledash/plugin-lms/ui/PriceInput#PriceInput": PriceInput_756a17b03e70a91885aac500631399ef,
+  "@littledash/plugin-lms/ui/PriceRowLabel#PriceRowLabel": PriceRowLabel_6fee0210e3b7ac79b9e43bec13e81b6e,
+  "@littledash/plugin-lms/ui/SlugInput#SlugInput": SlugInput_d43170cfa357939fd5f7fa383ad4fcb2
 }

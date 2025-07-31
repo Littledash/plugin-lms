@@ -1,7 +1,5 @@
 import { CollectionConfig, Field } from 'payload'
 import { FieldsOverride } from '../types.js'
-import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js'
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js'
 
 /**
  * Props interface for configuring the questions collection
@@ -146,12 +144,6 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
    */
   const baseConfig: CollectionConfig = {
     slug: 'questions',
-    access: {
-      read: isAdminOrAuthorOrStudent,
-      create: isAdminOrAuthor,
-      update: isAdminOrAuthor,
-      delete: isAdminOrAuthor,
-    },
     timestamps: true,
     ...overrides,
     admin: {

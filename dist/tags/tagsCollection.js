@@ -18,14 +18,11 @@ export const tagsCollection = (props)=>{
     }) : defaultFields;
     const baseConfig = {
         slug: 'tags',
-        access: {
-            // TODO: Add access control
-            read: ()=>true
-        },
         timestamps: true,
         ...overrides,
         admin: {
             useAsTitle: 'title',
+            group: 'Taxonomy',
             ...overrides?.admin
         },
         fields

@@ -1,7 +1,5 @@
 import { CollectionConfig, Field } from 'payload'
 import { FieldsOverride } from '../types.js'
-import { isAdminOrAuthorOrStudent } from '../access/isAdminOrAuthorOrStudent.js'
-import { isAdminOrAuthor } from '../access/isAdminOrAuthor.js'
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
 /**
  * Props interface for configuring the quizzes collection
@@ -103,12 +101,6 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
    */
   const baseConfig: CollectionConfig = {
     slug: 'quizzes',
-    access: {
-      read: isAdminOrAuthorOrStudent, // TODO not sure if everyone should be able to read quizzes
-      create: isAdminOrAuthor,
-      update: isAdminOrAuthor,
-      delete: isAdminOrAuthor,
-    },
     timestamps: true,
     ...overrides,
     admin: {

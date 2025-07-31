@@ -2,10 +2,9 @@ import { CollectionConfig, Field } from 'payload'
 import { FieldsOverride } from '../types.js'
 import type { CurrenciesConfig } from '../types.js'
 import { pricesField } from '../fields/pricesField.js'
-import { isAdminOrAuthor, isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
+import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
 import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js'
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
-import { isAdminOrPublished } from '../access/isAdminOrPublished.js'
 /**
  * Props interface for configuring the courses collection
  * @property categoriesCollectionSlug - Slug for the categories collection (default: 'categories')
@@ -46,6 +45,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     studentsCollectionSlug = 'users',
     certificatesCollectionSlug = 'certificates',
   } = props || {}
+  
   const fieldsOverride = overrides?.fields
 
   /**
@@ -75,20 +75,32 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
         description: 'The description of the course',
       },
     },
-
     {
       name: 'lessons',
-      type: 'relationship',
-      relationTo: lessonsCollectionSlug,
-      hasMany: true,
+      type: 'array',
+      label: 'Course Lessons',
       admin: {
-        allowCreate: false,
-        description: 'The lessons that are part of the course',
+        description: 'The lessons that are part of the course in specific order',
       },
+      fields: [
+        {
+          name: 'lesson',
+          type: 'relationship',
+          relationTo: lessonsCollectionSlug,
+          required: true,
+        },
+        {
+          name: 'isOptional',
+          type: 'checkbox',
+          admin: {
+            width: '50%',
+            description: 'Check if this lesson is optional',
+          },
+        },
+      ],
       access: {
-        // No access control for the lessons field
         read: isAdminOrAuthorOrStudentFieldLevel,
-      },
+      },  
     },
 
     {
@@ -124,8 +136,6 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
                     overrides: {
                       admin: {
                         condition: (_, siblingData) => {
-                          console.log(siblingData, 'siblingData')
-                          
                           return ['buy now', 'recurring', 'closed'].includes(
                             siblingData?.accessMode,
                           )
@@ -211,14 +221,65 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
           fields: [
             {
               name: 'prerequisiteCourses',
-              type: 'relationship',
-              relationTo: 'courses',
-              hasMany: true,
+              type: 'array',
               admin: {
-                allowCreate: false,
                 description:
-                  'Courses that a student must complete before enrolling in this course.',
+                  'Courses that a student must complete before enrolling in this course with completion criteria.',
               },
+              fields: [
+                {
+                  name: 'course',
+                  type: 'relationship',
+                  relationTo: 'courses',
+                  required: true,
+                },
+                {
+                  name: 'completionRequirement',
+                  type: 'select',
+                  defaultValue: 'complete',
+                  options: [
+                    { label: 'Complete Course', value: 'complete' },
+                    { label: 'Pass Final Quiz', value: 'passQuiz' },
+                    { label: 'Minimum Score', value: 'minimumScore' },
+                    { label: 'Complete Specific Lessons', value: 'specificLessons' },
+                  ],
+                  admin: {
+                    width: '50%',
+                    description: 'What is required to satisfy this prerequisite',
+                  },
+                },
+                {
+                  name: 'minimumScore',
+                  type: 'number',
+                  min: 0,
+                  max: 100,
+                  admin: {
+                    width: '50%',
+                    description: 'Minimum score required (0-100)',
+                    condition: (_, siblingData) => siblingData?.completionRequirement === 'minimumScore',
+                  },
+                },
+                {
+                  name: 'requiredLessons',
+                  type: 'relationship',
+                  relationTo: lessonsCollectionSlug,
+                  hasMany: true,
+                  admin: {
+                    width: '50%',
+                    description: 'Specific lessons that must be completed',
+                    condition: (_, siblingData) => siblingData?.completionRequirement === 'specificLessons',
+                  },
+                },
+                {
+                  name: 'isOptional',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  admin: {
+                    width: '50%',
+                    description: 'Whether this prerequisite is optional',
+                  },
+                },
+              ],
             },
             {
               name: 'requiredPoints',
@@ -365,12 +426,6 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
    */
   const baseConfig: CollectionConfig = {
     slug: 'courses',
-    access: {
-      create: isAdminOrAuthor,
-      delete: isAdminOrAuthor,
-      read: isAdminOrPublished, // TODO not sure if everyone should be able to read courses
-      update: isAdminOrAuthor,
-    },
     timestamps: true,
     ...overrides,
     admin: {

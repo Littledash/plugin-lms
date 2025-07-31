@@ -1,7 +1,4 @@
 import { slugField } from '../fields/slug.js';
-import { anyone } from '../access/anyone.js';
-import { isAdminOrLoggedIn } from '../access/isAdminOrLoggedIn.js';
-import { isAdminOrSelf } from '../access/isAdminOrSelf.js';
 /**
  * Creates a categories collection configuration for Payload CMS
  * This collection manages course categories for organizing and filtering courses
@@ -34,16 +31,11 @@ import { isAdminOrSelf } from '../access/isAdminOrSelf.js';
    * Includes slug, access control, timestamps, and admin settings
    */ const baseConfig = {
         slug: 'categories',
-        access: {
-            create: isAdminOrLoggedIn,
-            read: anyone,
-            update: isAdminOrSelf,
-            delete: isAdminOrSelf
-        },
         timestamps: true,
         ...overrides,
         admin: {
             useAsTitle: 'title',
+            group: 'Taxonomy',
             ...overrides?.admin
         },
         fields
