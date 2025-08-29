@@ -70,6 +70,10 @@ export type CoursesConfig = {
   coursesCollection?: CollectionOverride
 }
 
+export type GroupsConfig = {
+  groupsCollection?: CollectionOverride
+}
+
 export type LessonsConfig = {
   lessonsCollection?: CollectionOverride
 }
@@ -101,6 +105,7 @@ export type TopicsConfig = {
 export type CollectionSlugMap = {
   addresses: string
   courses: string
+  groups: string
   lessons: string
   quizzes: string
   categories: string
@@ -133,6 +138,13 @@ export type LMSPluginConfig = {
    * @default true
    */
   courses?: boolean | CoursesConfig
+
+  /**
+   * Enable groups collection.
+   *
+   * @default true
+   */
+  groups?: boolean | GroupsConfig
 
   /**
    * Enable lessons collection.
@@ -187,7 +199,7 @@ export type SanitizedLMSPluginConfig = {
   currencies: Required<CurrenciesConfig>
 } & Omit<
   Required<LMSPluginConfig>,
-  | 'students'    
+  | 'students'
   | 'addresses'
   | 'currencies'
 >

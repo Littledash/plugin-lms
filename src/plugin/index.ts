@@ -3,6 +3,7 @@ import type { Config } from 'payload'
 import type { LMSPluginConfig, SanitizedLMSPluginConfig } from '../types.js'
 import { addressesCollection } from '../addresses/addressesCollection.js'
 import { coursesCollection } from '../courses/coursesCollection.js'
+import { groupsCollection } from '../groups/groupsCollection.js'
 import { lessonsCollection } from '../lessons/lessonsCollection.js'
 import { quizzesCollection } from '../quizzes/quizzesCollection.js'
 import { categoriesCollection } from '../categoires/categoriesCollection.js'
@@ -113,6 +114,21 @@ export const lmsPlugin =
         overrides: collectionOverrides,
       })
       incomingConfig.collections.push(courses)
+    }
+
+    if (sanitizedPluginConfig.groups) {
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.groups === 'object'
+          ? sanitizedPluginConfig.groups.groupsCollection
+          : undefined
+
+      const groups = groupsCollection({
+        coursesCollectionSlug: collectionSlugMap.courses,
+        usersCollectionSlug: collectionSlugMap.students,
+        certificatesCollectionSlug: collectionSlugMap.certificates,
+        overrides: collectionOverrides,
+      })
+      incomingConfig.collections.push(groups)
     }
 
     if (sanitizedPluginConfig.lessons) {
