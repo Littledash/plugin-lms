@@ -40,6 +40,9 @@ export const sanitizePluginConfig = ({ pluginConfig })=>{
             ]
         };
     }
+    if (typeof config.groups === 'undefined') {
+        config.groups = true;
+    }
     if (typeof config.courses === 'undefined') {
         config.courses = true;
     }

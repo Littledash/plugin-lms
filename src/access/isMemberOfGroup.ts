@@ -1,4 +1,4 @@
-import type { Access } from 'payload'
+import type { Access, TypedCollection, Where } from 'payload'
 import { checkRole } from './checkRole.js'
 
 export const isMemberOfGroup: Access = async ({ req, id }) => {
@@ -20,8 +20,8 @@ export const isMemberOfGroup: Access = async ({ req, id }) => {
     })
 
     if (group) {
-      const userIds = group.users?.map(member => typeof member === 'object' ? member.id : member) || []
-      const leaderIds = group.leaders?.map(leader => typeof leader === 'object' ? leader.id : leader) || []
+      const userIds = group.users?.map(( member: TypedCollection['users']) => typeof member === 'object' ? member.id : member) || []
+      const leaderIds = group.leaders?.map((leader: TypedCollection['users']) => typeof leader === 'object' ? leader.id : leader) || []
 
       if (userIds.includes(user.id) || leaderIds.includes(user.id)) {
         return true
@@ -30,18 +30,20 @@ export const isMemberOfGroup: Access = async ({ req, id }) => {
   }
 
   // A query to find groups a user is in
-  return {
+  const query: Where = {
     or: [
       {
-        'users': {
+        users: {
           in: [user.id],
         },
       },
       {
-        'leaders': {
+        leaders: {
           in: [user.id],
         },
       }
     ]
   }
+  return query
+  
 }

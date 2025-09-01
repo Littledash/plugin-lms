@@ -5,6 +5,7 @@
     const defaultSlugMap = {
         addresses: 'addresses',
         courses: 'courses',
+        groups: 'groups',
         lessons: 'lessons',
         quizzes: 'quizzes',
         categories: 'categories',
@@ -29,6 +30,9 @@
     //   }
     if (typeof sanitizedPluginConfig.courses === 'object' && sanitizedPluginConfig.courses.coursesCollection?.slug) {
         collectionSlugsMap.courses = sanitizedPluginConfig.courses.coursesCollection.slug;
+    }
+    if (typeof sanitizedPluginConfig.groups === 'object' && sanitizedPluginConfig.groups.groupsCollection?.slug) {
+        collectionSlugsMap.groups = sanitizedPluginConfig.groups.groupsCollection.slug;
     }
     if (typeof sanitizedPluginConfig.lessons === 'object' && sanitizedPluginConfig.lessons.lessonsCollection?.slug) {
         collectionSlugsMap.lessons = sanitizedPluginConfig.lessons.lessonsCollection.slug;

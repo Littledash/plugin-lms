@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/groups.ts"],"sourcesContent":["export { groupsCollection as GroupsCollection } from '../groups/groupsCollection.js'\n"],"names":["groupsCollection","GroupsCollection"],"mappings":"AAAA,SAASA,oBAAoBC,gBAAgB,QAAQ,gCAA+B"}
