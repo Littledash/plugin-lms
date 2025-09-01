@@ -15,3 +15,5 @@ export {
   isAdminOrAuthorOrEnrolledInCourseFieldLevel,
 } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
 export { isAdminOrPublished } from '../access/isAdminOrPublished.js'
+export { isAdminOrGroupLeader } from '../access/isAdminOrGroupLeader.js'
+export { isMemberOfGroup } from '../access/isMemberOfGroup.js'

@@ -212,12 +212,6 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
       // group: 'LMS',
       ...overrides?.admin,
     },
-    access: {
-      create: isAdminOrGroupLeader,
-      read: isMemberOfGroup,
-      update: isAdminOrGroupLeader,
-      delete: isAdminOrGroupLeader,
-    },
     // hooks: {
     //   afterChange: [
     //     async ({ req, doc, previousDoc }) => {
