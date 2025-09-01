@@ -27,38 +27,58 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
       type: 'text',
       required: true,
     },
-    ...slugField(),
+
     {
       name: 'description',
       type: 'richText',
     },
+    ...slugField(),
     {
       name: 'courses',
       type: 'relationship',
       relationTo: coursesCollectionSlug,
       hasMany: true,
+      admin: {
+        position: 'sidebar',
+        description: 'The courses that are part of the group',
+        allowCreate: false,
+        allowEdit: false,
+      },
     },
     {
-      name: 'users',
+      name: 'students',
       type: 'relationship',
       relationTo: usersCollectionSlug,
       hasMany: true,
+      admin: {
+        position: 'sidebar',
+        description: 'The users that are part of the group',
+        allowCreate: false,
+        allowEdit: false,
+      },
     },
+ 
     {
       name: 'leaders',
       type: 'relationship',
       relationTo: usersCollectionSlug,
       hasMany: true,
-      filterOptions: ({ user }) => {
-        if (user && user.roles.includes('admin')) {
-          return {}
-        }
-        return {
-          roles: {
-            contains: ['instructor', 'leader'],
-          },
-        }
+      admin: {
+        position: 'sidebar',
+        description: 'The leaders of the group',
+        allowCreate: false,
+        allowEdit: false,
       },
+      // filterOptions: ({ user }) => {
+      //   if (user && user.roles.includes('admin')) {
+      //     return {}
+      //   }
+      //   return {
+      //     roles: {
+      //       contains: ['instructor', 'leader'],
+      //     },
+      //   }
+      // },
     },
     {
       name: 'accessMode',
@@ -70,6 +90,9 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
         { label: 'Closed', value: 'closed' },
       ],
       defaultValue: 'free',
+      admin: {
+        description: 'The access mode of the group',
+      },
     },
     {
       name: 'price',
@@ -106,12 +129,32 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
       ],
     },
     {
-      name: 'startDate',
-      type: 'date',
-    },
-    {
-      name: 'endDate',
-      type: 'date',
+      type: 'row',
+      fields: [
+        {
+          name: 'startDate',
+          type: 'date',
+          admin: {
+            date: {
+              pickerAppearance: 'dayOnly',
+            },
+            description: 'The start date of the group',
+            width: '50%',
+          },
+    
+        },
+        {
+          name: 'endDate',
+          type: 'date',
+          admin: {
+            date: {
+              pickerAppearance: 'dayOnly',
+            },
+            description: 'The end date of the group',
+            width: '50%',
+          },
+        },
+      ],
     },
     {
       name: 'studentLimit',
@@ -125,6 +168,10 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
       name: 'certificate',
       type: 'relationship',
       relationTo: certificatesCollectionSlug,
+      admin: {
+        allowCreate: false,
+        description: 'The certificate that is awarded to the students who complete the group',
+      },
     },
     {
       name: 'contentVisibility',
@@ -171,44 +218,44 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
       update: isAdminOrGroupLeader,
       delete: isAdminOrGroupLeader,
     },
-    hooks: {
-      afterChange: [
-        async ({ req, doc, previousDoc }) => {
-          const { payload } = req
-          const previousUsers = (previousDoc.users || []).map(u => typeof u === 'string' ? u : u.id)
-          const currentUsers = (doc.users || []).map(u => typeof u === 'string' ? u : u.id)
+    // hooks: {
+    //   afterChange: [
+    //     async ({ req, doc, previousDoc }) => {
+    //       const { payload } = req
+    //       const previousUsers = (previousDoc.users || []).map((user) => typeof user === 'string' ? user : user.id)
+    //       const currentUsers = (doc.users || []).map(user => typeof user === 'string' ? user : user.id)
 
-          const newUsers = currentUsers.filter(u => !previousUsers.includes(u))
+    //       const newUsers = currentUsers.filter(user => !previousUsers.includes(user))
 
-          if (newUsers.length > 0) {
-            const groupCourses = (doc.courses || []).map(c => typeof c === 'string' ? c : c.id)
+    //       if (newUsers.length > 0) {
+    //         const groupCourses = (doc.courses || []).map(course => typeof course === 'string' ? course : course.id)
 
-            if (groupCourses.length > 0) {
-              for (const courseId of groupCourses) {
-                const course = await payload.findByID({
-                  collection: 'courses',
-                  id: courseId,
-                  depth: 0,
-                })
+    //         if (groupCourses.length > 0) {
+    //           for (const courseId of groupCourses) {
+    //             const course = await payload.findByID({
+    //               collection: 'courses',
+    //               id: courseId,
+    //               depth: 0,
+    //             })
 
-                if (course) {
-                  const existingStudents = (course.students || []).map(s => typeof s === 'string' ? s : s.id)
-                  const allStudents = [...new Set([...existingStudents, ...newUsers])]
+    //             if (course) {
+    //               const existingStudents = (course.students || []).map(student => typeof student === 'string' ? student : student.id)
+    //               const allStudents = [...new Set([...existingStudents, ...newUsers])]
 
-                  await payload.update({
-                    collection: 'courses',
-                    id: courseId,
-                    data: {
-                      students: allStudents,
-                    },
-                  })
-                }
-              }
-            }
-          }
-        },
-      ],
-    },
+    //               await payload.update({
+    //                 collection: 'courses',
+    //                 id: courseId,
+    //                 data: {
+    //                   students: allStudents,
+    //                 },
+    //               })
+    //             }
+    //           }
+    //         }
+    //       }
+    //     },
+    //   ],
+    // },
     fields,
   }
 

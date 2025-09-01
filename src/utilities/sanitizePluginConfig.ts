@@ -63,6 +63,10 @@ export const sanitizePluginConfig = ({ pluginConfig }: Props): SanitizedLMSPlugi
     }
   }
 
+    if (typeof config.groups === 'undefined') {
+      config.groups =  true
+    }
+
     if (typeof config.courses === 'undefined') {
       config.courses =  true
     }
