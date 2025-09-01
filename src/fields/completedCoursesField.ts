@@ -23,7 +23,7 @@ export const completedCoursesField: (props: Props) => JoinField = ({
     name: 'completedCourses',
     type: 'join',
     collection: coursesCollectionSlug || 'courses',
-    on: studentsCollectionSlug || 'students',
+    on: 'courseCompletedStudents',
     ...overrides,
     admin: {
       allowCreate: false,

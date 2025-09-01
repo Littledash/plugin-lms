@@ -350,17 +350,28 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
       ],
     },
     {
-      name: 'students',
+      name: 'enrolledStudents',
       type: 'relationship',
       relationTo: studentsCollectionSlug,
       hasMany: true,
       admin: {
         position: 'sidebar',
         allowCreate: false,
-        description: 'Controls the students enrolled in the cours',
+        description: 'Controls the students enrolled in the course',
       },
       access: {
         read: isAdminOrAuthorFieldLevel,
+      },
+    },
+    {
+      name: 'courseCompletedStudents',
+      type: 'relationship',
+      relationTo: studentsCollectionSlug,
+      hasMany: true,
+      admin: {
+        position: 'sidebar',
+        allowCreate: false,
+        description: 'The students completed the course',
       },
     },
     {

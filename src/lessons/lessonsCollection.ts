@@ -203,7 +203,19 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
         allowCreate: false,
         description: 'The quizzes that are part of the lesson',
       },
+      
     },
+    // {
+    //   name: 'lessonCompletedStudents',
+    //   type: 'relationship',
+    //   relationTo: studentsCollectionSlug,
+    //   hasMany: true,
+    //   admin: {
+    //     position: 'sidebar',
+    //     allowCreate: false,
+    //     description: 'The students completed the lesson',
+    //   },
+    // },
   ]
 
   // Apply field overrides if provided
