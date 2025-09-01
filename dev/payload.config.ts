@@ -126,6 +126,7 @@ export default buildConfig({
         slug: 'users',
         studentsCollection: studentCollection,
       },
+      groups: true,
       courses: true,
       lessons: true,
       quizzes: true,
