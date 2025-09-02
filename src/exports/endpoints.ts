@@ -1,0 +1,6 @@
+export { enrollHandler  } from '../endpoints/enroll.js'
+export { completeCourseHandler } from '../endpoints/complete-course.js'
+export { completeLessonHandler } from '../endpoints/complete-lesson.js'
+export { submitQuizHandler } from '../endpoints/submit-quiz.js'
+export { generateCertificateHandler } from '../endpoints/generate-certificate.js'
+export { addUserToGroupHandler } from '../endpoints/add-user-to-group.js'

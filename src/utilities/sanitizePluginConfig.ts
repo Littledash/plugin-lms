@@ -56,6 +56,15 @@ export const sanitizePluginConfig = ({ pluginConfig }: Props): SanitizedLMSPlugi
     }
   }
 
+  if (
+    typeof config.endpoints === 'undefined' ||
+    (typeof config.endpoints === 'boolean' && config.endpoints === true)
+  ) {
+    config.endpoints = []
+  } else {
+    config.endpoints = pluginConfig.endpoints
+  }
+
   if (!config.currencies) {
     config.currencies = {
       defaultCurrency: 'AUD',
