@@ -23,9 +23,11 @@
     ]
   },
   "include": ["./src/**/*.ts", "./src/**/*.tsx", "./dev/next-env.d.ts"],
-  "paths": {
-    "@littledash/plugin-lms/ui": ["./src/exports/ui"],
-    "@littledash/plugin-lms/utilities/*": ["./src/exports/utilities"],
-    "@littledash/plugin-lms/helpers/*": ["./src/exports/helpers"]
-  }
+      "paths": {
+      "@littledash/plugin-lms": ["./src/exports"],
+      "@littledash/plugin-lms/ui": ["./src/exports/ui"],
+      "@littledash/plugin-lms/utilities/*": ["./src/exports/utilities"],
+      "@littledash/plugin-lms/helpers/*": ["./src/exports/helpers"],
+      "@littledash/plugin-lms/providers": ["./src/exports/providers"]
+    }
 }

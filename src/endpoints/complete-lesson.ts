@@ -1,4 +1,5 @@
 import { addDataAndFileToRequest, CollectionSlug, type Endpoint } from 'payload'
+import { CourseProgress } from '../providers/types.js'
 
 type Args = {
   userSlug: string
@@ -41,21 +42,30 @@ export const completeLessonHandler: CompleteLessonHandler = ({ userSlug = 'users
     const coursesProgress = currentUser.coursesProgress || []
     
     // Check if course progress already exists for this course
-    let courseProgress = coursesProgress.find((cp: { course: string }) => cp.course === courseId)
+    let courseProgressIndex = coursesProgress.findIndex((c: CourseProgress) => {
+      const courseIdToCompare = typeof c.course === 'object' ? c.course.id : c.course
+      return courseIdToCompare === courseId
+    })
     
-    if (!courseProgress) {
+    if (courseProgressIndex === -1) {
       // Create new course progress entry if it doesn't exist
-      courseProgress = {
+      const newCourseProgress = {
         course: courseId,
         completed: false,
         completedLessons: [],
         completedQuizzes: [],
       }
-      coursesProgress.push(courseProgress)
+      coursesProgress.push(newCourseProgress)
+      courseProgressIndex = coursesProgress.length - 1
     }
     
+    const courseProgress = coursesProgress[courseProgressIndex]
+    
     // Check if lesson is already completed
-    const lessonExists = courseProgress.completedLessons.some((cl: { lesson: string }) => cl.lesson === lessonId)
+    const lessonExists = courseProgress.completedLessons.some((cl: { lesson: string | { id: string } }) => {
+      const lessonIdToCompare = typeof cl.lesson === 'object' ? cl.lesson.id : cl.lesson
+      return lessonIdToCompare === lessonId
+    })
     
     if (!lessonExists) {
       // Add the completed lesson

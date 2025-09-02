@@ -14,14 +14,14 @@ export type Topic = TypedCollection['topics'] & {
     course?: DefaultDocumentIDType | Course;
 };
 export type CourseProgress = {
-    course: DefaultDocumentIDType;
+    course: DefaultDocumentIDType | Course;
     completed: boolean;
     completedLessons: Array<{
-        lesson: DefaultDocumentIDType;
+        lesson: DefaultDocumentIDType | Lesson;
         completedAt: string;
     }>;
     completedQuizzes: Array<{
-        quiz: DefaultDocumentIDType;
+        quiz: DefaultDocumentIDType | Quiz;
         score: number;
         completedAt: string;
     }>;

@@ -35,19 +35,27 @@ export const completeLessonHandler = ({ userSlug = 'users' })=>async (req)=>{
             }
             const coursesProgress = currentUser.coursesProgress || [];
             // Check if course progress already exists for this course
-            let courseProgress = coursesProgress.find((cp)=>cp.course === courseId);
-            if (!courseProgress) {
+            let courseProgressIndex = coursesProgress.findIndex((c)=>{
+                const courseIdToCompare = typeof c.course === 'object' ? c.course.id : c.course;
+                return courseIdToCompare === courseId;
+            });
+            if (courseProgressIndex === -1) {
                 // Create new course progress entry if it doesn't exist
-                courseProgress = {
+                const newCourseProgress = {
                     course: courseId,
                     completed: false,
                     completedLessons: [],
                     completedQuizzes: []
                 };
-                coursesProgress.push(courseProgress);
+                coursesProgress.push(newCourseProgress);
+                courseProgressIndex = coursesProgress.length - 1;
             }
+            const courseProgress = coursesProgress[courseProgressIndex];
             // Check if lesson is already completed
-            const lessonExists = courseProgress.completedLessons.some((cl)=>cl.lesson === lessonId);
+            const lessonExists = courseProgress.completedLessons.some((cl)=>{
+                const lessonIdToCompare = typeof cl.lesson === 'object' ? cl.lesson.id : cl.lesson;
+                return lessonIdToCompare === lessonId;
+            });
             if (!lessonExists) {
                 // Add the completed lesson
                 courseProgress.completedLessons.push({

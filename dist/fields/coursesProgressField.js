@@ -39,16 +39,7 @@
                         type: 'relationship',
                         relationTo: lessonsCollectionSlug,
                         hasMany: false,
-                        required: true,
-                        filterOptions: ({ siblingData, data })=>{
-                            // @ts-ignore
-                            return {
-                                course: {
-                                    // @ts-expect-error
-                                    equals: siblingData.course
-                                }
-                            };
-                        }
+                        required: true
                     },
                     {
                         name: 'completedAt',
