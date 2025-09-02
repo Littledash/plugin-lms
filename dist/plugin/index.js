@@ -13,6 +13,13 @@ import { sanitizePluginConfig } from '../utilities/sanitizePluginConfig.js';
 import { getCollectionSlugMap } from '../utilities/getCollectionSlugMap.js';
 import { studentsCollection } from '../students/studentsCollection.js';
 import { defaultStudentFields } from '../fields/defaultStudentFields.js';
+import { completeLessonHandler } from '../endpoints/complete-lesson.js';
+import { enrollHandler } from '../endpoints/enroll.js';
+import { submitQuizHandler } from '../endpoints/submit-quiz.js';
+import { completeCourseHandler } from '../endpoints/complete-course.js';
+import { generateCertificateHandler } from '../endpoints/generate-certificate.js';
+import { addUserToGroupHandler } from '../endpoints/add-user-to-group.js';
+import { fetchProgressHandler } from '../endpoints/fetch-progress.js';
 export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
         if (!pluginConfig) {
             return incomingConfig;
@@ -148,6 +155,74 @@ export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
             });
             incomingConfig.collections.push(questions);
         }
+        if (sanitizedPluginConfig.endpoints) {
+            incomingConfig.endpoints = [
+                ...incomingConfig.endpoints || [],
+                ...sanitizedPluginConfig.endpoints
+            ];
+        }
+        // Add default endpoints
+        const defaultEndpoints = [
+            {
+                path: '/lms/enroll',
+                method: 'post',
+                handler: enrollHandler({
+                    userSlug: collectionSlugMap.students,
+                    courseSlug: collectionSlugMap.courses
+                })
+            },
+            {
+                path: '/lms/complete-lesson',
+                method: 'post',
+                handler: completeLessonHandler({
+                    userSlug: collectionSlugMap.students
+                })
+            },
+            {
+                path: '/lms/submit-quiz',
+                method: 'post',
+                handler: submitQuizHandler({
+                    userSlug: collectionSlugMap.students,
+                    quizzesSlug: collectionSlugMap.quizzes
+                })
+            },
+            {
+                path: '/lms/complete-course',
+                method: 'post',
+                handler: completeCourseHandler({
+                    userSlug: collectionSlugMap.students,
+                    courseSlug: collectionSlugMap.courses
+                })
+            },
+            {
+                path: '/lms/generate-certificate',
+                method: 'post',
+                handler: generateCertificateHandler({
+                    userSlug: collectionSlugMap.students,
+                    courseSlug: collectionSlugMap.courses,
+                    certificatesSlug: collectionSlugMap.certificates
+                })
+            },
+            {
+                path: '/lms/add-user-to-group',
+                method: 'post',
+                handler: addUserToGroupHandler({
+                    userSlug: collectionSlugMap.students,
+                    groupSlug: collectionSlugMap.groups
+                })
+            },
+            {
+                path: '/lms/fetch-progress',
+                method: 'get',
+                handler: fetchProgressHandler({
+                    userSlug: collectionSlugMap.students
+                })
+            }
+        ];
+        incomingConfig.endpoints = [
+            ...incomingConfig.endpoints || [],
+            ...defaultEndpoints
+        ];
         return {
             ...incomingConfig
         };

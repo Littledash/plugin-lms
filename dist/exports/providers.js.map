@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/providers.ts"],"sourcesContent":["export { LMSProvider, useLMS } from '../providers/index.js'"],"names":["LMSProvider","useLMS"],"mappings":"AAAA,SAASA,WAAW,EAAEC,MAAM,QAAQ,wBAAuB"}

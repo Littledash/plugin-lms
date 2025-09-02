@@ -1,6 +1,4 @@
 import { slugField } from '../fields/slug.js';
-import { isAdminOrGroupLeader } from '../access/isAdminOrGroupLeader.js';
-import { isMemberOfGroup } from '../access/isMemberOfGroup.js';
 export const groupsCollection = (props)=>{
     const { overrides, coursesCollectionSlug = 'courses', usersCollectionSlug = 'users', certificatesCollectionSlug = 'certificates' } = props || {};
     const fieldsOverride = overrides?.fields;
@@ -219,12 +217,6 @@ export const groupsCollection = (props)=>{
             useAsTitle: 'title',
             // group: 'LMS',
             ...overrides?.admin
-        },
-        access: {
-            create: isAdminOrGroupLeader,
-            read: isMemberOfGroup,
-            update: isAdminOrGroupLeader,
-            delete: isAdminOrGroupLeader
         },
         // hooks: {
         //   afterChange: [

@@ -9,5 +9,7 @@ export { anyone } from '../access/anyone.js';
 export { isAdminOrSelf, isAdminOrSelfFieldLevel } from '../access/isAdminOrSelf.js';
 export { isAdminOrAuthorOrEnrolledInCourse, isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 export { isAdminOrPublished } from '../access/isAdminOrPublished.js';
+export { isAdminOrGroupLeader } from '../access/isAdminOrGroupLeader.js';
+export { isMemberOfGroup } from '../access/isMemberOfGroup.js';
 
 //# sourceMappingURL=access.js.map

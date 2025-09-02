@@ -1,4 +1,4 @@
-import type { CollectionConfig, Field } from 'payload';
+import type { CollectionConfig, Endpoint, Field, PayloadRequest } from 'payload';
 export type FieldsOverride = (args: {
     defaultFields: Field[];
 }) => Field[];
@@ -170,6 +170,134 @@ export type LMSPluginConfig = {
      * @default true
      */
     questions?: boolean | QuestionsConfig;
+    /**
+   * An array of endpoints to be bootstrapped to Payload's API in order to support the LMS. All API paths are relative to `/api/lms`.
+   */
+    endpoints?: Endpoint[];
+    completeCourse: (args: {
+        data: {
+            courseId: string;
+        };
+        /**
+         * Slug of the collection to use for users.
+         *
+         * @default 'users'
+         */
+        userSlug: string;
+        /**
+         * Slug of the collection to use for courses.
+         *
+         * @default 'courses'
+         */
+        courseSlug: string;
+        /**
+         * Payload request object.
+         */
+        req: PayloadRequest;
+    }) => Promise<Record<string, unknown>> | Record<string, unknown>;
+    completeLesson: (args: {
+        data: {
+            courseId: string;
+            lessonId: string;
+        };
+        /**
+         * Slug of the collection to use for users.
+         *
+         * @default 'users'
+         */
+        userSlug: string;
+        req: PayloadRequest;
+    }) => Promise<Record<string, unknown>> | Record<string, unknown>;
+    submitQuiz: (args: {
+        data: {
+            courseId: string;
+            quizId: string;
+            answers: Record<string, unknown>;
+        };
+        /**
+         * Slug of the collection to use for users.
+         *
+         * @default 'users'
+         */
+        userSlug: string;
+        /**
+         * Slug of the collection to use for quizzes.
+         *
+         * @default 'quizzes'
+         */
+        quizzesSlug: string;
+        req: PayloadRequest;
+    }) => Promise<Record<string, unknown>> | Record<string, unknown>;
+    generateCertificate: (args: {
+        data: {
+            courseId: string;
+        };
+        /**
+         * Slug of the collection to use for users.
+         *
+         * @default 'users'
+         */
+        userSlug: string;
+        /**
+         * Slug of the collection to use for courses.
+         *
+         * @default 'courses'
+         */
+        courseSlug: string;
+        /**
+         * Slug of the collection to use for certificates.
+         *
+         * @default 'certificates'
+         */
+        certificatesSlug: string;
+        req: PayloadRequest;
+    }) => Promise<Record<string, unknown>> | Record<string, unknown>;
+    enroll: (args: {
+        data: {
+            courseId: string;
+        };
+        /**
+         * Slug of the collection to use for users.
+         *
+         * @default 'users'
+         */
+        userSlug: string;
+        /**
+         * Slug of the collection to use for courses.
+         *
+         * @default 'courses'
+         */
+        courseSlug: string;
+        /**
+         * Payload request object.
+         */
+        req: PayloadRequest;
+    }) => Promise<Record<string, unknown>> | Record<string, unknown>;
+    /**
+     * Add a user to a group.
+     *
+     * @default true
+     */
+    addUserToGroup: (args: {
+        data: {
+            groupId: string;
+            userId: string;
+            role: 'leader' | 'student';
+        };
+        req: PayloadRequest;
+        /**
+         * Slug of the collection to use for users.
+         *
+         * @default 'users'
+         */
+        userSlug: string;
+        /**
+         * Slug of the collection to use for groups.
+         *
+         * @default 'groups'
+         */
+        groupSlug: string;
+    }) => Promise<Record<string, unknown>> | Record<string, unknown>;
 };
 export type SanitizedLMSPluginConfig = {
     students?: {

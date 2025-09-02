@@ -1,6 +1,6 @@
 {
   "name": "@littledash/plugin-lms",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "description": "A comprehensive Learning Management System (LMS) plugin for Payload CMS with courses, lessons, quizzes, certificates, and more.",
   "license": "MIT",
   "repository": {
@@ -118,6 +118,11 @@
       "import": "./dist/exports/providers.js",
       "types": "./dist/exports/providers.d.ts",
       "default": "./dist/exports/providers.js"
+    },
+    "./providers/types": {
+      "import": "./dist/providers/types.js",
+      "types": "./dist/providers/types.d.ts",
+      "default": "./dist/providers/types.js"
     },
     "./addresses": {
       "import": "./dist/exports/addresses.js",
@@ -312,6 +317,11 @@
         "import": "./dist/exports/providers.js",
         "types": "./dist/exports/providers.d.ts",
         "default": "./dist/exports/providers.js"
+      },
+      "./providers/types": {
+        "import": "./dist/providers/types.js",
+        "types": "./dist/providers/types.d.ts",
+        "default": "./dist/providers/types.js"
       },
       "./addresses": {
         "import": "./dist/exports/addresses.js",
