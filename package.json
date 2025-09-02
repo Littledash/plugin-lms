@@ -1,6 +1,6 @@
 {
   "name": "@littledash/plugin-lms",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "description": "A comprehensive Learning Management System (LMS) plugin for Payload CMS with courses, lessons, quizzes, certificates, and more.",
   "license": "MIT",
   "repository": {
@@ -103,6 +103,31 @@
       "import": "./dist/exports/plugin.js",
       "types": "./dist/exports/plugin.d.ts",
       "default": "./dist/exports/plugin.js"
+    },
+    "./endpoints": {
+      "import": "./dist/exports/endpoints.js",
+      "types": "./dist/exports/endpoints.d.ts",
+      "default": "./dist/exports/endpoints.js"
+    },
+    "./students": {
+      "import": "./dist/exports/students.js",
+      "types": "./dist/exports/students.d.ts",
+      "default": "./dist/exports/students.js"
+    },
+    "./providers": {
+      "import": "./dist/exports/providers.js",
+      "types": "./dist/exports/providers.d.ts",
+      "default": "./dist/exports/providers.js"
+    },
+    "./addresses": {
+      "import": "./dist/exports/addresses.js",
+      "types": "./dist/exports/addresses.d.ts",
+      "default": "./dist/exports/addresses.js"
+    },
+    "./groups": {
+      "import": "./dist/exports/groups.js",
+      "types": "./dist/exports/groups.d.ts",
+      "default": "./dist/exports/groups.js"
     }
   },
   "main": "./dist/index.js",
@@ -272,6 +297,31 @@
         "import": "./dist/exports/client.js",
         "types": "./dist/exports/client.d.ts",
         "default": "./dist/exports/client.js"
+      },
+      "./endpoints": {
+        "import": "./dist/exports/endpoints.js",
+        "types": "./dist/exports/endpoints.d.ts",
+        "default": "./dist/exports/endpoints.js"
+      },
+      "./students": {
+        "import": "./dist/exports/students.js",
+        "types": "./dist/exports/students.d.ts",
+        "default": "./dist/exports/students.js"
+      },
+      "./providers": {
+        "import": "./dist/exports/providers.js",
+        "types": "./dist/exports/providers.d.ts",
+        "default": "./dist/exports/providers.js"
+      },
+      "./addresses": {
+        "import": "./dist/exports/addresses.js",
+        "types": "./dist/exports/addresses.d.ts",
+        "default": "./dist/exports/addresses.js"
+      },
+      "./groups": {
+        "import": "./dist/exports/groups.js",
+        "types": "./dist/exports/groups.d.ts",
+        "default": "./dist/exports/groups.js"
       }
     },
     "main": "./dist/index.js",
