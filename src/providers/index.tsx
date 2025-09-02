@@ -22,6 +22,7 @@ const defaultContext: LMSContextType = {
   submitQuiz: async () => {},
   addUserToGroup: async () => {},
   getProgress: () => undefined,
+  fetchProgress: async () => {},
   fetchUsers: async () => {},
   fetchCourses: async () => {},
   fetchTopics: async () => {},
@@ -56,9 +57,30 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
 
   const [state, dispatch] = useReducer(lmsReducer, initialState)
 
-  // Load progress and course status from localStorage on initial render
+  const fetchProgress = useCallback(async () => {
+    dispatch({ type: 'SET_LOADING', payload: true })
+    dispatch({ type: 'SET_ERROR', payload: null })
+    try {
+      const response = await fetch(`${baseAPIURL}/lms/fetch-progress`)
+      if (!response.ok) throw new Error('Failed to fetch user progress')
+      const data = await response.json()
+      const { coursesProgress, enrolledCourses, completedCourses } = data
+      
+      // Update all progress-related state
+      dispatch({ type: 'UPDATE_PROGRESS', payload: coursesProgress || [] })
+      dispatch({ type: 'SET_ENROLLED_COURSES', payload: enrolledCourses || [] })
+      dispatch({ type: 'SET_COMPLETED_COURSES', payload: completedCourses || [] })
+    } catch (e: unknown) {
+      dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }, [baseAPIURL])
+
+  // Load progress and course status from database on initial render
   useEffect(() => {
     if (syncLocalStorage) {
+      // First try to load from localStorage for immediate UI rendering
       const storedProgress = localStorage.getItem(localStorageConfig.key)
       if (storedProgress) {
         const parsed = JSON.parse(storedProgress)
@@ -71,8 +93,11 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
           },
         })
       }
+      
+      // Then fetch fresh data from database
+      fetchProgress()
     }
-  }, [syncLocalStorage, localStorageConfig.key])
+  }, [syncLocalStorage, localStorageConfig.key, fetchProgress])
 
   // Persist progress and course status to localStorage whenever they change
   useEffect(() => {
@@ -200,10 +225,14 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const getProgress = useCallback(
-    (courseId: DefaultDocumentIDType) => {
+    (courseId: DefaultDocumentIDType, refreshFromDB = false) => {
+      if (refreshFromDB) {
+        // Fetch fresh progress from database
+        fetchProgress()
+      }
       return state.progress.find((cp) => cp.course === courseId)
     },
-    [state.progress],
+    [state.progress, fetchProgress],
   )
 
   const fetchUsers = useCallback(async () => {
@@ -336,6 +365,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     submitQuiz,
     addUserToGroup,
     getProgress,
+    fetchProgress,
     fetchUsers,
     fetchCourses,
     fetchTopics,

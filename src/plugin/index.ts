@@ -22,6 +22,7 @@ import { submitQuizHandler } from '../endpoints/submit-quiz.js'
 import { completeCourseHandler } from '../endpoints/complete-course.js'
 import { generateCertificateHandler } from '../endpoints/generate-certificate.js'
 import { addUserToGroupHandler } from '../endpoints/add-user-to-group.js'
+import { fetchProgressHandler } from '../endpoints/fetch-progress.js'
 
 export const lmsPlugin =
   (pluginConfig?: LMSPluginConfig) =>
@@ -276,6 +277,13 @@ export const lmsPlugin =
         handler: addUserToGroupHandler({
           userSlug: collectionSlugMap.students,
           groupSlug: collectionSlugMap.groups,
+        }),
+      },
+      {
+        path: '/lms/fetch-progress',
+        method: 'get' as const,
+        handler: fetchProgressHandler({
+          userSlug: collectionSlugMap.students,
         }),
       },
     ]

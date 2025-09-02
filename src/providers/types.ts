@@ -48,7 +48,7 @@ export type LMSContextType = {
   submitQuiz: (
     courseId: DefaultDocumentIDType,
     quizId: DefaultDocumentIDType,
-    answers: any,
+    answers: Record<string, unknown>,
   ) => Promise<void>
   addUserToGroup: (
     groupId: DefaultDocumentIDType,
@@ -56,6 +56,7 @@ export type LMSContextType = {
     role: 'leader' | 'student',
   ) => Promise<void>
   getProgress: (courseId: DefaultDocumentIDType) => CourseProgress | undefined
+  fetchProgress: () => Promise<void>
   fetchUsers: () => Promise<void>
   fetchCourses: () => Promise<void>
   fetchTopics: (courseId: DefaultDocumentIDType) => Promise<void>
