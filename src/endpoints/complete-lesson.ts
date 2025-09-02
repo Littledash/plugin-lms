@@ -39,23 +39,26 @@ export const completeLessonHandler: CompleteLessonHandler = ({ userSlug = 'users
     }
 
     const coursesProgress = currentUser.coursesProgress || []
-    let courseProgressIndex = coursesProgress.findIndex((cp: any) => cp.course === courseId)
     
-    if (courseProgressIndex === -1) {
-      // Create new course progress entry
-      coursesProgress.push({
+    // Check if course progress already exists for this course
+    let courseProgress = coursesProgress.find((cp: { course: string }) => cp.course === courseId)
+    
+    if (!courseProgress) {
+      // Create new course progress entry if it doesn't exist
+      courseProgress = {
         course: courseId,
         completed: false,
         completedLessons: [],
         completedQuizzes: [],
-      })
-      courseProgressIndex = coursesProgress.length - 1
+      }
+      coursesProgress.push(courseProgress)
     }
     
-    const courseProgress = coursesProgress[courseProgressIndex]
-    const lessonExists = courseProgress.completedLessons.some((cl: any) => cl.lesson === lessonId)
+    // Check if lesson is already completed
+    const lessonExists = courseProgress.completedLessons.some((cl: { lesson: string }) => cl.lesson === lessonId)
     
     if (!lessonExists) {
+      // Add the completed lesson
       courseProgress.completedLessons.push({
         lesson: lessonId,
         completedAt: new Date().toISOString(),

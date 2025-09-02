@@ -49,7 +49,7 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
           Array.isArray(question.answers)
         ) {
           const submittedAnswer = answers[question.id]
-          const correctAnswer = question.answers.find((a: any) => a.isCorrect)?.id
+          const correctAnswer = question.answers.find((a: { isCorrect: boolean; id: string }) => a.isCorrect)?.id
           if (submittedAnswer === correctAnswer) {
             correctAnswers++
           }
@@ -68,7 +68,7 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
     }
 
     const coursesProgress = currentUser.coursesProgress || []
-    let courseProgressIndex = coursesProgress.findIndex((cp: any) => cp.course === courseId)
+    let courseProgressIndex = coursesProgress.findIndex((cp: { course: string }) => cp.course === courseId)
     
     if (courseProgressIndex === -1) {
       // Create new course progress entry
@@ -82,7 +82,7 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
     }
     
     const courseProgress = coursesProgress[courseProgressIndex]
-    const quizExists = courseProgress.completedQuizzes.some((cq: any) => cq.quiz === quizId)
+    const quizExists = courseProgress.completedQuizzes.some((cq: { quiz: string }) => cq.quiz === quizId)
     
     if (!quizExists) {
       courseProgress.completedQuizzes.push({
@@ -92,7 +92,7 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
       })
     } else {
       // Update existing quiz score
-      const quizIndex = courseProgress.completedQuizzes.findIndex((cq: any) => cq.quiz === quizId)
+      const quizIndex = courseProgress.completedQuizzes.findIndex((cq: { quiz: string }) => cq.quiz === quizId)
       if (quizIndex !== -1) {
         courseProgress.completedQuizzes[quizIndex].score = score
         courseProgress.completedQuizzes[quizIndex].completedAt = new Date().toISOString()
