@@ -28,6 +28,7 @@
       "@littledash/plugin-lms/ui": ["./src/exports/ui"],
       "@littledash/plugin-lms/utilities/*": ["./src/exports/utilities"],
       "@littledash/plugin-lms/helpers/*": ["./src/exports/helpers"],
-      "@littledash/plugin-lms/providers": ["./src/exports/providers"]
+      "@littledash/plugin-lms/providers": ["./src/exports/providers"],
+      "@littledash/plugin-lms/providers/*": ["./src/providers/*"]
     }
 }
