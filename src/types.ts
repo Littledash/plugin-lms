@@ -197,7 +197,7 @@ export type LMSPluginConfig = {
  */
     endpoints?: Endpoint[]
 
-    completeCourse:( args: {
+    completeCourse?:( args: {
       data: {
         courseId: string
       }
@@ -219,7 +219,7 @@ export type LMSPluginConfig = {
       req: PayloadRequest
     }) => Promise<Record<string, unknown>> | Record<string, unknown>
 
-    completeLesson:( args: {
+    completeLesson?:( args: {
       data: {
         courseId: string
         lessonId: string
@@ -233,7 +233,7 @@ export type LMSPluginConfig = {
       req: PayloadRequest
     }) => Promise<Record<string, unknown>> | Record<string, unknown>
 
-    submitQuiz:( args: {
+    submitQuiz?:( args: {
       data: {
         courseId: string
         quizId: string
@@ -254,7 +254,7 @@ export type LMSPluginConfig = {
       req: PayloadRequest
     }) => Promise<Record<string, unknown>> | Record<string, unknown>
 
-    generateCertificate:( args: {
+    generateCertificate?:( args: {
       data: {
         courseId: string
       }
@@ -279,7 +279,7 @@ export type LMSPluginConfig = {
       req: PayloadRequest
     }) => Promise<Record<string, unknown>> | Record<string, unknown>
 
-    enroll:( args: {
+    enroll?:( args: {
       data: {
         courseId: string
       }
@@ -307,7 +307,7 @@ export type LMSPluginConfig = {
      *
      * @default true
      */
-    addUserToGroup:( args: {
+    addUserToGroup?:( args: {
       data: {
         groupId: string
         userId: string
