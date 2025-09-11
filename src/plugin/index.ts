@@ -55,7 +55,6 @@ export const lmsPlugin =
           : undefined
 
       studentsFields = sanitizedPluginConfig.students.studentsFields
-      console.log('studentsFields', studentsFields)
 
       if (studentsFields) {
         const students = studentsCollection({

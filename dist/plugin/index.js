@@ -41,7 +41,6 @@ export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
         if (sanitizedPluginConfig.students) {
             const collectionOverrides = typeof sanitizedPluginConfig.students === 'object' ? sanitizedPluginConfig.students.studentsCollection : undefined;
             studentsFields = sanitizedPluginConfig.students.studentsFields;
-            console.log('studentsFields', studentsFields);
             if (studentsFields) {
                 const students = studentsCollection({
                     studentsCollectionSlug: collectionSlugMap.students,
