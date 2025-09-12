@@ -1,252 +1,157 @@
 # LMS Plugin for Payload CMS
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A comprehensive Learning Management System (LMS) plugin for Payload CMS that enables course creation, management, and delivery.
 
-## Features
+> [!WARNING]
+> This plugin is under heavy development. And it may not be stable for production use. Please use with caution.
 
-- **Course Management**
-  - Create and organize courses with rich content
-  - Support for multiple access modes (open, free, buy now, recurring, closed)
-  - Course navigation modes (linear, free form)
-  - Course prerequisites and points system
-  - Course materials and resources
-  - Certificate generation
+## Compatibility
 
-- **UI Components**
-  - `PriceInput`: Custom price input component with currency formatting
-  - `PriceRowLabel`: Price display component for table rows
-  - `SlugInput`: Auto-generating slug input with lock/unlock functionality
-
-- **Lesson Management**
-  - Rich text content support
-  - Embedded video support
-  - Lesson materials and resources
-  - Progression control (required/optional)
-  - Lesson ordering
-  - Quiz integration
-  - Topic organization
-
-- **Topic Management**
-  - Rich text content support
-  - Embedded video support with progression tracking
-  - Topic materials and resources
-  - Course and lesson relationships
-  - Video progression control
-
-- **Quiz System**
-  - Multiple question types:
-    - Multiple Choice
-    - True/False
-    - Sorting
-    - Fill in the Blank
-    - Assessment
-    - Essay/Open Answer
-    - Free Choice
-    - Single Choice
-  - Points-based scoring
-  - Quiz integration with lessons
-
-- **User Management**
-  - Role-based access control (Admin, Author, Student)
-  - Course enrollment tracking
-  - Course completion tracking
-  - Student progress monitoring
-
-- **Content Organization**
-  - Categories for course classification
-  - Tags for content organization
-  - Media management for course assets
-
-- **Monetization**
-  - Flexible pricing system with multiple currencies
-  - Access expiration settings
-  - Enrollment URL for closed courses
-  - Course bundling through prerequisites
+- **Payload CMS:** `^3.29.0`
+- **Node.js:** `^18.20.2` or `>=20.9.0`
 
 ## Installation
 
-### From NPM (if published)
-
-1. Install the plugin:
+This plugin is designed to work with `pnpm`, but you can use `npm` or `yarn` as well.
 
 ```bash
-npm install @littedash/plugin-lms
+# pnpm (recommended)
+pnpm add @littledash/plugin-lms
+
+# npm
+npm install @littledash/plugin-lms
+
+# yarn
+yarn add @littledash/plugin-lms
 ```
 
-### From Private GitHub Repository
+## Basic Usage
 
-1. Add the plugin to your project's `package.json`:
-
-```json
-{
-  "dependencies": {
-    "@littledash/plugin-lms": "github:Littledash/plugin-lms#main"
-  }
-}
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-# or
-pnpm install
-# or
-yarn install
-```
-
-For detailed GitHub installation instructions, see [GITHUB_INSTALLATION.md](./GITHUB_INSTALLATION.md).
-
-### Configuration
-
-2. Add the plugin to your Payload config:
+Enable the plugin in your `payload.config.ts` file. Here is a basic configuration to get you started:
 
 ```typescript
-import { buildConfig } from 'payload/config'
-import lmsPlugin from '@payloadcms/plugin-lms'
+// payload.config.ts
+import { buildConfig } from 'payload/config';
+import { lmsPlugin } from '@littledash/plugin-lms';
+import { AUD } from '@littledash/plugin-lms/currencies'; // Example currency import
 
 export default buildConfig({
+  // ... other Payload config
   plugins: [
     lmsPlugin({
-      // Plugin configuration options
-      currencies: {
-        defaultCurrency: 'AUD',
-        supportedCurrencies: [AUD],
-      },
+      // Enable the collections you need
       courses: true,
       lessons: true,
       topics: true,
       quizzes: true,
+      questions: true,
       categories: true,
       tags: true,
       certificates: true,
-      questions: true,
-    }),
-  ],
-})
-```
-
-## Collections
-
-The plugin provides the following collections:
-
-- **Courses**: Manages course content, access, and organization
-- **Lessons**: Handles lesson content and progression
-- **Topics**: Manages topic content and video progression
-- **Quizzes**: Manages assessments and questions
-- **Questions**: Stores quiz questions and answers
-- **Categories**: Organizes courses by category
-- **Tags**: Provides additional content organization
-- **Certificates**: Manages course completion certificates
-- **Media**: Handles course assets and resources
-
-## Configuration Options
-
-The plugin supports various configuration options:
-
-```typescript
-{
-  // Currency settings
-  currencies?: {
-    defaultCurrency: string
-    supportedCurrencies: Currency[]
-  }
-
-  // Collection slugs
-  studentsCollectionSlug?: string
-  certificatesCollectionSlug?: string
-  coursesCollectionSlug?: string
-  categoriesCollectionSlug?: string
-  lessonsCollectionSlug?: string
-  topicsCollectionSlug?: string
-  mediaCollectionSlug?: string
-  tagsCollectionSlug?: string
-  quizzesCollectionSlug?: string
-
-  // Enable/disable collections
-  courses?: boolean | CoursesConfig
-  lessons?: boolean | LessonsConfig
-  topics?: boolean | TopicsConfig
-  quizzes?: boolean | QuizzesConfig
-  categories?: boolean
-  tags?: boolean
-  certificates?: boolean
-  questions?: boolean,
-
-  // Add custom fields to collections
-  customFields?: {
-    [key: string]: Field[]
-  }
-}
-```
-
-### Custom Fields
-
-You can add custom fields to any of the collections provided by the plugin. This is useful for extending the functionality of the plugin to meet your specific needs.
-
-Here's an example of how to add a custom field to the `courses` collection:
-
-```typescript
-import { buildConfig } from 'payload/config'
-import lmsPlugin from '@payloadcms/plugin-lms'
-import type { Field } from 'payload'
-
-export default buildConfig({
-  plugins: [
-    lmsPlugin({
-      // ... other options
-      customFields: {
-        courses: [
-          {
-            name: 'customField',
-            type: 'text',
-            label: 'Custom Field',
-          },
-        ],
+      // Configure currency settings
+      currencies: {
+        defaultCurrency: 'AUD',
+        supportedCurrencies: [AUD],
       },
     }),
   ],
-})
+});
 ```
 
-## UI Components
+## Configuration
 
-The plugin provides several reusable UI components that can be imported directly:
+This plugin is highly configurable. You can enable or disable features and customize them by passing a configuration object to `lmsPlugin`.
+
+| Option         | Type                               | Description                                                                                             |
+| -------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `students`     | `boolean \| { ... }`               | Enables and configures the `students` collection. Can accept an object for overrides.                   |
+| `addresses`    | `boolean \| { ... }`               | Enables and configures the `addresses` collection for students.                                         |
+| `courses`      | `boolean \| { ... }`               | Enables and configures the `courses` collection.                                                        |
+| `lessons`      | `boolean \| { ... }`               | Enables and configures the `lessons` collection.                                                        |
+| `topics`       | `boolean \| { ... }`               | Enables and configures the `topics` collection.                                                         |
+| `quizzes`      | `boolean \| { ... }`               | Enables and configures the `quizzes` collection.                                                        |
+| `questions`    | `boolean \| { ... }`               | Enables and configures the `questions` collection for quizzes.                                          |
+| `categories`   | `boolean \| { ... }`               | Enables and configures the `categories` collection for courses.                                         |
+| `tags`         | `boolean \| { ... }`               | Enables and configures the `tags` collection for content organization.                                  |
+| `certificates` | `boolean \| { ... }`               | Enables and configures the `certificates` collection for course completion awards.                      |
+| `groups`       | `boolean \| { ... }`               | Enables and configures the `groups` collection to manage student cohorts.                               |
+| `currencies`   | `{ defaultCurrency: string, supportedCurrencies: Currency[] }` | **Required.** Configures the default and supported currencies for course pricing. |
+| `endpoints`    | `Endpoint[]`                       | An array of custom [Payload endpoints](https://payloadcms.com/docs/rest-api/endpoints) to add to your config. |
+
+---
+
+## Advanced Usage
+
+### Customizing Collections
+
+You can override the default configuration for any collection, for example to add custom fields. This is useful for extending the plugin's functionality to meet your specific needs.
+
+Here's an example of how to add a custom `externalLink` field to the `courses` collection:
 
 ```typescript
-import { PriceInput } from '@littledash/plugin-lms/ui/PriceInput'
-import { PriceRowLabel } from '@littledash/plugin-lms/ui/PriceRowLabel'
-import { SlugInput } from '@littledash/plugin-lms/ui/SlugInput'
+// payload.config.ts
+import { buildConfig } from 'payload/config';
+import { lmsPlugin } from '@littledash/plugin-lms';
+import type { Field } from 'payload/types';
+
+export default buildConfig({
+  // ...
+  plugins: [
+    lmsPlugin({
+      courses: {
+        coursesCollection: {
+          fields: ({ defaultFields }) => [
+            ...defaultFields,
+            {
+              name: 'externalLink',
+              type: 'text',
+              label: 'External Link',
+            },
+          ],
+        },
+      },
+      // ... other options
+    }),
+  ],
+});
 ```
 
-### PriceInput
+### Modular Imports
 
-A custom price input component with currency formatting and validation.
+For maximum flexibility, you can import individual components like fields, access control functions, and UI components directly from the plugin.
 
-### PriceRowLabel
+**Example: Importing a Field**
+```typescript
+import { pricesField } from '@littledash/plugin-lms/fields';
+```
 
-A price display component designed for use in table rows.
+**Example: Importing an Access Control Function**
+```typescript
+import { isAdminOrAuthor } from '@littledash/plugin-lms/access';
+```
 
-### SlugInput
+**Example: Importing a UI Component**
+```typescript
+import { SlugInput } from '@littledash/plugin-lms/ui/SlugInput';
+```
 
-An auto-generating slug input component with lock/unlock functionality for manual editing.
+## API Endpoints
 
-## Access Control
+The plugin automatically registers several endpoints to handle core LMS functionality. These endpoints are prefixed with `/lms`.
 
-The plugin includes several access control utilities:
+| Method | Path                        | Description                                      |
+| ------ | --------------------------- | ------------------------------------------------ |
+| `POST` | `/lms/enroll`               | Enrolls the current user in a specified course.  |
+| `POST` | `/lms/complete-lesson`      | Marks a lesson as complete for the current user. |
+| `POST` | `/lms/submit-quiz`          | Submits a user's answers for a quiz.             |
+| `POST` | `/lms/complete-course`      | Marks a course as complete for the current user. |
+| `POST` | `/lms/generate-certificate` | Generates a certificate for a completed course.  |
+| `POST` | `/lms/add-user-to-group`    | Adds a specified user to a group.                |
+| `GET`  | `/lms/fetch-progress`       | Fetches the current user's progress.             |
 
-- `isAdmin`: Admin-only access
-- `isAuthor`: Author-only access
-- `isAdminOrAuthor`: Admin or author access
-- `isAdminOrStudent`: Admin or student access
-- `isAdminOrPublished`: Admin or published content access
-- `isAdminOrAuthorOrEnrolledInCourse`: Admin, author, or enrolled student access
-- `isAdminOrAuthorOrStudent`: Admin, author, or student access
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT
+This plugin is licensed under the MIT License.
