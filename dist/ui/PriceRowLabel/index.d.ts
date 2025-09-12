@@ -1,7 +1,7 @@
-import type { CurrenciesConfig } from '../../types.js'
-import './index.css'
+import type { CurrenciesConfig } from '../../types.js';
+import './index.css';
 type Props = {
-  currenciesConfig: CurrenciesConfig
-}
-export declare const PriceRowLabel: React.FC<Props>
-export {}
+    currenciesConfig: CurrenciesConfig;
+};
+export declare const PriceRowLabel: React.FC<Props>;
+export {};

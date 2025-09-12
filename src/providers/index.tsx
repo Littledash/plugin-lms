@@ -122,18 +122,15 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
           body: JSON.stringify({ courseId }),
         })
         if (!response.ok) throw new Error('Failed to enroll in course')
-        const enrolledCourse = state.courses.find((course) => course.id === courseId)
-        if (enrolledCourse) {
-                  dispatch({ type: 'ENROLL_IN_COURSE', payload: enrolledCourse })
+        await fetchProgress() // Refetch progress to ensure state is up-to-date
+      } catch (e: unknown) {
+        dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
+      } finally {
+        dispatch({ type: 'SET_LOADING', payload: false })
       }
-    } catch (e: unknown) {
-      dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false })
-    }
-  },
-  [baseAPIURL, state.courses],
-)
+    },
+    [baseAPIURL, fetchProgress],
+  )
 
   const completeCourse = useCallback(
     async (courseId: DefaultDocumentIDType) => {
@@ -146,20 +143,14 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
           body: JSON.stringify({ courseId }),
         })
         if (!response.ok) throw new Error('Failed to complete course')
-        const courseToComplete = state.enrolledCourses.find((course) => course.id === courseId)
-        if (courseToComplete) {
-          dispatch({ 
-            type: 'COMPLETE_COURSE', 
-            payload: { courseId, course: courseToComplete } 
-          })
-        }
+        await fetchProgress() // Refetch progress to ensure state is up-to-date
       } catch (e: unknown) {
         dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false })
       }
     },
-    [baseAPIURL, state.enrolledCourses],
+    [baseAPIURL, fetchProgress],
   )
 
   const completeLesson = useCallback(
@@ -172,14 +163,14 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ courseId, lessonId }),
         })
-        // Progress is now handled by the API endpoint
+        await fetchProgress() // Refetch progress to ensure state is up-to-date
       } catch (e: unknown) {
         dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false })
       }
     },
-    [baseAPIURL],
+    [baseAPIURL, fetchProgress],
   )
 
   const submitQuiz = useCallback(
@@ -193,15 +184,14 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
           body: JSON.stringify({ courseId, quizId, answers }),
         })
         if (!response.ok) throw new Error('Failed to submit quiz')
-        const { score } = await response.json()
-        // Progress is now handled by the API endpoint
+        await fetchProgress() // Refetch progress to ensure state is up-to-date
       } catch (e: unknown) {
         dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false })
       }
     },
-    [baseAPIURL],
+    [baseAPIURL, fetchProgress],
   )
 
   const addUserToGroup = useCallback(

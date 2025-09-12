@@ -1,6 +1,6 @@
-import { CollectionConfig } from 'payload'
-import { FieldsOverride } from '../types.js'
-import type { CurrenciesConfig } from '../types.js'
+import { CollectionConfig } from 'payload';
+import { FieldsOverride } from '../types.js';
+import type { CurrenciesConfig } from '../types.js';
 /**
  * Props interface for configuring the courses collection
  * @property categoriesCollectionSlug - Slug for the categories collection (default: 'categories')
@@ -13,17 +13,17 @@ import type { CurrenciesConfig } from '../types.js'
  * @property overrides - Optional configuration overrides for fields and collection settings
  */
 type Props = {
-  categoriesCollectionSlug?: string
-  certificatesCollectionSlug?: string
-  currenciesConfig?: CurrenciesConfig
-  lessonsCollectionSlug?: string
-  mediaCollectionSlug?: string
-  studentsCollectionSlug?: string
-  tagsCollectionSlug?: string
-  overrides?: {
-    fields?: FieldsOverride
-  } & Partial<Omit<CollectionConfig, 'fields'>>
-}
+    categoriesCollectionSlug?: string;
+    certificatesCollectionSlug?: string;
+    currenciesConfig?: CurrenciesConfig;
+    lessonsCollectionSlug?: string;
+    mediaCollectionSlug?: string;
+    studentsCollectionSlug?: string;
+    tagsCollectionSlug?: string;
+    overrides?: {
+        fields?: FieldsOverride;
+    } & Partial<Omit<CollectionConfig, 'fields'>>;
+};
 /**
  * Creates a courses collection configuration for Payload CMS
  * This collection manages educational courses with various access modes, pricing, and content organization
@@ -31,5 +31,5 @@ type Props = {
  * @param props - Configuration properties for the courses collection
  * @returns CollectionConfig object for courses
  */
-export declare const coursesCollection: (props?: Props) => CollectionConfig<'courses'>
-export {}
+export declare const coursesCollection: (props?: Props) => CollectionConfig<'courses'>;
+export {};

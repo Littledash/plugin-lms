@@ -51,6 +51,20 @@ export const addUserToGroupHandler: AddUserToGroupHandler = ({
       return Response.json({ message: 'Group not found.' }, { status: 404 })
     }
 
+    // Authorization check: only admins or leaders of the group can add users
+    const isLeader = group.leaders?.some((leader: TypedCollection['users']) => {
+      const leaderId = typeof leader === 'object' ? leader.id : leader
+      return leaderId === user.id
+    })
+    const isAdmin = user.roles?.includes('admin')
+
+    if (!isAdmin && !isLeader) {
+      return Response.json(
+        { message: 'You are not authorized to add users to this group.' },
+        { status: 403 },
+      )
+    }
+
     const targetUser = await payload.findByID({
       collection: userSlug as CollectionSlug,
       id: userId,
