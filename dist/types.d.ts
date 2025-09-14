@@ -174,7 +174,7 @@ export type LMSPluginConfig = {
    * An array of endpoints to be bootstrapped to Payload's API in order to support the LMS. All API paths are relative to `/api/lms`.
    */
     endpoints?: Endpoint[];
-    completeCourse: (args: {
+    completeCourse?: (args: {
         data: {
             courseId: string;
         };
@@ -195,7 +195,7 @@ export type LMSPluginConfig = {
          */
         req: PayloadRequest;
     }) => Promise<Record<string, unknown>> | Record<string, unknown>;
-    completeLesson: (args: {
+    completeLesson?: (args: {
         data: {
             courseId: string;
             lessonId: string;
@@ -208,7 +208,7 @@ export type LMSPluginConfig = {
         userSlug: string;
         req: PayloadRequest;
     }) => Promise<Record<string, unknown>> | Record<string, unknown>;
-    submitQuiz: (args: {
+    submitQuiz?: (args: {
         data: {
             courseId: string;
             quizId: string;
@@ -228,7 +228,7 @@ export type LMSPluginConfig = {
         quizzesSlug: string;
         req: PayloadRequest;
     }) => Promise<Record<string, unknown>> | Record<string, unknown>;
-    generateCertificate: (args: {
+    generateCertificate?: (args: {
         data: {
             courseId: string;
         };
@@ -252,7 +252,7 @@ export type LMSPluginConfig = {
         certificatesSlug: string;
         req: PayloadRequest;
     }) => Promise<Record<string, unknown>> | Record<string, unknown>;
-    enroll: (args: {
+    enroll?: (args: {
         data: {
             courseId: string;
         };
@@ -278,7 +278,7 @@ export type LMSPluginConfig = {
      *
      * @default true
      */
-    addUserToGroup: (args: {
+    addUserToGroup?: (args: {
         data: {
             groupId: string;
             userId: string;

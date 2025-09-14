@@ -1,1 +1,1 @@
-export { quizzesCollection } from '../quizzes/quizzesCollection.js'
+export { quizzesCollection } from '../quizzes/quizzesCollection.js';
