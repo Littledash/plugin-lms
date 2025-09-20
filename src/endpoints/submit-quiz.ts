@@ -68,7 +68,13 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
     }
 
     const coursesProgress = currentUser.coursesProgress || []
-    let courseProgressIndex = coursesProgress.findIndex((cp: { course: string }) => cp.course === courseId)
+    let courseProgressIndex = coursesProgress.findIndex((cp: { course: string | { id: string } }) => {
+      // Handle both full course objects and course IDs for backward compatibility
+      if (typeof cp.course === 'object' && cp.course !== null) {
+        return cp.course.id === courseId
+      }
+      return cp.course === courseId
+    })
     
     if (courseProgressIndex === -1) {
       // Create new course progress entry
@@ -82,7 +88,13 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
     }
     
     const courseProgress = coursesProgress[courseProgressIndex]
-    const quizExists = courseProgress.completedQuizzes.some((cq: { quiz: string }) => cq.quiz === quizId)
+    const quizExists = courseProgress.completedQuizzes.some((cq: { quiz: string | { id: string } }) => {
+      // Handle both full quiz objects and quiz IDs for backward compatibility
+      if (typeof cq.quiz === 'object' && cq.quiz !== null) {
+        return cq.quiz.id === quizId
+      }
+      return cq.quiz === quizId
+    })
     
     if (!quizExists) {
       courseProgress.completedQuizzes.push({
@@ -92,7 +104,13 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
       })
     } else {
       // Update existing quiz score
-      const quizIndex = courseProgress.completedQuizzes.findIndex((cq: { quiz: string }) => cq.quiz === quizId)
+      const quizIndex = courseProgress.completedQuizzes.findIndex((cq: { quiz: string | { id: string } }) => {
+        // Handle both full quiz objects and quiz IDs for backward compatibility
+        if (typeof cq.quiz === 'object' && cq.quiz !== null) {
+          return cq.quiz.id === quizId
+        }
+        return cq.quiz === quizId
+      })
       if (quizIndex !== -1) {
         courseProgress.completedQuizzes[quizIndex].score = score
         courseProgress.completedQuizzes[quizIndex].completedAt = new Date().toISOString()

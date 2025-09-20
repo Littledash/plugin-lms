@@ -84,12 +84,35 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       const storedProgress = localStorage.getItem(localStorageConfig.key)
       if (storedProgress) {
         const parsed = JSON.parse(storedProgress)
+        
+        // Normalize progress data to use IDs only for backward compatibility
+        const normalizedProgress = (parsed.progress || []).map((progress: any) => ({
+          ...progress,
+          course: typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course,
+          completedLessons: progress.completedLessons?.map((lesson: any) => ({
+            ...lesson,
+            lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson,
+          })) || [],
+          completedQuizzes: progress.completedQuizzes?.map((quiz: any) => ({
+            ...quiz,
+            quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz,
+          })) || [],
+        }))
+        
+        // Normalize enrolled and completed courses to use IDs only
+        const normalizedEnrolledCourses = (parsed.enrolledCourses || []).map((course: any) => 
+          typeof course === 'object' && course !== null ? course.id : course
+        )
+        const normalizedCompletedCourses = (parsed.completedCourses || []).map((course: any) => 
+          typeof course === 'object' && course !== null ? course.id : course
+        )
+        
         dispatch({
           type: 'LOAD_FROM_STORAGE',
           payload: {
-            progress: parsed.progress || [],
-            enrolledCourses: parsed.enrolledCourses || [],
-            completedCourses: parsed.completedCourses || [],
+            progress: normalizedProgress,
+            enrolledCourses: normalizedEnrolledCourses,
+            completedCourses: normalizedCompletedCourses,
           },
         })
       }
@@ -220,7 +243,13 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         // Fetch fresh progress from database
         fetchProgress()
       }
-      return state.progress.find((cp) => cp.course === courseId)
+      return state.progress.find((cp) => {
+        // Handle both full course objects and course IDs for backward compatibility
+        if (typeof cp.course === 'object' && cp.course !== null) {
+          return cp.course.id === courseId
+        }
+        return cp.course === courseId
+      })
     },
     [state.progress, fetchProgress],
   )

@@ -43,6 +43,10 @@ export const completeLessonHandler: CompleteLessonHandler = ({ userSlug = 'users
     
     // Check if course progress already exists for this course
     let courseProgressIndex = coursesProgress.findIndex((c: CourseProgress) => {
+      // Handle both full course objects and course IDs for backward compatibility
+      if (typeof c.course === 'object' && c.course !== null) {
+        return c.course.id === courseId
+      }
       return c.course === courseId
     })
     
@@ -60,7 +64,11 @@ export const completeLessonHandler: CompleteLessonHandler = ({ userSlug = 'users
     
     const courseProgress = coursesProgress[courseProgressIndex]
     // Check if lesson is already completed
-    const lessonExists = courseProgress.completedLessons.some((cl: { lesson: string }) => {
+    const lessonExists = courseProgress.completedLessons.some((cl: { lesson: string | { id: string } }) => {
+      // Handle both full lesson objects and lesson IDs for backward compatibility
+      if (typeof cl.lesson === 'object' && cl.lesson !== null) {
+        return cl.lesson.id === lessonId
+      }
       return cl.lesson === lessonId
     })
     
