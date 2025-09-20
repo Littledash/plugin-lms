@@ -43,8 +43,7 @@ export const completeLessonHandler: CompleteLessonHandler = ({ userSlug = 'users
     
     // Check if course progress already exists for this course
     let courseProgressIndex = coursesProgress.findIndex((c: CourseProgress) => {
-      const courseIdToCompare = typeof c.course === 'object' ? c.course.id : c.course
-      return courseIdToCompare === courseId
+      return c.course === courseId
     })
     
     if (courseProgressIndex === -1) {
@@ -60,11 +59,9 @@ export const completeLessonHandler: CompleteLessonHandler = ({ userSlug = 'users
     }
     
     const courseProgress = coursesProgress[courseProgressIndex]
-    
     // Check if lesson is already completed
-    const lessonExists = courseProgress.completedLessons.some((cl: { lesson: string | { id: string } }) => {
-      const lessonIdToCompare = typeof cl.lesson === 'object' ? cl.lesson.id : cl.lesson
-      return lessonIdToCompare === lessonId
+    const lessonExists = courseProgress.completedLessons.some((cl: { lesson: string }) => {
+      return cl.lesson === lessonId
     })
     
     if (!lessonExists) {

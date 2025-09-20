@@ -9,8 +9,8 @@ export type LMSState = {
   progress: CourseProgress[]
   quizzes: Quiz[]
   certificates: Certificate[]
-  enrolledCourses: Course[]
-  completedCourses: Course[]
+  enrolledCourses: DefaultDocumentIDType[]
+  completedCourses: DefaultDocumentIDType[]
   isLoading: boolean
   error: Error | null
 }
@@ -24,13 +24,13 @@ export type LMSAction =
   | { type: 'SET_LESSONS'; payload: Lesson[] }
   | { type: 'SET_QUIZZES'; payload: Quiz[] }
   | { type: 'SET_CERTIFICATES'; payload: Certificate[] }
-  | { type: 'ENROLL_IN_COURSE'; payload: Course }
-  | { type: 'COMPLETE_COURSE'; payload: { courseId: DefaultDocumentIDType; course: Course } }
+  | { type: 'ENROLL_IN_COURSE'; payload: DefaultDocumentIDType }
+  | { type: 'COMPLETE_COURSE'; payload: DefaultDocumentIDType }
   | { type: 'UPDATE_PROGRESS'; payload: CourseProgress[] }
-  | { type: 'SET_ENROLLED_COURSES'; payload: Course[] }
-  | { type: 'SET_COMPLETED_COURSES'; payload: Course[] }
+  | { type: 'SET_ENROLLED_COURSES'; payload: DefaultDocumentIDType[] }
+  | { type: 'SET_COMPLETED_COURSES'; payload: DefaultDocumentIDType[] }
   | { type: 'ADD_CERTIFICATE'; payload: Certificate }
-  | { type: 'LOAD_FROM_STORAGE'; payload: { progress: CourseProgress[]; enrolledCourses: Course[]; completedCourses: Course[] } }
+  | { type: 'LOAD_FROM_STORAGE'; payload: { progress: CourseProgress[]; enrolledCourses: DefaultDocumentIDType[]; completedCourses: DefaultDocumentIDType[] } }
   | { type: 'RESET_STATE' }
 
 export const initialState: LMSState = {
@@ -106,8 +106,8 @@ export const lmsReducer = (state: LMSState, action: LMSAction): LMSState => {
     case 'COMPLETE_COURSE':
       return {
         ...state,
-        enrolledCourses: state.enrolledCourses.filter((course) => course.id !== action.payload.courseId),
-        completedCourses: [...state.completedCourses, action.payload.course],
+        enrolledCourses: state.enrolledCourses.filter((courseId) => courseId !== action.payload),
+        completedCourses: [...state.completedCourses, action.payload],
       }
 
     case 'UPDATE_PROGRESS':

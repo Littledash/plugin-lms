@@ -68,8 +68,8 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       
       // Update all progress-related state
       dispatch({ type: 'UPDATE_PROGRESS', payload: coursesProgress || [] })
-      dispatch({ type: 'SET_ENROLLED_COURSES', payload: enrolledCourses || [] })
-      dispatch({ type: 'SET_COMPLETED_COURSES', payload: completedCourses || [] })
+      dispatch({ type: 'SET_ENROLLED_COURSES', payload: (enrolledCourses || []).map((course: { id: DefaultDocumentIDType }) => course.id) })
+      dispatch({ type: 'SET_COMPLETED_COURSES', payload: (completedCourses || []).map((course: { id: DefaultDocumentIDType }) => course.id) })
     } catch (e: unknown) {
       dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
     } finally {

@@ -18,17 +18,17 @@ export type Topic = TypedCollection['topics'] & { course?: DefaultDocumentIDType
  */
 export type CourseProgress = {
   /** The course this progress belongs to. */
-  course: DefaultDocumentIDType | Course
+  course: DefaultDocumentIDType
   /** Whether the entire course has been completed. */
   completed: boolean
   /** A list of lessons completed by the user. */
   completedLessons: Array<{
-    lesson: DefaultDocumentIDType | Lesson
+    lesson: DefaultDocumentIDType
     completedAt: string
   }>
   /** A list of quizzes completed by the user. */
   completedQuizzes: Array<{
-    quiz: DefaultDocumentIDType | Quiz
+    quiz: DefaultDocumentIDType
     score: number
     completedAt: string
   }>
@@ -57,10 +57,10 @@ export type LMSContextType = {
   quizzes: Quiz[]
   /** A list of certificates earned by the current user. */
   certificates: Certificate[]
-  /** A list of courses the current user is enrolled in. */
-  enrolledCourses: Course[]
-  /** A list of courses the current user has completed. */
-  completedCourses: Course[]
+  /** A list of course IDs the current user is enrolled in. */
+  enrolledCourses: DefaultDocumentIDType[]
+  /** A list of course IDs the current user has completed. */
+  completedCourses: DefaultDocumentIDType[]
   /** Enrolls the current user in a course. */
   enroll: (courseId: DefaultDocumentIDType) => Promise<void>
   /** Marks a course as complete for the current user. */
