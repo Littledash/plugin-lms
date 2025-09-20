@@ -64,10 +64,10 @@ export const lmsReducer = (state, action)=>{
         case 'COMPLETE_COURSE':
             return {
                 ...state,
-                enrolledCourses: state.enrolledCourses.filter((course)=>course.id !== action.payload.courseId),
+                enrolledCourses: state.enrolledCourses.filter((courseId)=>courseId !== action.payload),
                 completedCourses: [
                     ...state.completedCourses,
-                    action.payload.course
+                    action.payload
                 ]
             };
         case 'UPDATE_PROGRESS':

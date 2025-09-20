@@ -36,8 +36,7 @@ export const completeLessonHandler = ({ userSlug = 'users' })=>async (req)=>{
             const coursesProgress = currentUser.coursesProgress || [];
             // Check if course progress already exists for this course
             let courseProgressIndex = coursesProgress.findIndex((c)=>{
-                const courseIdToCompare = typeof c.course === 'object' ? c.course.id : c.course;
-                return courseIdToCompare === courseId;
+                return c.course === courseId;
             });
             if (courseProgressIndex === -1) {
                 // Create new course progress entry if it doesn't exist
@@ -53,8 +52,7 @@ export const completeLessonHandler = ({ userSlug = 'users' })=>async (req)=>{
             const courseProgress = coursesProgress[courseProgressIndex];
             // Check if lesson is already completed
             const lessonExists = courseProgress.completedLessons.some((cl)=>{
-                const lessonIdToCompare = typeof cl.lesson === 'object' ? cl.lesson.id : cl.lesson;
-                return lessonIdToCompare === lessonId;
+                return cl.lesson === lessonId;
             });
             if (!lessonExists) {
                 // Add the completed lesson

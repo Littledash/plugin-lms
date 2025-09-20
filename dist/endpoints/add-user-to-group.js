@@ -46,7 +46,10 @@ export const addUserToGroupHandler = ({ userSlug = 'users', groupSlug = 'groups'
                 });
             }
             // Authorization check: only admins or leaders of the group can add users
-            const isLeader = group.leaders?.some((leader)=>leader.id === user.id);
+            const isLeader = group.leaders?.some((leader)=>{
+                const leaderId = typeof leader === 'object' ? leader.id : leader;
+                return leaderId === user.id;
+            });
             const isAdmin = user.roles?.includes('admin');
             if (!isAdmin && !isLeader) {
                 return Response.json({

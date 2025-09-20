@@ -62,11 +62,11 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             });
             dispatch({
                 type: 'SET_ENROLLED_COURSES',
-                payload: enrolledCourses || []
+                payload: (enrolledCourses || []).map((course)=>course.id)
             });
             dispatch({
                 type: 'SET_COMPLETED_COURSES',
-                payload: completedCourses || []
+                payload: (completedCourses || []).map((course)=>course.id)
             });
         } catch (e) {
             dispatch({
@@ -143,13 +143,8 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 })
             });
             if (!response.ok) throw new Error('Failed to enroll in course');
-            const enrolledCourse = state.courses.find((course)=>course.id === courseId);
-            if (enrolledCourse) {
-                dispatch({
-                    type: 'ENROLL_IN_COURSE',
-                    payload: enrolledCourse
-                });
-            }
+            await fetchProgress() // Refetch progress to ensure state is up-to-date
+            ;
         } catch (e) {
             dispatch({
                 type: 'SET_ERROR',
@@ -163,7 +158,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         }
     }, [
         baseAPIURL,
-        state.courses
+        fetchProgress
     ]);
     const completeCourse = useCallback(async (courseId)=>{
         dispatch({
@@ -185,16 +180,8 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 })
             });
             if (!response.ok) throw new Error('Failed to complete course');
-            const courseToComplete = state.enrolledCourses.find((course)=>course.id === courseId);
-            if (courseToComplete) {
-                dispatch({
-                    type: 'COMPLETE_COURSE',
-                    payload: {
-                        courseId,
-                        course: courseToComplete
-                    }
-                });
-            }
+            await fetchProgress() // Refetch progress to ensure state is up-to-date
+            ;
         } catch (e) {
             dispatch({
                 type: 'SET_ERROR',
@@ -208,7 +195,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         }
     }, [
         baseAPIURL,
-        state.enrolledCourses
+        fetchProgress
     ]);
     const completeLesson = useCallback(async (courseId, lessonId)=>{
         dispatch({
@@ -230,7 +217,8 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                     lessonId
                 })
             });
-        // Progress is now handled by the API endpoint
+            await fetchProgress() // Refetch progress to ensure state is up-to-date
+            ;
         } catch (e) {
             dispatch({
                 type: 'SET_ERROR',
@@ -243,7 +231,8 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             });
         }
     }, [
-        baseAPIURL
+        baseAPIURL,
+        fetchProgress
     ]);
     const submitQuiz = useCallback(async (courseId, quizId, answers)=>{
         dispatch({
@@ -267,8 +256,8 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 })
             });
             if (!response.ok) throw new Error('Failed to submit quiz');
-            const { score } = await response.json();
-        // Progress is now handled by the API endpoint
+            await fetchProgress() // Refetch progress to ensure state is up-to-date
+            ;
         } catch (e) {
             dispatch({
                 type: 'SET_ERROR',
@@ -281,7 +270,8 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             });
         }
     }, [
-        baseAPIURL
+        baseAPIURL,
+        fetchProgress
     ]);
     const addUserToGroup = useCallback(async (groupId, userId, role)=>{
         dispatch({

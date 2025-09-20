@@ -8,8 +8,8 @@ export type LMSState = {
     progress: CourseProgress[];
     quizzes: Quiz[];
     certificates: Certificate[];
-    enrolledCourses: Course[];
-    completedCourses: Course[];
+    enrolledCourses: DefaultDocumentIDType[];
+    completedCourses: DefaultDocumentIDType[];
     isLoading: boolean;
     error: Error | null;
 };
@@ -39,22 +39,19 @@ export type LMSAction = {
     payload: Certificate[];
 } | {
     type: 'ENROLL_IN_COURSE';
-    payload: Course;
+    payload: DefaultDocumentIDType;
 } | {
     type: 'COMPLETE_COURSE';
-    payload: {
-        courseId: DefaultDocumentIDType;
-        course: Course;
-    };
+    payload: DefaultDocumentIDType;
 } | {
     type: 'UPDATE_PROGRESS';
     payload: CourseProgress[];
 } | {
     type: 'SET_ENROLLED_COURSES';
-    payload: Course[];
+    payload: DefaultDocumentIDType[];
 } | {
     type: 'SET_COMPLETED_COURSES';
-    payload: Course[];
+    payload: DefaultDocumentIDType[];
 } | {
     type: 'ADD_CERTIFICATE';
     payload: Certificate;
@@ -62,8 +59,8 @@ export type LMSAction = {
     type: 'LOAD_FROM_STORAGE';
     payload: {
         progress: CourseProgress[];
-        enrolledCourses: Course[];
-        completedCourses: Course[];
+        enrolledCourses: DefaultDocumentIDType[];
+        completedCourses: DefaultDocumentIDType[];
     };
 } | {
     type: 'RESET_STATE';

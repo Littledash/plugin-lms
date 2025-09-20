@@ -18,17 +18,17 @@ export type Topic = TypedCollection['topics'] & { course?: DefaultDocumentIDType
  */
 export type CourseProgress = {
   /** The course this progress belongs to. */
-  course: DefaultDocumentIDType
+  course: DefaultDocumentIDType | { id: DefaultDocumentIDType }
   /** Whether the entire course has been completed. */
   completed: boolean
   /** A list of lessons completed by the user. */
   completedLessons: Array<{
-    lesson: DefaultDocumentIDType
+    lesson: DefaultDocumentIDType | { id: DefaultDocumentIDType }
     completedAt: string
   }>
   /** A list of quizzes completed by the user. */
   completedQuizzes: Array<{
-    quiz: DefaultDocumentIDType
+    quiz: DefaultDocumentIDType | { id: DefaultDocumentIDType }
     score: number
     completedAt: string
   }>
