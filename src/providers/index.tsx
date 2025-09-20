@@ -3,7 +3,7 @@
 import React, { createContext, use, useCallback, useEffect, useReducer } from 'react'
 import type { DefaultDocumentIDType } from 'payload'
 import * as qs from 'qs-esm'
-import { LMSContextType, LMSProviderProps } from './types.js'
+import { LMSContextType, LMSProviderProps, CourseProgress } from './types.js'
 import { lmsReducer, initialState, type LMSState } from './reducer.js'
 
 const defaultContext: LMSContextType = {
@@ -68,8 +68,14 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       
       // Update all progress-related state
       dispatch({ type: 'UPDATE_PROGRESS', payload: coursesProgress || [] })
-      dispatch({ type: 'SET_ENROLLED_COURSES', payload: (enrolledCourses || []).map((course: { id: DefaultDocumentIDType }) => course.id) })
-      dispatch({ type: 'SET_COMPLETED_COURSES', payload: (completedCourses || []).map((course: { id: DefaultDocumentIDType }) => course.id) })
+      
+      // Ensure enrolledCourses is an array before mapping
+      const enrolledCoursesArray = Array.isArray(enrolledCourses) ? enrolledCourses : []
+      dispatch({ type: 'SET_ENROLLED_COURSES', payload: enrolledCoursesArray.map((course: { id: DefaultDocumentIDType }) => course.id) })
+      
+      // Ensure completedCourses is an array before mapping
+      const completedCoursesArray = Array.isArray(completedCourses) ? completedCourses : []
+      dispatch({ type: 'SET_COMPLETED_COURSES', payload: completedCoursesArray.map((course: { id: DefaultDocumentIDType }) => course.id) })
     } catch (e: unknown) {
       dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
     } finally {
@@ -86,24 +92,24 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         const parsed = JSON.parse(storedProgress)
         
         // Normalize progress data to use IDs only for backward compatibility
-        const normalizedProgress = (parsed.progress || []).map((progress: any) => ({
+        const normalizedProgress = (parsed.progress || []).map((progress: CourseProgress) => ({
           ...progress,
           course: typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course,
-          completedLessons: progress.completedLessons?.map((lesson: any) => ({
+          completedLessons: progress.completedLessons?.map((lesson) => ({
             ...lesson,
             lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson,
           })) || [],
-          completedQuizzes: progress.completedQuizzes?.map((quiz: any) => ({
+          completedQuizzes: progress.completedQuizzes?.map((quiz) => ({
             ...quiz,
             quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz,
           })) || [],
         }))
         
         // Normalize enrolled and completed courses to use IDs only
-        const normalizedEnrolledCourses = (parsed.enrolledCourses || []).map((course: any) => 
+        const normalizedEnrolledCourses = (parsed.enrolledCourses || []).map((course: DefaultDocumentIDType | { id: DefaultDocumentIDType }) => 
           typeof course === 'object' && course !== null ? course.id : course
         )
-        const normalizedCompletedCourses = (parsed.completedCourses || []).map((course: any) => 
+        const normalizedCompletedCourses = (parsed.completedCourses || []).map((course: DefaultDocumentIDType | { id: DefaultDocumentIDType }) => 
           typeof course === 'object' && course !== null ? course.id : course
         )
         

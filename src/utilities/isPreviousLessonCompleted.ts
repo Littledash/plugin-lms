@@ -1,4 +1,4 @@
-import { TypedCollection } from "payload"
+import { TypedCollection, DefaultDocumentIDType } from "payload"
 import { CourseProgress, Progress } from "../providers/types.js"
 
 export const isPreviousLessonCompleted = (
@@ -7,7 +7,8 @@ export const isPreviousLessonCompleted = (
     lessonId: string,
   ) => {
     const lessonIndex = course.lessons?.findIndex(
-      (l: any) => typeof l.lesson !== 'string' && l.lesson.id === lessonId,
+      (l: { lesson: DefaultDocumentIDType | { id: DefaultDocumentIDType } }) => 
+        typeof l.lesson === 'object' && l.lesson !== null && l.lesson.id === lessonId,
     )
     const previousLesson = lessonIndex !== undefined && lessonIndex > 0 ? course.lessons?.[lessonIndex - 1] : undefined
     if (!previousLesson) return true // If there is no previous lesson, then the previous lesson is completed
@@ -19,6 +20,6 @@ export const isPreviousLessonCompleted = (
         .find((p: CourseProgress) => (typeof p.course === 'object' ? p.course.id : p.course) === course.id)
         ?.completedLessons.find(
           (l) => (typeof l.lesson === 'object' ? l.lesson.id : l.lesson) === previousLessonId,
-        ) || false
+        ) !== undefined
     )
   }

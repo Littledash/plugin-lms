@@ -1,4 +1,5 @@
-import { addDataAndFileToRequest, CollectionSlug, type Endpoint } from 'payload'
+import { addDataAndFileToRequest, CollectionSlug, type Endpoint, type DefaultDocumentIDType } from 'payload'
+import type { CourseProgress } from '../providers/types.js'
 
 type Args = {
   userSlug: string
@@ -34,24 +35,27 @@ export const fetchProgressHandler: FetchProgressHandler = ({ userSlug = 'users' 
     const completedCourses = currentUser.completedCourses || []
 
     // Normalize progress data to use IDs only
-    const normalizedProgress = coursesProgress.map((progress: any) => ({
+    const normalizedProgress = coursesProgress.map((progress: CourseProgress) => ({
       ...progress,
       course: typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course,
-      completedLessons: progress.completedLessons?.map((lesson: any) => ({
+      completedLessons: progress.completedLessons?.map((lesson) => ({
         ...lesson,
         lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson,
       })) || [],
-      completedQuizzes: progress.completedQuizzes?.map((quiz: any) => ({
+      completedQuizzes: progress.completedQuizzes?.map((quiz) => ({
         ...quiz,
         quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz,
       })) || [],
     }))
 
     // Normalize enrolled and completed courses to use IDs only
-    const normalizedEnrolledCourses = enrolledCourses.map((course: any) => 
+    const enrolledCoursesArray = Array.isArray(enrolledCourses) ? enrolledCourses : []
+    const completedCoursesArray = Array.isArray(completedCourses) ? completedCourses : []
+    
+    const normalizedEnrolledCourses = enrolledCoursesArray.map((course: DefaultDocumentIDType | { id: DefaultDocumentIDType }) => 
       typeof course === 'object' && course !== null ? course.id : course
     )
-    const normalizedCompletedCourses = completedCourses.map((course: any) => 
+    const normalizedCompletedCourses = completedCoursesArray.map((course: DefaultDocumentIDType | { id: DefaultDocumentIDType }) => 
       typeof course === 'object' && course !== null ? course.id : course
     )
 
