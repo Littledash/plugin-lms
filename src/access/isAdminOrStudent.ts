@@ -1,6 +1,5 @@
 import type { Access, FieldAccess } from 'payload'
 
-import type { User } from 'payload'
 
 import { checkRole } from './checkRole.js'
 
@@ -13,21 +12,10 @@ export const isAdminOrStudent: Access = ({ req: { user } }) => {
     return true
   }
 
-  // if (user && checkRole(['student'], user)) {
-  //   return {
-  //     students: {
-  //       contains: user.id,
-  //     },
-  //   }
-  // }
-
   return false
 }
 
-export const isAdminOrStudentFieldLevel: FieldAccess<
-  { id: string; students?: (string | number)[] },
-  User
-> = ({ req: { user }, doc }) => {
+export const isAdminOrStudentFieldLevel: FieldAccess = ({ req: { user }, doc }) => {
   if (!user) return false
   if (checkRole(['admin', 'student'], user)) return true
   return doc?.students?.includes(String(user.id)) ?? false

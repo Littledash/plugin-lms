@@ -375,6 +375,19 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
       },
     },
     {
+      name: 'courseEnrolledGroups',
+      type: 'relationship',
+      relationTo: 'groups',
+      hasMany: true,
+      label: 'Course Enrolled Groups',
+      admin: {
+        position: 'sidebar',
+        allowCreate: false,
+        allowEdit: false,
+        description: 'Controls the groups enrolled in the course', // TODO move ibnto lms  plugin
+      },
+    },
+    {
       name: 'authors',
       type: 'relationship',
       relationTo: studentsCollectionSlug,

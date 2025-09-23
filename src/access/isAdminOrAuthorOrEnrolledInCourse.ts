@@ -23,9 +23,36 @@ export const isAdminOrAuthorOrEnrolledInCourse: Access = async ({
         id: {
           equals: courseId,
         },
-        students: {
-          contains: user.id,
+      or: [
+        {
+          enrolledStudents: {
+            contains: user.id,
+          },
         },
+        {
+          courseCompletedStudents: {
+            contains: user.id,
+          },
+        },
+        {
+          courseEnrolledGroups: {
+            contains: {
+              leaders: {
+                contains: user.id,
+              },
+            },
+          },
+        },
+        {
+          courseEnrolledGroups: {
+            contains: {
+              students: {
+                contains: user.id,
+              },
+            },
+          },
+        }
+      ],
       },
     })
 
@@ -49,9 +76,36 @@ export const isAdminOrAuthorOrEnrolledInCourseFieldLevel: FieldAccess = async ({
       id: {
         equals: doc?.course,
       },
-      students: {
-        contains: user.id,
-      },
+      or: [
+        {
+          enrolledUsers: {
+            contains: user.id,
+          },
+        },
+        {
+          courseCompletedStudents: {
+            contains: user.id,
+          },
+        },
+        {
+          courseEnrolledGroups: {
+            contains: {
+              leaders: {
+                contains: user.id,
+              },
+            },
+          },
+        },
+        {
+          courseEnrolledGroups: {
+            contains: {
+              students: {
+                contains: user.id,
+              },
+            },
+          },
+        },
+      ],
     },
   })
 
