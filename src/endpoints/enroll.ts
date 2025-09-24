@@ -1,4 +1,5 @@
 import { addDataAndFileToRequest, CollectionSlug, TypedCollection, type Endpoint } from 'payload'
+import type { CourseProgress } from '../providers/types.js'
 
 type Args = {
   userSlug: string
@@ -39,15 +40,15 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
       return Response.json({ message: 'User not found.' }, { status: 404 })
     }
 
-    const enrolledStudentIds = (course?.students || []).map((student: string | TypedCollection[typeof userSlug]) =>
+    const enrolledStudentIds = (course?.enrolledStudents || []).map((student: string | TypedCollection[typeof userSlug]) =>
       typeof student === 'object' ? student.id : student,
     )
 
-    const enrolledCourseIds = (currentUser.enrolledCourses?.docs || []).map(
+    const enrolledCourseIds = (currentUser.enrolledCourses || []).map(
       (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
     )
 
-    const completedCourseIds = (currentUser.completedCourses?.docs || []).map(
+    const completedCourseIds = (currentUser.completedCourses || []).map(
       (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
     )
 
@@ -61,7 +62,7 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
     if (
       completedCourseIds.includes(courseId) 
     ) {
-      return Response.json({ message: 'You are already completed this course.' }, { status: 409 })
+      return Response.json({ message: 'You have already completed this course.' }, { status: 409 })
     }
 
     await payload.update({
@@ -71,6 +72,35 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
         enrolledStudents: [...enrolledStudentIds, user.id],
       },
     })
+
+    // Initialize course progress for the user
+    const coursesProgress = currentUser.coursesProgress || []
+    
+    // Check if course progress already exists for this course
+    const courseProgressExists = coursesProgress.some((progress: CourseProgress) => {
+      if (typeof progress.course === 'object' && progress.course !== null) {
+        return progress.course.id === courseId
+      }
+      return progress.course === courseId
+    })
+    
+    if (!courseProgressExists) {
+      // Create new course progress entry
+      const newCourseProgress = {
+        course: courseId,
+        completed: false,
+        completedLessons: [],
+        completedQuizzes: [],
+      }
+      
+      await payload.update({
+        collection: userSlug as CollectionSlug,
+        id: user.id,
+        data: {
+          coursesProgress: [...coursesProgress, newCourseProgress],
+        },
+      })
+    }
 
     payload.logger.info(`User ${user.id} enrolled in course ${courseId}`)
 

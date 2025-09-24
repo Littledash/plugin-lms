@@ -293,6 +293,7 @@ export const lmsPlugin =
         method: 'get' as const,
         handler: fetchProgressHandler({
           userSlug: collectionSlugMap.students,
+          courseSlug: collectionSlugMap.courses,
         }),
       },
     ]

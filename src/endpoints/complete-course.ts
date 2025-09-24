@@ -1,4 +1,5 @@
 import { addDataAndFileToRequest, CollectionSlug, TypedCollection, type Endpoint } from 'payload'
+import type { CourseProgress } from '../providers/types.js'
 
 type Args = {
   userSlug: string
@@ -44,10 +45,10 @@ async (req) => {
       depth: 1,
     })
 
-    const enrolledCourses = (currentUser.enrolledCourses?.docs || []).map(
+    const enrolledCourses = (currentUser.enrolledCourses || []).map(
       (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
     )
-    const completedCourses = (currentUser.completedCourses?.docs || []).map(
+    const completedCourses = (currentUser.completedCourses || []).map(
       (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
     )
 
@@ -60,7 +61,7 @@ async (req) => {
     }
 
     // Update course collection - add student to courseCompletedStudents while keeping them enrolled
-    const courseCompletedStudents = (course.courseCompletedStudents?.docs || []).map(
+    const courseCompletedStudents = (course.courseCompletedStudents || []).map(
       (student: string | TypedCollection[typeof userSlug]) => (typeof student === 'object' ? student.id : student),
     )
 
@@ -74,6 +75,41 @@ async (req) => {
         },
       })
     }
+
+    // Update user's course progress to mark as completed
+    const coursesProgress = currentUser.coursesProgress || []
+    const courseProgressIndex = coursesProgress.findIndex((progress: CourseProgress) => {
+      if (typeof progress.course === 'object' && progress.course !== null) {
+        return progress.course.id === courseId
+      }
+      return progress.course === courseId
+    })
+
+    if (courseProgressIndex !== -1) {
+      // Update existing progress to mark as completed
+      coursesProgress[courseProgressIndex] = {
+        ...coursesProgress[courseProgressIndex],
+        completed: true,
+        completedAt: new Date().toISOString(),
+      }
+    } else {
+      // Create new progress entry if it doesn't exist (shouldn't happen with enrollment initialization)
+      coursesProgress.push({
+        course: courseId,
+        completed: true,
+        completedAt: new Date().toISOString(),
+        completedLessons: [],
+        completedQuizzes: [],
+      })
+    }
+
+    await payload.update({
+      collection: userSlug as CollectionSlug,
+      id: user.id,
+      data: {
+        coursesProgress,
+      },
+    })
 
     payload.logger.info(`User ${user.id} completed course ${courseId}`)
 

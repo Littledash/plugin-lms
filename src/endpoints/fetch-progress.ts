@@ -3,11 +3,12 @@ import type { CourseProgress } from '../providers/types.js'
 
 type Args = {
   userSlug: string
+  courseSlug?: string
 }
 
 type FetchProgressHandler = (args: Args) => Endpoint['handler']
 
-export const fetchProgressHandler: FetchProgressHandler = ({ userSlug = 'users' }) => async (req) => {
+export const fetchProgressHandler: FetchProgressHandler = ({ userSlug = 'users', courseSlug = 'courses' }) => async (req) => {
   await addDataAndFileToRequest(req)
   const user = req.user
   const payload = req.payload
@@ -34,19 +35,53 @@ export const fetchProgressHandler: FetchProgressHandler = ({ userSlug = 'users' 
     const enrolledCourses = currentUser.enrolledCourses || []
     const completedCourses = currentUser.completedCourses || []
 
-    // Normalize progress data to use IDs only
-    const normalizedProgress = coursesProgress.map((progress: CourseProgress) => ({
-      ...progress,
-      course: typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course,
-      completedLessons: progress.completedLessons?.map((lesson) => ({
-        ...lesson,
-        lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson,
-      })) || [],
-      completedQuizzes: progress.completedQuizzes?.map((quiz) => ({
-        ...quiz,
-        quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz,
-      })) || [],
-    }))
+    // Calculate completion percentage for each course progress
+    const normalizedProgress = await Promise.all(
+      coursesProgress.map(async (progress: CourseProgress) => {
+        const courseId = typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course
+        
+        // Fetch course data to get total required lessons
+        let completionPercentage = 0
+        try {
+          const course = await payload.findByID({
+            collection: courseSlug as CollectionSlug,
+            id: courseId,
+            depth: 1,
+          })
+          
+          if (course && course.lessons) {
+            // Count total required lessons (non-optional)
+            const totalRequiredLessons = course.lessons.filter((lessonItem: { lesson: string | { id: string }, isOptional?: boolean }) => !lessonItem.isOptional).length
+            
+            // Count completed lessons
+            const completedLessonIds = progress.completedLessons?.map((lesson) => 
+              typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson
+            ) || []
+            
+            // Calculate percentage
+            if (totalRequiredLessons > 0) {
+              completionPercentage = Math.round((completedLessonIds.length / totalRequiredLessons) * 100)
+            }
+          }
+        } catch (error) {
+          payload.logger.warn(`Could not fetch course ${courseId} for completion percentage calculation: ${error}`)
+        }
+
+        return {
+          ...progress,
+          course: courseId,
+          completionPercentage,
+          completedLessons: progress.completedLessons?.map((lesson) => ({
+            ...lesson,
+            lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson,
+          })) || [],
+          completedQuizzes: progress.completedQuizzes?.map((quiz) => ({
+            ...quiz,
+            quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz,
+          })) || [],
+        }
+      })
+    )
 
     // Normalize enrolled and completed courses to use IDs only
     const enrolledCoursesArray = Array.isArray(enrolledCourses) ? enrolledCourses : []

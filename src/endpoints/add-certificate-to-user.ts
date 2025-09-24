@@ -14,7 +14,7 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
   const user = req.user
   const payload = req.payload
   const courseId = data?.courseId
-  const certificate = data?.certificate
+  const certificateId = data?.certificateId
 
   if (!user) {
     return Response.json(
@@ -27,6 +27,10 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
     return Response.json({ message: 'Course ID is required.' }, { status: 400 })
   }
 
+  if (!certificateId) {
+    return Response.json({ message: 'Certificate ID is required.' }, { status: 400 })
+  }
+
   try {
     const currentUser = await payload.findByID({
       collection: userSlug as CollectionSlug,
@@ -36,6 +40,16 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
 
     if (!currentUser) {
       return Response.json({ message: 'User not found.' }, { status: 404 })
+    }
+
+    // Fetch the certificate object
+    const certificate = await payload.findByID({
+      collection: certificatesSlug as CollectionSlug,
+      id: certificateId,
+    })
+
+    if (!certificate) {
+      return Response.json({ message: 'Certificate not found.' }, { status: 404 })
     }
 
     const completedCourses = (currentUser.completedCourses || []).map((course: string | TypedCollection[typeof courseSlug]) =>
@@ -50,7 +64,7 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
       typeof cert.certificate === 'object' ? cert.certificate.id : cert.certificate
     )
 
-    if (existingCertificates.includes(certificate?.id)) {
+    if (existingCertificates.includes(certificateId)) {
       return Response.json({ message: 'You already have this certificate.' }, { status: 400 })
     }
 
@@ -61,7 +75,7 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
         certificates: [
           ...(currentUser.certificates || []),
           {
-            certificate: certificate.id,
+            certificate: certificateId,
             completedDate: new Date().toISOString(),
           },
         ],
