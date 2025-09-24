@@ -78,7 +78,7 @@ export const isAdminOrAuthorOrEnrolledInCourseFieldLevel: FieldAccess = async ({
       },
       or: [
         {
-          enrolledUsers: {
+          enrolledStudents: {
             contains: user.id,
           },
         },
