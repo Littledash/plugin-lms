@@ -359,6 +359,19 @@ import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOr
             }
         },
         {
+            name: 'courseEnrolledGroups',
+            type: 'relationship',
+            relationTo: 'groups',
+            hasMany: true,
+            label: 'Course Enrolled Groups',
+            admin: {
+                position: 'sidebar',
+                allowCreate: false,
+                allowEdit: false,
+                description: 'Controls the groups enrolled in the course'
+            }
+        },
+        {
             name: 'authors',
             type: 'relationship',
             relationTo: studentsCollectionSlug,

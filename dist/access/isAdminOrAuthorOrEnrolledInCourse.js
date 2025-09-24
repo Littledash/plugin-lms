@@ -19,9 +19,36 @@ import { checkRole } from './checkRole.js';
                 id: {
                     equals: courseId
                 },
-                students: {
-                    contains: user.id
-                }
+                or: [
+                    {
+                        enrolledStudents: {
+                            contains: user.id
+                        }
+                    },
+                    {
+                        courseCompletedStudents: {
+                            contains: user.id
+                        }
+                    },
+                    {
+                        courseEnrolledGroups: {
+                            contains: {
+                                leaders: {
+                                    contains: user.id
+                                }
+                            }
+                        }
+                    },
+                    {
+                        courseEnrolledGroups: {
+                            contains: {
+                                students: {
+                                    contains: user.id
+                                }
+                            }
+                        }
+                    }
+                ]
             }
         });
         return courses.docs.length > 0;
@@ -41,9 +68,36 @@ export const isAdminOrAuthorOrEnrolledInCourseFieldLevel = async ({ req: { user,
             id: {
                 equals: doc?.course
             },
-            students: {
-                contains: user.id
-            }
+            or: [
+                {
+                    enrolledStudents: {
+                        contains: user.id
+                    }
+                },
+                {
+                    courseCompletedStudents: {
+                        contains: user.id
+                    }
+                },
+                {
+                    courseEnrolledGroups: {
+                        contains: {
+                            leaders: {
+                                contains: user.id
+                            }
+                        }
+                    }
+                },
+                {
+                    courseEnrolledGroups: {
+                        contains: {
+                            students: {
+                                contains: user.id
+                            }
+                        }
+                    }
+                }
+            ]
         }
     });
     const isEnrolled = courses.docs.length > 0;

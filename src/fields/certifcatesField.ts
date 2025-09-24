@@ -1,32 +1,46 @@
-import type { JoinField } from 'payload'
+import type { ArrayField } from 'payload'
 
 /**
- * Props for the roles field configuration
+ * Props for the certificates field configuration
  */
 type Props = {
   certificatesCollectionSlug?: string
-  studentsCollectionSlug?: string
-  overrides?: Partial<JoinField>
+  overrides?: Partial<ArrayField>
 }
 
 /**
- * Creates a relationship field for certificates
+ * Creates an array field for certificates with certificate and completed date
  * @param props - Configuration overrides for the field
- * @returns A configured relationship field for certificates
+ * @returns A configured array field for certificates
  */
-export const certificatesField: (props: Props) => JoinField = ({
+export const certificatesField: (props: Props) => ArrayField = ({
   overrides,
   certificatesCollectionSlug,
-  studentsCollectionSlug,
 }) => {
-  const field: JoinField = {
+  const field: ArrayField = {
     name: 'certificates',
-    type: 'join',
-    collection: certificatesCollectionSlug || 'certificates',
-    on: studentsCollectionSlug || 'students',
+    type: 'array',
+    fields: [
+      {
+        name: 'certificate',
+        type: 'relationship',
+        relationTo: certificatesCollectionSlug || 'certificates',
+        required: true,
+        admin: {
+          allowCreate: false,
+        },
+      },
+      {
+        name: 'completedDate',
+        type: 'date',
+        required: true,
+        admin: {
+          description: 'The date when the certificate was completed',
+        },
+      },
+    ],
     ...overrides,
     admin: {
-      allowCreate: false,
       ...overrides?.admin,
     },
   }

@@ -94,17 +94,6 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
       },
     },
     {
-      name: 'students',
-      type: 'relationship',
-      relationTo: studentsCollectionSlug,
-      hasMany: true,
-      admin: {
-        // readOnly: true,
-        allowCreate: false,
-        description: 'The students of the certificate',
-      },
-    },
-    {
       name: 'authors',
       type: 'relationship',
       relationTo: studentsCollectionSlug,

@@ -357,7 +357,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
-        const response = await fetch(`${baseAPIURL}/lms/generate-certificate`, {
+        const response = await fetch(`${baseAPIURL}/lms/add-certificate-to-user`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ courseId }),

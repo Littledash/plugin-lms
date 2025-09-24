@@ -1,16 +1,15 @@
-import type { JoinField } from 'payload';
+import type { ArrayField } from 'payload';
 /**
- * Props for the roles field configuration
+ * Props for the certificates field configuration
  */
 type Props = {
     certificatesCollectionSlug?: string;
-    studentsCollectionSlug?: string;
-    overrides?: Partial<JoinField>;
+    overrides?: Partial<ArrayField>;
 };
 /**
- * Creates a relationship field for certificates
+ * Creates an array field for certificates with certificate and completed date
  * @param props - Configuration overrides for the field
- * @returns A configured relationship field for certificates
+ * @returns A configured array field for certificates
  */
-export declare const certificatesField: (props: Props) => JoinField;
+export declare const certificatesField: (props: Props) => ArrayField;
 export {};

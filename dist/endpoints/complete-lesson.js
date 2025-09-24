@@ -36,6 +36,10 @@ export const completeLessonHandler = ({ userSlug = 'users' })=>async (req)=>{
             const coursesProgress = currentUser.coursesProgress || [];
             // Check if course progress already exists for this course
             let courseProgressIndex = coursesProgress.findIndex((c)=>{
+                // Handle both full course objects and course IDs for backward compatibility
+                if (typeof c.course === 'object' && c.course !== null) {
+                    return c.course.id === courseId;
+                }
                 return c.course === courseId;
             });
             if (courseProgressIndex === -1) {
@@ -52,6 +56,10 @@ export const completeLessonHandler = ({ userSlug = 'users' })=>async (req)=>{
             const courseProgress = coursesProgress[courseProgressIndex];
             // Check if lesson is already completed
             const lessonExists = courseProgress.completedLessons.some((cl)=>{
+                // Handle both full lesson objects and lesson IDs for backward compatibility
+                if (typeof cl.lesson === 'object' && cl.lesson !== null) {
+                    return cl.lesson.id === lessonId;
+                }
                 return cl.lesson === lessonId;
             });
             if (!lessonExists) {

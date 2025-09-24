@@ -60,13 +60,17 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 type: 'UPDATE_PROGRESS',
                 payload: coursesProgress || []
             });
+            // Ensure enrolledCourses is an array before mapping
+            const enrolledCoursesArray = Array.isArray(enrolledCourses) ? enrolledCourses : [];
             dispatch({
                 type: 'SET_ENROLLED_COURSES',
-                payload: (enrolledCourses || []).map((course)=>course.id)
+                payload: enrolledCoursesArray.map((course)=>course.id)
             });
+            // Ensure completedCourses is an array before mapping
+            const completedCoursesArray = Array.isArray(completedCourses) ? completedCourses : [];
             dispatch({
                 type: 'SET_COMPLETED_COURSES',
-                payload: (completedCourses || []).map((course)=>course.id)
+                payload: completedCoursesArray.map((course)=>course.id)
             });
         } catch (e) {
             dispatch({
@@ -89,12 +93,28 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             const storedProgress = localStorage.getItem(localStorageConfig.key);
             if (storedProgress) {
                 const parsed = JSON.parse(storedProgress);
+                // Normalize progress data to use IDs only for backward compatibility
+                const normalizedProgress = (parsed.progress || []).map((progress)=>({
+                        ...progress,
+                        course: typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course,
+                        completedLessons: progress.completedLessons?.map((lesson)=>({
+                                ...lesson,
+                                lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson
+                            })) || [],
+                        completedQuizzes: progress.completedQuizzes?.map((quiz)=>({
+                                ...quiz,
+                                quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz
+                            })) || []
+                    }));
+                // Normalize enrolled and completed courses to use IDs only
+                const normalizedEnrolledCourses = (parsed.enrolledCourses || []).map((course)=>typeof course === 'object' && course !== null ? course.id : course);
+                const normalizedCompletedCourses = (parsed.completedCourses || []).map((course)=>typeof course === 'object' && course !== null ? course.id : course);
                 dispatch({
                     type: 'LOAD_FROM_STORAGE',
                     payload: {
-                        progress: parsed.progress || [],
-                        enrolledCourses: parsed.enrolledCourses || [],
-                        completedCourses: parsed.completedCourses || []
+                        progress: normalizedProgress,
+                        enrolledCourses: normalizedEnrolledCourses,
+                        completedCourses: normalizedCompletedCourses
                     }
                 });
             }
@@ -314,7 +334,13 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             // Fetch fresh progress from database
             fetchProgress();
         }
-        return state.progress.find((cp)=>cp.course === courseId);
+        return state.progress.find((cp)=>{
+            // Handle both full course objects and course IDs for backward compatibility
+            if (typeof cp.course === 'object' && cp.course !== null) {
+                return cp.course.id === courseId;
+            }
+            return cp.course === courseId;
+        });
     }, [
         state.progress,
         fetchProgress
@@ -525,7 +551,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             payload: null
         });
         try {
-            const response = await fetch(`${baseAPIURL}/lms/generate-certificate`, {
+            const response = await fetch(`${baseAPIURL}/lms/add-certificate-to-user`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

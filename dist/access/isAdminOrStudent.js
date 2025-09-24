@@ -9,13 +9,6 @@ import { checkRole } from './checkRole.js';
     ], user)) {
         return true;
     }
-    // if (user && checkRole(['student'], user)) {
-    //   return {
-    //     students: {
-    //       contains: user.id,
-    //     },
-    //   }
-    // }
     return false;
 };
 export const isAdminOrStudentFieldLevel = ({ req: { user }, doc })=>{

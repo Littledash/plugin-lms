@@ -1,19 +1,31 @@
 import { addDataAndFileToRequest, CollectionSlug, TypedCollection, type Endpoint } from 'payload'
-
+import { renderToStream, type DocumentProps } from '@react-pdf/renderer'
+import React from 'react'
+import { CertificateDocument } from '../ui/Certificate/index.jsx'
 type Args = {
   userSlug: string
   courseSlug: string
-  certificatesSlug: string
+  mediaSlug: string
+}
+
+async function renderToBuffer(doc: React.ReactElement<DocumentProps>) {
+  const stream = await renderToStream(doc)
+  const chunks: Buffer[] = []
+  for await (const chunk of stream) {
+    chunks.push(chunk as Buffer)
+  }
+  return Buffer.concat(chunks)
 }
 
 type GenerateCertificateHandler = (args: Args) => Endpoint['handler']
 
-export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', certificatesSlug = 'certificates' }) => async (req) => {
+export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', mediaSlug = 'media' }) => async (req) => {
   await addDataAndFileToRequest(req)
   const data = req.data
   const user = req.user
   const payload = req.payload
   const courseId = data?.courseId
+  const certificate = data?.certificate
 
   if (!user) {
     return Response.json(
@@ -45,20 +57,58 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       return Response.json({ message: 'You have not completed this course.' }, { status: 403 })
     }
 
-    const newCertificate = await payload.create({
-      collection: certificatesSlug as CollectionSlug,
+    let certificatePDF = null
+
+  
+    const certificateData = {
+      studentName: currentUser.firstName + ' ' + currentUser.lastName,
+      courseTitle: certificate.title,
+      completionDate: new Date().toLocaleDateString(),
+      certificateNumber: `CERT-${courseId}-${certificate.id}-${user.id}`,
+      templateImage: certificate.template?.url, // A4 landscape
+      fontFamily: 'Poppins',
+      authorName: certificate.authors?.[0]?.name
+  }
+
+  const pdfBuffer = await renderToBuffer(React.createElement(CertificateDocument, certificateData) as React.ReactElement<DocumentProps>);
+
+  const certificateFileName = `Certificate-${courseId}-${certificate.id}-${user.id}.pdf`;
+  
+  const existingCertificate = await payload.find({
+    collection: mediaSlug as CollectionSlug,
+    where: {
+      filename: {
+        equals: certificateFileName
+      }
+    }
+  })
+
+  if (existingCertificate.docs.length > 0) {
+    
+    certificatePDF = existingCertificate.docs[0].url
+  } else {
+  //   certificatePDF = await generateCertificatePDF(courseId, user.id)
+   const certificateMedia = await payload.create({
+      collection: mediaSlug as CollectionSlug,
       data: {
-        user: user.id,
-        course: courseId,
-        issuedAt: new Date().toISOString(),
-      },
+        filename: certificateFileName,
+        title: 'Certificate - ' + certificate.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName + ' - ' + courseId,
+        mimeType: 'application/pdf',
+        filesize:  pdfBuffer?.length,
+      }
     })
+
+    certificatePDF = certificateMedia.docs[0].url
+  }
+
+    // const certificatePDF = await generateCertificatePDF(courseId, user.id)
+
 
     
 
     payload.logger.info(`Generated certificate for user ${user.id} for course ${courseId}`)
 
-    return Response.json(newCertificate)
+    return Response.json({ success: true, message: 'Successfully generated certificate.', certificate: certificatePDF })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'An unknown error occurred.'
     payload.logger.error(message)
