@@ -1,5 +1,5 @@
 import { addDataAndFileToRequest } from 'payload';
-export const fetchProgressHandler = ({ userSlug = 'users' })=>async (req)=>{
+export const fetchProgressHandler = ({ userSlug = 'users', courseSlug = 'courses' })=>async (req)=>{
         await addDataAndFileToRequest(req);
         const user = req.user;
         const payload = req.payload;
@@ -26,10 +26,34 @@ export const fetchProgressHandler = ({ userSlug = 'users' })=>async (req)=>{
             const coursesProgress = currentUser.coursesProgress || [];
             const enrolledCourses = currentUser.enrolledCourses || [];
             const completedCourses = currentUser.completedCourses || [];
-            // Normalize progress data to use IDs only
-            const normalizedProgress = coursesProgress.map((progress)=>({
+            // Calculate completion percentage for each course progress
+            const normalizedProgress = await Promise.all(coursesProgress.map(async (progress)=>{
+                const courseId = typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course;
+                // Fetch course data to get total required lessons
+                let completionPercentage = 0;
+                try {
+                    const course = await payload.findByID({
+                        collection: courseSlug,
+                        id: courseId,
+                        depth: 1
+                    });
+                    if (course && course.lessons) {
+                        // Count total required lessons (non-optional)
+                        const totalRequiredLessons = course.lessons.filter((lessonItem)=>!lessonItem.isOptional).length;
+                        // Count completed lessons
+                        const completedLessonIds = progress.completedLessons?.map((lesson)=>typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson) || [];
+                        // Calculate percentage
+                        if (totalRequiredLessons > 0) {
+                            completionPercentage = Math.round(completedLessonIds.length / totalRequiredLessons * 100);
+                        }
+                    }
+                } catch (error) {
+                    payload.logger.warn(`Could not fetch course ${courseId} for completion percentage calculation: ${error}`);
+                }
+                return {
                     ...progress,
-                    course: typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course,
+                    course: courseId,
+                    completionPercentage,
                     completedLessons: progress.completedLessons?.map((lesson)=>({
                             ...lesson,
                             lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson
@@ -38,7 +62,8 @@ export const fetchProgressHandler = ({ userSlug = 'users' })=>async (req)=>{
                             ...quiz,
                             quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz
                         })) || []
-                }));
+                };
+            }));
             // Normalize enrolled and completed courses to use IDs only
             const enrolledCoursesArray = Array.isArray(enrolledCourses) ? enrolledCourses : [];
             const completedCoursesArray = Array.isArray(completedCourses) ? completedCourses : [];

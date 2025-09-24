@@ -224,7 +224,8 @@ export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
                 path: '/lms/fetch-progress',
                 method: 'get',
                 handler: fetchProgressHandler({
-                    userSlug: collectionSlugMap.students
+                    userSlug: collectionSlugMap.students,
+                    courseSlug: collectionSlugMap.courses
                 })
             }
         ];

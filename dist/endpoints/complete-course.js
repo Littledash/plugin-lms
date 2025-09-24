@@ -37,8 +37,8 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
                 id: courseId,
                 depth: 1
             });
-            const enrolledCourses = (currentUser.enrolledCourses?.docs || []).map((course)=>typeof course === 'object' ? course.id : course);
-            const completedCourses = (currentUser.completedCourses?.docs || []).map((course)=>typeof course === 'object' ? course.id : course);
+            const enrolledCourses = (currentUser.enrolledCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
+            const completedCourses = (currentUser.completedCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
             if (!enrolledCourses.includes(courseId)) {
                 return Response.json({
                     message: 'You are not enrolled in this course.'
@@ -54,7 +54,7 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
                 });
             }
             // Update course collection - add student to courseCompletedStudents while keeping them enrolled
-            const courseCompletedStudents = (course.courseCompletedStudents?.docs || []).map((student)=>typeof student === 'object' ? student.id : student);
+            const courseCompletedStudents = (course.courseCompletedStudents || []).map((student)=>typeof student === 'object' ? student.id : student);
             // Only add to completed students if not already there
             if (!courseCompletedStudents.includes(user.id)) {
                 await payload.update({
@@ -68,6 +68,38 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
                     }
                 });
             }
+            // Update user's course progress to mark as completed
+            const coursesProgress = currentUser.coursesProgress || [];
+            const courseProgressIndex = coursesProgress.findIndex((progress)=>{
+                if (typeof progress.course === 'object' && progress.course !== null) {
+                    return progress.course.id === courseId;
+                }
+                return progress.course === courseId;
+            });
+            if (courseProgressIndex !== -1) {
+                // Update existing progress to mark as completed
+                coursesProgress[courseProgressIndex] = {
+                    ...coursesProgress[courseProgressIndex],
+                    completed: true,
+                    completedAt: new Date().toISOString()
+                };
+            } else {
+                // Create new progress entry if it doesn't exist (shouldn't happen with enrollment initialization)
+                coursesProgress.push({
+                    course: courseId,
+                    completed: true,
+                    completedAt: new Date().toISOString(),
+                    completedLessons: [],
+                    completedQuizzes: []
+                });
+            }
+            await payload.update({
+                collection: userSlug,
+                id: user.id,
+                data: {
+                    coursesProgress
+                }
+            });
             payload.logger.info(`User ${user.id} completed course ${courseId}`);
             return Response.json({
                 success: true,

@@ -37,9 +37,9 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses' })=>a
                     status: 404
                 });
             }
-            const enrolledStudentIds = (course?.students || []).map((student)=>typeof student === 'object' ? student.id : student);
-            const enrolledCourseIds = (currentUser.enrolledCourses?.docs || []).map((course)=>typeof course === 'object' ? course.id : course);
-            const completedCourseIds = (currentUser.completedCourses?.docs || []).map((course)=>typeof course === 'object' ? course.id : course);
+            const enrolledStudentIds = (course?.enrolledStudents || []).map((student)=>typeof student === 'object' ? student.id : student);
+            const enrolledCourseIds = (currentUser.enrolledCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
+            const completedCourseIds = (currentUser.completedCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
             if (enrolledStudentIds?.includes(user.id) || enrolledCourseIds.includes(courseId)) {
                 return Response.json({
                     message: 'You are already enrolled in this course.'
@@ -49,7 +49,7 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses' })=>a
             }
             if (completedCourseIds.includes(courseId)) {
                 return Response.json({
-                    message: 'You are already completed this course.'
+                    message: 'You have already completed this course.'
                 }, {
                     status: 409
                 });
@@ -64,6 +64,34 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses' })=>a
                     ]
                 }
             });
+            // Initialize course progress for the user
+            const coursesProgress = currentUser.coursesProgress || [];
+            // Check if course progress already exists for this course
+            const courseProgressExists = coursesProgress.some((progress)=>{
+                if (typeof progress.course === 'object' && progress.course !== null) {
+                    return progress.course.id === courseId;
+                }
+                return progress.course === courseId;
+            });
+            if (!courseProgressExists) {
+                // Create new course progress entry
+                const newCourseProgress = {
+                    course: courseId,
+                    completed: false,
+                    completedLessons: [],
+                    completedQuizzes: []
+                };
+                await payload.update({
+                    collection: userSlug,
+                    id: user.id,
+                    data: {
+                        coursesProgress: [
+                            ...coursesProgress,
+                            newCourseProgress
+                        ]
+                    }
+                });
+            }
             payload.logger.info(`User ${user.id} enrolled in course ${courseId}`);
             return Response.json({
                 success: true,

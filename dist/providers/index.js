@@ -26,6 +26,7 @@ const defaultContext = {
     fetchLessons: async ()=>{},
     fetchQuizzes: async ()=>{},
     generateCertificate: async ()=>{},
+    addCertificate: async ()=>{},
     isLoading: false,
     error: null
 };
@@ -551,7 +552,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             payload: null
         });
         try {
-            const response = await fetch(`${baseAPIURL}/lms/add-certificate-to-user`, {
+            const response = await fetch(`${baseAPIURL}/lms/generate-certificate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -561,11 +562,14 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 })
             });
             if (!response.ok) throw new Error('Failed to generate certificate');
-            const newCertificate = await response.json();
             dispatch({
-                type: 'ADD_CERTIFICATE',
-                payload: newCertificate
+                type: 'GENERATE_CERTIFICATE',
+                payload: {
+                    id: courseId
+                }
             });
+            await fetchProgress() // Refetch progress to ensure state is up-to-date
+            ;
         } catch (e) {
             dispatch({
                 type: 'SET_ERROR',
@@ -578,7 +582,53 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             });
         }
     }, [
-        baseAPIURL
+        baseAPIURL,
+        fetchProgress
+    ]);
+    const addCertificate = useCallback(async (courseId, certificateId)=>{
+        dispatch({
+            type: 'SET_LOADING',
+            payload: true
+        });
+        dispatch({
+            type: 'SET_ERROR',
+            payload: null
+        });
+        try {
+            const response = await fetch(`${baseAPIURL}/lms/add-certificate-to-user`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    courseId,
+                    certificateId
+                })
+            });
+            if (!response.ok) throw new Error('Failed to add certificate');
+            // const result = await response.json()
+            dispatch({
+                type: 'ADD_CERTIFICATE',
+                payload: {
+                    id: certificateId
+                }
+            });
+            await fetchProgress() // Refetch progress to ensure state is up-to-date
+            ;
+        } catch (e) {
+            dispatch({
+                type: 'SET_ERROR',
+                payload: e instanceof Error ? e : new Error('An unknown error occurred')
+            });
+        } finally{
+            dispatch({
+                type: 'SET_LOADING',
+                payload: false
+            });
+        }
+    }, [
+        baseAPIURL,
+        fetchProgress
     ]);
     const value = {
         users: state.users,
@@ -603,6 +653,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         fetchLessons,
         fetchQuizzes,
         generateCertificate,
+        addCertificate,
         isLoading: state.isLoading,
         error: state.error
     };

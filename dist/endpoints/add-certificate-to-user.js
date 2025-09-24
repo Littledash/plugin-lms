@@ -5,7 +5,7 @@ export const addCertificateToUserHandler = ({ userSlug = 'users', courseSlug = '
         const user = req.user;
         const payload = req.payload;
         const courseId = data?.courseId;
-        const certificate = data?.certificate;
+        const certificateId = data?.certificateId;
         if (!user) {
             return Response.json({
                 message: 'You must be logged in to add a certificate.'
@@ -16,6 +16,13 @@ export const addCertificateToUserHandler = ({ userSlug = 'users', courseSlug = '
         if (!courseId) {
             return Response.json({
                 message: 'Course ID is required.'
+            }, {
+                status: 400
+            });
+        }
+        if (!certificateId) {
+            return Response.json({
+                message: 'Certificate ID is required.'
             }, {
                 status: 400
             });
@@ -33,6 +40,18 @@ export const addCertificateToUserHandler = ({ userSlug = 'users', courseSlug = '
                     status: 404
                 });
             }
+            // Fetch the certificate object
+            const certificate = await payload.findByID({
+                collection: certificatesSlug,
+                id: certificateId
+            });
+            if (!certificate) {
+                return Response.json({
+                    message: 'Certificate not found.'
+                }, {
+                    status: 404
+                });
+            }
             const completedCourses = (currentUser.completedCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
             if (!completedCourses.includes(courseId)) {
                 return Response.json({
@@ -42,7 +61,7 @@ export const addCertificateToUserHandler = ({ userSlug = 'users', courseSlug = '
                 });
             }
             const existingCertificates = (currentUser.certificates || []).map((cert)=>typeof cert.certificate === 'object' ? cert.certificate.id : cert.certificate);
-            if (existingCertificates.includes(certificate?.id)) {
+            if (existingCertificates.includes(certificateId)) {
                 return Response.json({
                     message: 'You already have this certificate.'
                 }, {
@@ -56,7 +75,7 @@ export const addCertificateToUserHandler = ({ userSlug = 'users', courseSlug = '
                     certificates: [
                         ...currentUser.certificates || [],
                         {
-                            certificate: certificate.id,
+                            certificate: certificateId,
                             completedDate: new Date().toISOString()
                         }
                     ]

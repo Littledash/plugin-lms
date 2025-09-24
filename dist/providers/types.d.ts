@@ -23,6 +23,8 @@ export type CourseProgress = {
     };
     /** Whether the entire course has been completed. */
     completed: boolean;
+    /** The completion percentage of the course (0-100). */
+    completionPercentage?: number;
     /** A list of lessons completed by the user. */
     completedLessons: Array<{
         lesson: DefaultDocumentIDType | {
@@ -91,6 +93,8 @@ export type LMSContextType = {
     fetchQuizzes: (lessonId: DefaultDocumentIDType) => Promise<void>;
     /** Generates a new certificate for a completed course. */
     generateCertificate: (courseId: DefaultDocumentIDType) => Promise<void>;
+    /** Adds an existing certificate to a user for a completed course. */
+    addCertificate: (courseId: DefaultDocumentIDType, certificateId: DefaultDocumentIDType) => Promise<void>;
     /** Whether the provider is currently fetching data. */
     isLoading: boolean;
     /** Any error that occurred during data fetching. */

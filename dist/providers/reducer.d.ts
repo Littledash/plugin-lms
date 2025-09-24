@@ -54,7 +54,14 @@ export type LMSAction = {
     payload: DefaultDocumentIDType[];
 } | {
     type: 'ADD_CERTIFICATE';
-    payload: Certificate;
+    payload: {
+        id: DefaultDocumentIDType;
+    };
+} | {
+    type: 'GENERATE_CERTIFICATE';
+    payload: {
+        id: DefaultDocumentIDType;
+    };
 } | {
     type: 'LOAD_FROM_STORAGE';
     payload: {
