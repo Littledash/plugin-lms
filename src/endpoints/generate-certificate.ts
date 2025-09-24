@@ -1,7 +1,7 @@
 import { addDataAndFileToRequest, CollectionSlug, TypedCollection, type Endpoint } from 'payload'
 import { renderToStream, type DocumentProps } from '@react-pdf/renderer'
 import React from 'react'
-import { CertificateDocument } from '../ui/Certificate/index.jsx'
+import { CertificateDocument } from '../ui/Certificate/index.js'
 type Args = {
   userSlug: string
   courseSlug: string

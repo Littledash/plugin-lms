@@ -237,6 +237,7 @@ export const lmsPlugin =
         handler: enrollHandler({
           userSlug: collectionSlugMap.students,
           courseSlug: collectionSlugMap.courses,
+          groupSlug: collectionSlugMap.groups,
         }),
       },
       {

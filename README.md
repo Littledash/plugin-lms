@@ -254,6 +254,246 @@ export function CourseList() {
 }
 ```
 
+### Group Enrollment Example
+
+```tsx
+// components/GroupEnrollment.tsx
+import { useLMS } from '@littledash/plugin-lms/providers'
+import { useState } from 'react'
+
+export function GroupEnrollment({ courseId }) {
+  const { enroll, isLoading, error } = useLMS()
+  const [isGroup, setIsGroup] = useState(false)
+  const [companyName, setCompanyName] = useState('')
+  const [isLeader, setIsLeader] = useState(false)
+
+  const handleEnroll = async () => {
+    try {
+      if (isGroup) {
+        // Group enrollment with company name and role
+        await enroll(courseId, {
+          isGroup: true,
+          companyName: companyName,
+          isLeader: isLeader
+        })
+      } else {
+        // Regular individual enrollment
+        await enroll(courseId)
+      }
+    } catch (err) {
+      console.error('Enrollment failed:', err)
+    }
+  }
+
+  return (
+    <div className="enrollment-form">
+      <h3>Enroll in Course</h3>
+      
+      <div className="form-group">
+        <label>
+          <input
+            type="checkbox"
+            checked={isGroup}
+            onChange={(e) => setIsGroup(e.target.checked)}
+          />
+          Enroll as part of a group/company
+        </label>
+      </div>
+
+      {isGroup && (
+        <>
+          <div className="form-group">
+            <label>
+              Company/Group Name:
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Enter company or group name"
+                required
+              />
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label>
+              <input
+                type="radio"
+                name="role"
+                checked={isLeader}
+                onChange={() => setIsLeader(true)}
+              />
+              Group Leader
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="role"
+                checked={!isLeader}
+                onChange={() => setIsLeader(false)}
+              />
+              Group Member
+            </label>
+          </div>
+        </>
+      )}
+
+      {error && <div className="error">Error: {error.message}</div>}
+      
+      <button 
+        onClick={handleEnroll} 
+        disabled={isLoading || (isGroup && !companyName.trim())}
+      >
+        {isLoading ? 'Enrolling...' : 'Enroll Now'}
+      </button>
+    </div>
+  )
+}
+```
+
+### Advanced Enrollment with Form Validation
+
+```tsx
+// components/AdvancedEnrollment.tsx
+import { useLMS } from '@littledash/plugin-lms/providers'
+import { useState } from 'react'
+
+export function AdvancedEnrollment({ courseId }) {
+  const { enroll, isLoading, error } = useLMS()
+  const [enrollmentType, setEnrollmentType] = useState('individual')
+  const [formData, setFormData] = useState({
+    companyName: '',
+    isLeader: false,
+    department: ''
+  })
+  const [validationErrors, setValidationErrors] = useState({})
+
+  const validateForm = () => {
+    const errors = {}
+    
+    if (enrollmentType === 'group') {
+      if (!formData.companyName.trim()) {
+        errors.companyName = 'Company name is required for group enrollment'
+      }
+      if (formData.companyName.length < 2) {
+        errors.companyName = 'Company name must be at least 2 characters'
+      }
+    }
+    
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    
+    if (!validateForm()) return
+
+    try {
+      const enrollmentOptions = enrollmentType === 'group' ? {
+        isGroup: true,
+        companyName: formData.companyName,
+        isLeader: formData.isLeader
+      } : undefined
+
+      await enroll(courseId, enrollmentOptions)
+      
+      // Reset form on success
+      setFormData({ companyName: '', isLeader: false, department: '' })
+      setEnrollmentType('individual')
+    } catch (err) {
+      console.error('Enrollment failed:', err)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="enrollment-form">
+      <h3>Course Enrollment</h3>
+      
+      <div className="form-group">
+        <label>Enrollment Type:</label>
+        <select 
+          value={enrollmentType} 
+          onChange={(e) => setEnrollmentType(e.target.value)}
+        >
+          <option value="individual">Individual Enrollment</option>
+          <option value="group">Group/Company Enrollment</option>
+        </select>
+      </div>
+
+      {enrollmentType === 'group' && (
+        <>
+          <div className="form-group">
+            <label>
+              Company/Group Name: *
+              <input
+                type="text"
+                value={formData.companyName}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  companyName: e.target.value 
+                }))}
+                placeholder="Enter your company or group name"
+              />
+              {validationErrors.companyName && (
+                <span className="error-text">{validationErrors.companyName}</span>
+              )}
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label>
+              <input
+                type="radio"
+                name="role"
+                checked={formData.isLeader}
+                onChange={() => setFormData(prev => ({ ...prev, isLeader: true }))}
+              />
+              Group Leader (can manage group members)
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="role"
+                checked={!formData.isLeader}
+                onChange={() => setFormData(prev => ({ ...prev, isLeader: false }))}
+              />
+              Group Member
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label>
+              Department (Optional):
+              <input
+                type="text"
+                value={formData.department}
+                onChange={(e) => setFormData(prev => ({ 
+                  ...prev, 
+                  department: e.target.value 
+                }))}
+                placeholder="e.g., Engineering, Marketing, Sales"
+              />
+            </label>
+          </div>
+        </>
+      )}
+
+      {error && <div className="error">Error: {error.message}</div>}
+      
+      <button 
+        type="submit"
+        disabled={isLoading}
+        className="enroll-button"
+      >
+        {isLoading ? 'Enrolling...' : 
+         enrollmentType === 'group' ? 'Enroll Group' : 'Enroll Individual'}
+      </button>
+    </form>
+  )
+}
+```
+
 ### Progress Tracking Example
 
 ```tsx
@@ -670,14 +910,30 @@ All endpoints require authentication. Include the user's session token in your r
 
 **POST** `/api/lms/enroll`
 
-Enrolls the current user in a specified course.
+Enrolls the current user in a specified course. Supports both individual and group enrollment.
 
-**Request Body:**
+**Request Body (Individual Enrollment):**
 ```json
 {
   "courseId": "64f8a1b2c3d4e5f6a7b8c9d0"
 }
 ```
+
+**Request Body (Group Enrollment):**
+```json
+{
+  "courseId": "64f8a1b2c3d4e5f6a7b8c9d0",
+  "isGroup": true,
+  "companyName": "Acme Corporation",
+  "isLeader": false
+}
+```
+
+**Parameters:**
+- `courseId` (required): The ID of the course to enroll in
+- `isGroup` (optional): Whether this is a group enrollment (default: false)
+- `companyName` (optional): Company or group name (required if isGroup is true)
+- `isLeader` (optional): Whether the user is a group leader (default: false)
 
 **Response (200):**
 ```json
@@ -694,8 +950,17 @@ Enrolls the current user in a specified course.
 }
 ```
 
+**Response (400 - Missing Company Name):**
+```json
+{
+  "message": "Company name is required for group enrollment."
+}
+```
+
 **Example Usage:**
+
 ```javascript
+// Individual enrollment
 const enrollInCourse = async (courseId) => {
   const response = await fetch('/api/lms/enroll', {
     method: 'POST',
@@ -712,6 +977,34 @@ const enrollInCourse = async (courseId) => {
   }
   return result
 }
+
+// Group enrollment
+const enrollGroupInCourse = async (courseId, companyName, isLeader = false) => {
+  const response = await fetch('/api/lms/enroll', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${userToken}`
+    },
+    body: JSON.stringify({
+      courseId,
+      isGroup: true,
+      companyName,
+      isLeader
+    })
+  })
+
+  const result = await response.json()
+  if (!response.ok) {
+    throw new Error(result.message)
+  }
+  return result
+}
+
+// Usage examples
+await enrollInCourse('64f8a1b2c3d4e5f6a7b8c9d0')
+await enrollGroupInCourse('64f8a1b2c3d4e5f6a7b8c9d0', 'Tech Corp', true) // as leader
+await enrollGroupInCourse('64f8a1b2c3d4e5f6a7b8c9d0', 'Tech Corp', false) // as member
 ```
 
 ### Complete Lesson

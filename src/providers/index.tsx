@@ -142,14 +142,38 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   }, [state.progress, state.enrolledCourses, state.completedCourses, syncLocalStorage, localStorageConfig.key])
 
   const enroll = useCallback(
-    async (courseId: DefaultDocumentIDType) => {
+    async (
+      courseId: DefaultDocumentIDType,
+      options?: {
+        isGroup?: boolean
+        companyName?: string
+        isLeader?: boolean
+      }
+    ) => {
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
+        const requestBody: {
+          courseId: DefaultDocumentIDType
+          isGroup?: boolean
+          companyName?: string
+          isLeader?: boolean
+        } = { courseId }
+
+        if (options?.isGroup !== undefined) {
+          requestBody.isGroup = options.isGroup
+        }
+        if (options?.companyName) {
+          requestBody.companyName = options.companyName
+        }
+        if (options?.isLeader !== undefined) {
+          requestBody.isLeader = options.isLeader
+        }
+
         const response = await fetch(`${baseAPIURL}/lms/enroll`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ courseId }),
+          body: JSON.stringify(requestBody),
         })
         if (!response.ok) throw new Error('Failed to enroll in course')
         await fetchProgress() // Refetch progress to ensure state is up-to-date
