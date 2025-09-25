@@ -5,6 +5,9 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
         const user = req.user;
         const payload = req.payload;
         const courseId = data?.courseId;
+        const userId = data?.userId || '';
+        const baseUrl = req.url ? req.url.split('/api')[0] : 'http://localhost:3000';
+        console.log('baseUrl', baseUrl);
         if (!user) {
             return Response.json({
                 message: 'You must be logged in to complete a course.'
@@ -22,7 +25,7 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
         try {
             const currentUser = await payload.findByID({
                 collection: userSlug,
-                id: user.id,
+                id: userId ? userId : user.id,
                 depth: 1
             });
             if (!currentUser) {
@@ -95,11 +98,44 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
             }
             await payload.update({
                 collection: userSlug,
-                id: user.id,
+                id: currentUser.id,
                 data: {
                     coursesProgress
                 }
             });
+            // Add certificate to user if the course has one
+            try {
+                // Check if the course has a certificate configured
+                if (course.awards?.certificate) {
+                    const certificateId = typeof course.awards.certificate === 'object' ? course.awards.certificate.id : course.awards.certificate;
+                    // Use the existing add-certificate-to-user endpoint via HTTP
+                    const certificateResponse = await fetch(`${baseUrl}/api/lms/add-certificate-to-user`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            courseId,
+                            certificateId,
+                            options: {
+                                userId: user.id
+                            }
+                        })
+                    });
+                    if (certificateResponse.ok) {
+                        payload.logger.info(`Certificate ${certificateId} added to user ${user.id} for completing course ${courseId}`);
+                    } else {
+                        const errorData = await certificateResponse.json();
+                        payload.logger.warn(`Failed to add certificate: ${errorData.message}`);
+                    }
+                } else {
+                    payload.logger.info(`Course ${courseId} does not have a certificate configured`);
+                }
+            } catch (error) {
+                payload.logger.error(`Failed to add certificate to user: ${error instanceof Error ? error.message : 'An unknown error occurred.'}`);
+            // Don't fail the entire course completion if certificate addition fails
+            }
             payload.logger.info(`User ${user.id} completed course ${courseId}`);
             return Response.json({
                 success: true,

@@ -94,9 +94,9 @@ export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
         if (sanitizedPluginConfig.groups) {
             const collectionOverrides = typeof sanitizedPluginConfig.groups === 'object' ? sanitizedPluginConfig.groups.groupsCollection : undefined;
             const groups = groupsCollection({
-                coursesCollectionSlug: collectionSlugMap.courses,
+                // coursesCollectionSlug: collectionSlugMap.courses,
                 usersCollectionSlug: collectionSlugMap.students,
-                certificatesCollectionSlug: collectionSlugMap.certificates,
+                // certificatesCollectionSlug: collectionSlugMap.certificates,
                 overrides: collectionOverrides
             });
             incomingConfig.collections.push(groups);
@@ -168,7 +168,8 @@ export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
                 method: 'post',
                 handler: enrollHandler({
                     userSlug: collectionSlugMap.students,
-                    courseSlug: collectionSlugMap.courses
+                    courseSlug: collectionSlugMap.courses,
+                    groupSlug: collectionSlugMap.groups
                 })
             },
             {

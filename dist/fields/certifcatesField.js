@@ -2,7 +2,7 @@
  * Creates an array field for certificates with certificate and completed date
  * @param props - Configuration overrides for the field
  * @returns A configured array field for certificates
- */ export const certificatesField = ({ overrides, certificatesCollectionSlug })=>{
+ */ export const certificatesField = ({ overrides, certificatesCollectionSlug = 'certificates', coursesCollectionSlug = 'courses' })=>{
     const field = {
         name: 'certificates',
         type: 'array',
@@ -13,7 +13,8 @@
                 relationTo: certificatesCollectionSlug || 'certificates',
                 required: true,
                 admin: {
-                    allowCreate: false
+                    allowCreate: false,
+                    allowEdit: false
                 }
             },
             {
@@ -22,6 +23,18 @@
                 required: true,
                 admin: {
                     description: 'The date when the certificate was completed'
+                }
+            },
+            {
+                name: 'course',
+                type: 'relationship',
+                relationTo: coursesCollectionSlug || 'courses',
+                required: true,
+                hasMany: false,
+                admin: {
+                    description: 'The course that the certificate is for',
+                    allowCreate: false,
+                    allowEdit: false
                 }
             }
         ],

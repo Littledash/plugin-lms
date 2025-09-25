@@ -6,6 +6,7 @@ export const addCertificateToUserHandler = ({ userSlug = 'users', courseSlug = '
         const payload = req.payload;
         const courseId = data?.courseId;
         const certificateId = data?.certificateId;
+        const userId = data?.userId;
         if (!user) {
             return Response.json({
                 message: 'You must be logged in to add a certificate.'
@@ -30,7 +31,7 @@ export const addCertificateToUserHandler = ({ userSlug = 'users', courseSlug = '
         try {
             const currentUser = await payload.findByID({
                 collection: userSlug,
-                id: user.id,
+                id: userId ? userId : user.id,
                 depth: 1
             });
             if (!currentUser) {
@@ -60,8 +61,12 @@ export const addCertificateToUserHandler = ({ userSlug = 'users', courseSlug = '
                     status: 403
                 });
             }
-            const existingCertificates = (currentUser.certificates || []).map((cert)=>typeof cert.certificate === 'object' ? cert.certificate.id : cert.certificate);
-            if (existingCertificates.includes(certificateId)) {
+            const existingCertificates = (currentUser.certificates || []).map((cert)=>({
+                    certificateId: typeof cert.certificate === 'object' ? cert.certificate.id : cert.certificate,
+                    courseId: typeof cert.course === 'object' ? cert.course.id : cert.course
+                }));
+            const hasExistingCertificate = existingCertificates.some((cert)=>cert.certificateId === certificateId && cert.courseId === courseId);
+            if (hasExistingCertificate) {
                 return Response.json({
                     message: 'You already have this certificate.'
                 }, {
@@ -70,18 +75,19 @@ export const addCertificateToUserHandler = ({ userSlug = 'users', courseSlug = '
             }
             await payload.update({
                 collection: userSlug,
-                id: user.id,
+                id: currentUser.id,
                 data: {
                     certificates: [
                         ...currentUser.certificates || [],
                         {
                             certificate: certificateId,
+                            course: courseId,
                             completedDate: new Date().toISOString()
                         }
                     ]
                 }
             });
-            payload.logger.info(`Certificate added to user ${user.id} for course ${courseId}`);
+            payload.logger.info(`Certificate added to user ${currentUser.id} for course ${courseId}`);
             return Response.json({
                 success: true,
                 message: 'Successfully added certificate to user.'

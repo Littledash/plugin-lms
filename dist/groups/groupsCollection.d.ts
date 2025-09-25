@@ -1,9 +1,7 @@
 import { CollectionConfig } from 'payload';
 import { FieldsOverride } from '../types.js';
 type Props = {
-    coursesCollectionSlug?: string;
     usersCollectionSlug?: string;
-    certificatesCollectionSlug?: string;
     overrides?: {
         fields?: FieldsOverride;
     } & Partial<Omit<CollectionConfig, 'fields'>>;

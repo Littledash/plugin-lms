@@ -15,11 +15,17 @@ export const isPreviousLessonCompleted = (
     
     const previousLessonId = typeof previousLesson.lesson === 'object' ? previousLesson.lesson.id : previousLesson.lesson
     
+    const courseProgress = progress.find((p: CourseProgress) => 
+      (typeof p.course === 'object' ? p.course.id : p.course) === course.id
+    )
+    
+    if (!courseProgress) {
+      return false
+    }
+    
     return (
-      progress
-        .find((p: CourseProgress) => (typeof p.course === 'object' ? p.course.id : p.course) === course.id)
-        ?.completedLessons.find(
-          (l) => (typeof l.lesson === 'object' ? l.lesson.id : l.lesson) === previousLessonId,
-        ) !== undefined
+      courseProgress.completedLessons.find(
+        (l) => (typeof l.lesson === 'object' ? l.lesson.id : l.lesson) === previousLessonId,
+      ) !== undefined
     )
   }

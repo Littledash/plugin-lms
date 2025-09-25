@@ -144,7 +144,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         syncLocalStorage,
         localStorageConfig.key
     ]);
-    const enroll = useCallback(async (courseId)=>{
+    const enroll = useCallback(async (courseId, options)=>{
         dispatch({
             type: 'SET_LOADING',
             payload: true
@@ -154,14 +154,28 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             payload: null
         });
         try {
+            const requestBody = {
+                courseId
+            };
+            if (options?.isGroup !== undefined) {
+                requestBody.isGroup = options.isGroup;
+            }
+            if (options?.companyName) {
+                requestBody.companyName = options.companyName;
+            }
+            if (options?.isLeader !== undefined) {
+                requestBody.isLeader = options.isLeader;
+            }
+            if (options?.userId) {
+                requestBody.userId = options.userId;
+            }
             const response = await fetch(`${baseAPIURL}/lms/enroll`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    courseId
-                })
+                credentials: 'include',
+                body: JSON.stringify(requestBody)
             });
             if (!response.ok) throw new Error('Failed to enroll in course');
             await fetchProgress() // Refetch progress to ensure state is up-to-date
@@ -181,7 +195,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         baseAPIURL,
         fetchProgress
     ]);
-    const completeCourse = useCallback(async (courseId)=>{
+    const completeCourse = useCallback(async (courseId, options)=>{
         dispatch({
             type: 'SET_LOADING',
             payload: true
@@ -191,14 +205,19 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             payload: null
         });
         try {
+            const requestBody = {
+                courseId
+            };
+            if (options?.userId) {
+                requestBody.userId = options.userId;
+            }
             const response = await fetch(`${baseAPIURL}/lms/complete-course`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    courseId
-                })
+                credentials: 'include',
+                body: JSON.stringify(requestBody)
             });
             if (!response.ok) throw new Error('Failed to complete course');
             await fetchProgress() // Refetch progress to ensure state is up-to-date
@@ -542,7 +561,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
     }, [
         baseAPIURL
     ]);
-    const generateCertificate = useCallback(async (courseId)=>{
+    const generateCertificate = useCallback(async (courseId, options)=>{
         dispatch({
             type: 'SET_LOADING',
             payload: true
@@ -552,14 +571,20 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             payload: null
         });
         try {
+            console.log('Generating certificate for course', courseId);
+            const requestBody = {
+                courseId
+            };
+            if (options?.userId) {
+                requestBody.userId = options.userId;
+            }
             const response = await fetch(`${baseAPIURL}/lms/generate-certificate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    courseId
-                })
+                credentials: 'include',
+                body: JSON.stringify(requestBody)
             });
             if (!response.ok) throw new Error('Failed to generate certificate');
             dispatch({
@@ -585,7 +610,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         baseAPIURL,
         fetchProgress
     ]);
-    const addCertificate = useCallback(async (courseId, certificateId)=>{
+    const addCertificate = useCallback(async (courseId, certificateId, options)=>{
         dispatch({
             type: 'SET_LOADING',
             payload: true
@@ -595,15 +620,19 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             payload: null
         });
         try {
+            const requestBody = {
+                courseId,
+                certificateId
+            };
+            if (options?.userId) {
+                requestBody.userId = options.userId;
+            }
             const response = await fetch(`${baseAPIURL}/lms/add-certificate-to-user`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    courseId,
-                    certificateId
-                })
+                body: JSON.stringify(requestBody)
             });
             if (!response.ok) throw new Error('Failed to add certificate');
             // const result = await response.json()

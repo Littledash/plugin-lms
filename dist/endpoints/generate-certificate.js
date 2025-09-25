@@ -1,7 +1,7 @@
 import { addDataAndFileToRequest } from 'payload';
 import { renderToStream } from '@react-pdf/renderer';
 import React from 'react';
-import { CertificateDocument } from '../ui/Certificate/index.jsx';
+import { CertificateDocument } from '../ui/Certificate/index.js';
 async function renderToBuffer(doc) {
     const stream = await renderToStream(doc);
     const chunks = [];
@@ -17,6 +17,7 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
         const payload = req.payload;
         const courseId = data?.courseId;
         const certificate = data?.certificate;
+        const userId = data?.userId;
         if (!user) {
             return Response.json({
                 message: 'You must be logged in to generate a certificate.'
@@ -34,7 +35,12 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
         try {
             const currentUser = await payload.findByID({
                 collection: userSlug,
-                id: user.id,
+                id: userId ? userId : user.id,
+                depth: 1
+            });
+            const course = await payload.findByID({
+                collection: courseSlug,
+                id: courseId,
                 depth: 1
             });
             if (!currentUser) {
@@ -55,15 +61,15 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
             let certificatePDF = null;
             const certificateData = {
                 studentName: currentUser.firstName + ' ' + currentUser.lastName,
-                courseTitle: certificate.title,
+                courseTitle: course.title,
                 completionDate: new Date().toLocaleDateString(),
-                certificateNumber: `CERT-${courseId}-${certificate.id}-${user.id}`,
+                certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
                 templateImage: certificate.template?.url,
                 fontFamily: 'Poppins',
                 authorName: certificate.authors?.[0]?.name
             };
             const pdfBuffer = await renderToBuffer(React.createElement(CertificateDocument, certificateData));
-            const certificateFileName = `Certificate-${courseId}-${certificate.id}-${user.id}.pdf`;
+            const certificateFileName = `certificate-${courseId}-${certificate.id}-${currentUser.id}.pdf`;
             const existingCertificate = await payload.find({
                 collection: mediaSlug,
                 where: {
@@ -73,22 +79,22 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                 }
             });
             if (existingCertificate.docs.length > 0) {
-                certificatePDF = existingCertificate.docs[0].url;
+                certificatePDF = existingCertificate;
             } else {
                 //   certificatePDF = await generateCertificatePDF(courseId, user.id)
                 const certificateMedia = await payload.create({
                     collection: mediaSlug,
                     data: {
                         filename: certificateFileName,
-                        title: 'Certificate - ' + certificate.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName + ' - ' + courseId,
+                        title: 'Certificate - ' + course.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName,
                         mimeType: 'application/pdf',
                         filesize: pdfBuffer?.length
                     }
                 });
-                certificatePDF = certificateMedia.docs[0].url;
+                certificatePDF = certificateMedia;
             }
             // const certificatePDF = await generateCertificatePDF(courseId, user.id)
-            payload.logger.info(`Generated certificate for user ${user.id} for course ${courseId}`);
+            payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`);
             return Response.json({
                 success: true,
                 message: 'Successfully generated certificate.',

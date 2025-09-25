@@ -68,7 +68,11 @@ export type LMSContextType = {
     /** A list of course IDs the current user has completed. */
     completedCourses: DefaultDocumentIDType[];
     /** Enrolls the current user in a course. */
-    enroll: (courseId: DefaultDocumentIDType) => Promise<void>;
+    enroll: (courseId: DefaultDocumentIDType, options?: {
+        isGroup?: boolean;
+        companyName?: string;
+        isLeader?: boolean;
+    }) => Promise<void>;
     /** Marks a course as complete for the current user. */
     completeCourse: (courseId: DefaultDocumentIDType) => Promise<void>;
     /** Marks a lesson as complete for the current user. */
