@@ -4,9 +4,9 @@ export const completedLesson = (
     courseId: string,
     lessonId: string,
   ) => {
-    return (
+    return Boolean(
       progress
         .find((p: CourseProgress) => (typeof p.course === 'object' ? p.course.id : p.course) === courseId)
-        ?.completedLessons.find((l) => typeof l.lesson === 'object' ? l.lesson.id : l.lesson === lessonId) || false
+        ?.completedLessons.find((l) => typeof l.lesson === 'object' ? l.lesson.id : l.lesson === lessonId)
     )
   }
