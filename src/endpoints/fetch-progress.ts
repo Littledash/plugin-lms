@@ -42,6 +42,7 @@ export const fetchProgressHandler: FetchProgressHandler = ({ userSlug = 'users',
         
         // Fetch course data to get total required lessons
         let completionPercentage = 0
+        let courseCompletion = ''
         try {
           const course = await payload.findByID({
             collection: courseSlug as CollectionSlug,
@@ -61,6 +62,7 @@ export const fetchProgressHandler: FetchProgressHandler = ({ userSlug = 'users',
             // Calculate percentage
             if (totalRequiredLessons > 0) {
               completionPercentage = Math.round((completedLessonIds.length / totalRequiredLessons) * 100)
+              courseCompletion = `${completedLessonIds.length}/${totalRequiredLessons}`
             }
           }
         } catch (error) {
@@ -71,6 +73,7 @@ export const fetchProgressHandler: FetchProgressHandler = ({ userSlug = 'users',
           ...progress,
           course: courseId,
           completionPercentage,
+          courseCompletion,
           completedLessons: progress.completedLessons?.map((lesson) => ({
             ...lesson,
             lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson,

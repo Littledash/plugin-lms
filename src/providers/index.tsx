@@ -100,6 +100,8 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
             ...lesson,
             lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson,
           })) || [],
+          completionPercentage: progress.completionPercentage || 0,
+          courseCompletion: progress.courseCompletion || '',
           completedQuizzes: progress.completedQuizzes?.map((quiz) => ({
             ...quiz,
             quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz,
