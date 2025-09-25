@@ -26,6 +26,7 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
   const payload = req.payload
   const courseId = data?.courseId
   const certificate = data?.certificate
+  const userId = data?.userId
 
   if (!user) {
     return Response.json(
@@ -41,7 +42,13 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
   try {
     const currentUser = await payload.findByID({
       collection: userSlug as CollectionSlug,
-      id: user.id,
+      id: userId ? userId : user.id,
+      depth: 1,
+    })
+
+    const course = await payload.findByID({
+      collection: courseSlug as CollectionSlug,
+      id: courseId,
       depth: 1,
     })
 
@@ -62,9 +69,9 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
   
     const certificateData = {
       studentName: currentUser.firstName + ' ' + currentUser.lastName,
-      courseTitle: certificate.title,
+      courseTitle: course.title, // should be the course title
       completionDate: new Date().toLocaleDateString(),
-      certificateNumber: `CERT-${courseId}-${certificate.id}-${user.id}`,
+      certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
       templateImage: certificate.template?.url, // A4 landscape
       fontFamily: 'Poppins',
       authorName: certificate.authors?.[0]?.name
@@ -72,7 +79,7 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
 
   const pdfBuffer = await renderToBuffer(React.createElement(CertificateDocument, certificateData) as React.ReactElement<DocumentProps>);
 
-  const certificateFileName = `certificate-${courseId}-${certificate.id}-${user.id}.pdf`;
+  const certificateFileName = `certificate-${courseId}-${certificate.id}-${currentUser.id}.pdf`;
   
   const existingCertificate = await payload.find({
     collection: mediaSlug as CollectionSlug,
@@ -85,20 +92,20 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
 
   if (existingCertificate.docs.length > 0) {
     
-    certificatePDF = existingCertificate.docs[0].url
+    certificatePDF = existingCertificate
   } else {
   //   certificatePDF = await generateCertificatePDF(courseId, user.id)
    const certificateMedia = await payload.create({
       collection: mediaSlug as CollectionSlug,
       data: {
         filename: certificateFileName,
-        title: 'Certificate - ' + certificate.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName + ' - ' + courseId,
+        title: 'Certificate - ' + course.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName,
         mimeType: 'application/pdf',
         filesize:  pdfBuffer?.length,
       }
     })
 
-    certificatePDF = certificateMedia.docs[0].url
+    certificatePDF = certificateMedia
   }
 
     // const certificatePDF = await generateCertificatePDF(courseId, user.id)
@@ -106,7 +113,7 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
 
     
 
-    payload.logger.info(`Generated certificate for user ${user.id} for course ${courseId}`)
+    payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`)
 
     return Response.json({ success: true, message: 'Successfully generated certificate.', certificate: certificatePDF })
   } catch (error: unknown) {

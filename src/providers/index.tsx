@@ -178,6 +178,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         const response = await fetch(`${baseAPIURL}/lms/enroll`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(requestBody),
         })
         if (!response.ok) throw new Error('Failed to enroll in course')
@@ -208,6 +209,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         const response = await fetch(`${baseAPIURL}/lms/complete-course`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(requestBody),
         })
         if (!response.ok) throw new Error('Failed to complete course')
@@ -392,16 +394,26 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const generateCertificate = useCallback(
-    async (courseId: DefaultDocumentIDType) => {
+    async (courseId: DefaultDocumentIDType, options?: { userId?: DefaultDocumentIDType }) => {
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
         console.log('Generating certificate for course', courseId)
 
+        const requestBody: {
+          courseId: DefaultDocumentIDType
+          userId?: DefaultDocumentIDType
+        } = { courseId }
+
+        if (options?.userId) {
+          requestBody.userId = options.userId
+        }
+
         const response = await fetch(`${baseAPIURL}/lms/generate-certificate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ courseId }),
+          credentials: 'include',
+          body: JSON.stringify(requestBody),
         })
         if (!response.ok) throw new Error('Failed to generate certificate')
         dispatch({ type: 'GENERATE_CERTIFICATE', payload: { id: courseId } })
