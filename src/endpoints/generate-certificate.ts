@@ -72,7 +72,7 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
 
   const pdfBuffer = await renderToBuffer(React.createElement(CertificateDocument, certificateData) as React.ReactElement<DocumentProps>);
 
-  const certificateFileName = `Certificate-${courseId}-${certificate.id}-${user.id}.pdf`;
+  const certificateFileName = `certificate-${courseId}-${certificate.id}-${user.id}.pdf`;
   
   const existingCertificate = await payload.find({
     collection: mediaSlug as CollectionSlug,
