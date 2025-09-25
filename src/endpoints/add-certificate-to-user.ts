@@ -61,11 +61,16 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
       return Response.json({ message: 'You have not completed this course.' }, { status: 403 })
     }
 
-    const existingCertificates = (currentUser.certificates || []).map((cert: { certificate: string | TypedCollection[typeof certificatesSlug] }) => 
-      typeof cert.certificate === 'object' ? cert.certificate.id : cert.certificate
+    const existingCertificates = (currentUser.certificates || []).map((cert: { certificate: string | TypedCollection[typeof certificatesSlug], course: string | TypedCollection[typeof courseSlug] }) => ({
+      certificateId: typeof cert.certificate === 'object' ? cert.certificate.id : cert.certificate,
+      courseId: typeof cert.course === 'object' ? cert.course.id : cert.course
+    }))
+
+    const hasExistingCertificate = existingCertificates.some((cert: { certificateId: string, courseId: string }) => 
+      cert.certificateId === certificateId && cert.courseId === courseId
     )
 
-    if (existingCertificates.includes(certificateId)) {
+    if (hasExistingCertificate) {
       return Response.json({ message: 'You already have this certificate.' }, { status: 400 })
     }
 
@@ -77,6 +82,7 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
           ...(currentUser.certificates || []),
           {
             certificate: certificateId,
+            course: courseId,
             completedDate: new Date().toISOString(),
           },
         ],

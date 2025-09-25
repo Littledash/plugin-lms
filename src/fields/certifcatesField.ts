@@ -5,6 +5,7 @@ import type { ArrayField } from 'payload'
  */
 type Props = {
   certificatesCollectionSlug?: string
+  coursesCollectionSlug?: string
   overrides?: Partial<ArrayField>
 }
 
@@ -15,7 +16,8 @@ type Props = {
  */
 export const certificatesField: (props: Props) => ArrayField = ({
   overrides,
-  certificatesCollectionSlug,
+  certificatesCollectionSlug = 'certificates',
+  coursesCollectionSlug = 'courses',
 }) => {
   const field: ArrayField = {
     name: 'certificates',
@@ -28,6 +30,7 @@ export const certificatesField: (props: Props) => ArrayField = ({
         required: true,
         admin: {
           allowCreate: false,
+          allowEdit: false,
         },
       },
       {
@@ -36,6 +39,18 @@ export const certificatesField: (props: Props) => ArrayField = ({
         required: true,
         admin: {
           description: 'The date when the certificate was completed',
+        },
+      },
+      {
+        name: 'course',
+        type: 'relationship',
+        relationTo: coursesCollectionSlug || 'courses',
+        required: true,
+        hasMany: false,
+        admin: {
+          description: 'The course that the certificate is for',
+          allowCreate: false,
+          allowEdit: false,
         },
       },
     ],
