@@ -148,6 +148,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         isGroup?: boolean
         companyName?: string
         isLeader?: boolean
+        userId?: DefaultDocumentIDType
       }
     ) => {
       dispatch({ type: 'SET_LOADING', payload: true })
@@ -158,6 +159,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
           isGroup?: boolean
           companyName?: string
           isLeader?: boolean
+          userId?: DefaultDocumentIDType
         } = { courseId }
 
         if (options?.isGroup !== undefined) {
@@ -168,6 +170,9 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         }
         if (options?.isLeader !== undefined) {
           requestBody.isLeader = options.isLeader
+        }
+        if (options?.userId) {
+          requestBody.userId = options.userId
         }
 
         const response = await fetch(`${baseAPIURL}/lms/enroll`, {
@@ -187,14 +192,23 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const completeCourse = useCallback(
-    async (courseId: DefaultDocumentIDType) => {
+    async (courseId: DefaultDocumentIDType, options?: { userId?: DefaultDocumentIDType }) => {
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
+        const requestBody: {
+          courseId: DefaultDocumentIDType
+          userId?: DefaultDocumentIDType
+        } = { courseId }
+
+        if (options?.userId) {
+          requestBody.userId = options.userId
+        }
+
         const response = await fetch(`${baseAPIURL}/lms/complete-course`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ courseId }),
+          body: JSON.stringify(requestBody),
         })
         if (!response.ok) throw new Error('Failed to complete course')
         await fetchProgress() // Refetch progress to ensure state is up-to-date

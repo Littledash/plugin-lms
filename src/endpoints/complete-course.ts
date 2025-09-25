@@ -16,6 +16,7 @@ async (req) => {
   const user = req.user
   const payload = req.payload
   const courseId = data?.courseId
+  const userId = data?.userId || ''
 
   if (!user) {
     return Response.json(
@@ -31,7 +32,7 @@ async (req) => {
   try {
     const currentUser = await payload.findByID({
       collection: userSlug as CollectionSlug,
-      id: user.id,
+      id: userId ? userId : user.id,
       depth: 1,
     })
 
@@ -105,7 +106,7 @@ async (req) => {
 
     await payload.update({
       collection: userSlug as CollectionSlug,
-      id: user.id,
+      id: currentUser.id,
       data: {
         coursesProgress,
       },

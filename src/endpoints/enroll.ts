@@ -17,7 +17,8 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
   const courseId = data?.courseId
   const isGroup = data?.isGroup || false
   const companyName = data?.companyName || ''
-  const isLeader = data?.isLeader || false
+  const userId = data?.userId || ''
+  let isLeader = data?.isLeader || false
 
   if (!user) {
     return Response.json({ message: 'You must be logged in to enroll.' }, { status: 401 })
@@ -30,7 +31,7 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
   try {
     const currentUser = await payload.findByID({
       collection: userSlug as CollectionSlug,
-      id: user.id,
+      id: userId ? userId : user.id,
       depth: 1,
     })
 
