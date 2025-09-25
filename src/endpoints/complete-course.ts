@@ -1,6 +1,5 @@
 import { addDataAndFileToRequest, CollectionSlug, TypedCollection, type Endpoint } from 'payload'
 import type { CourseProgress } from '../providers/types.js'
-
 type Args = {
   userSlug: string
   courseSlug: string
@@ -17,7 +16,8 @@ async (req) => {
   const payload = req.payload
   const courseId = data?.courseId
   const userId = data?.userId || ''
-
+  const baseUrl = req.url ? req.url.split('/api')[0] : 'http://localhost:3000'
+  console.log('baseUrl', baseUrl)
   if (!user) {
     return Response.json(
       { message: 'You must be logged in to complete a course.' },
@@ -111,6 +111,45 @@ async (req) => {
         coursesProgress,
       },
     })
+
+    // Add certificate to user if the course has one
+    try {
+      // Check if the course has a certificate configured
+      if (course.awards?.certificate) {
+        const certificateId = typeof course.awards.certificate === 'object' 
+          ? course.awards.certificate.id 
+          : course.awards.certificate
+
+        // Use the existing add-certificate-to-user endpoint via HTTP
+
+        const certificateResponse = await fetch(`${baseUrl}/api/lms/add-certificate-to-user`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            courseId,
+            certificateId,
+            options: {
+              userId: user.id,
+            }
+          }),
+        })
+        
+        if (certificateResponse.ok) {
+          payload.logger.info(`Certificate ${certificateId} added to user ${user.id} for completing course ${courseId}`)
+        } else {
+          const errorData = await certificateResponse.json()
+          payload.logger.warn(`Failed to add certificate: ${errorData.message}`)
+        }
+      } else {
+        payload.logger.info(`Course ${courseId} does not have a certificate configured`)
+      }
+    } catch (error: unknown) {
+      payload.logger.error(`Failed to add certificate to user: ${error instanceof Error ? error.message : 'An unknown error occurred.'}`)
+      // Don't fail the entire course completion if certificate addition fails
+    }
 
     payload.logger.info(`User ${user.id} completed course ${courseId}`)
 

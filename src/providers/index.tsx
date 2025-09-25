@@ -396,6 +396,8 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
+        console.log('Generating certificate for course', courseId)
+
         const response = await fetch(`${baseAPIURL}/lms/generate-certificate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -414,14 +416,24 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const addCertificate = useCallback(
-    async (courseId: DefaultDocumentIDType, certificateId: DefaultDocumentIDType) => {
+    async (courseId: DefaultDocumentIDType, certificateId: DefaultDocumentIDType, options?: { userId?: DefaultDocumentIDType }) => {
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
+        const requestBody: {
+          courseId: DefaultDocumentIDType
+          certificateId: DefaultDocumentIDType
+          userId?: DefaultDocumentIDType
+        } = { courseId, certificateId }
+
+        if (options?.userId) {
+          requestBody.userId = options.userId
+        }
+
         const response = await fetch(`${baseAPIURL}/lms/add-certificate-to-user`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ courseId, certificateId }),
+          body: JSON.stringify(requestBody),
         })
         if (!response.ok) throw new Error('Failed to add certificate')
         // const result = await response.json()

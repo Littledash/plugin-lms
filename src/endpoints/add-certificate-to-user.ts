@@ -15,6 +15,7 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
   const payload = req.payload
   const courseId = data?.courseId
   const certificateId = data?.certificateId
+  const userId = data?.userId
 
   if (!user) {
     return Response.json(
@@ -34,7 +35,7 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
   try {
     const currentUser = await payload.findByID({
       collection: userSlug as CollectionSlug,
-      id: user.id,
+      id: userId ? userId : user.id,
       depth: 1,
     })
 
@@ -70,7 +71,7 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
 
     await payload.update({
       collection: userSlug as CollectionSlug,
-      id: user.id,
+      id: currentUser.id,
       data: {
         certificates: [
           ...(currentUser.certificates || []),
@@ -84,7 +85,7 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
 
     
 
-    payload.logger.info(`Certificate added to user ${user.id} for course ${courseId}`)
+    payload.logger.info(`Certificate added to user ${currentUser.id} for course ${courseId}`)
 
     return Response.json({ success: true, message: 'Successfully added certificate to user.' })
   } catch (error: unknown) {
