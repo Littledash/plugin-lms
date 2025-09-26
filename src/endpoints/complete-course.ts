@@ -17,7 +17,7 @@ async (req) => {
   const courseId = data?.courseId
   const userId = data?.userId || ''
   const baseUrl = req.url ? req.url.split('/api')[0] : 'http://localhost:3000'
-  console.log('baseUrl', baseUrl)
+
   if (!user) {
     return Response.json(
       { message: 'You must be logged in to complete a course.' },
@@ -46,10 +46,10 @@ async (req) => {
       depth: 1,
     })
 
-    const enrolledCourses = (currentUser.enrolledCourses || []).map(
+    const enrolledCourses = (Array.isArray(currentUser.enrolledCourses) ? currentUser.enrolledCourses : []).map(
       (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
     )
-    const completedCourses = (currentUser.completedCourses || []).map(
+    const completedCourses = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map(
       (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
     )
 
@@ -62,7 +62,7 @@ async (req) => {
     }
 
     // Update course collection - add student to courseCompletedStudents while keeping them enrolled
-    const courseCompletedStudents = (course.courseCompletedStudents || []).map(
+    const courseCompletedStudents = (Array.isArray(course.courseCompletedStudents) ? course.courseCompletedStudents : []).map(
       (student: string | TypedCollection[typeof userSlug]) => (typeof student === 'object' ? student.id : student),
     )
 
@@ -126,6 +126,8 @@ async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `${userSlug} API-Key ${process.env.PAYLOAD_API_KEY}`,
+
           },
           credentials: 'include',
           body: JSON.stringify({
