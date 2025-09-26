@@ -40,6 +40,9 @@ async (req) => {
       return Response.json({ message: 'User not found.' }, { status: 404 })
     }
 
+       // Check if user has completed the course by looking at coursesProgress
+       const coursesProgress = currentUser.coursesProgress || []
+
     const course = await payload.findByID({
       collection: courseSlug as CollectionSlug,
       id: courseId,
@@ -51,15 +54,28 @@ async (req) => {
       typeof student === 'object' ? student.id : student,
     )
     
-    const completedCourses = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map(
-      (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
-    )
+    // const completedCourses = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map(
+    //   (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
+    // )
+
+     
+        const courseProgress = coursesProgress.find((progress: CourseProgress) => {
+          if (typeof progress.course === 'object' && progress.course !== null) {
+            return progress.course.id === courseId
+          }
+          return progress.course === courseId
+        })
+    
+        if (!courseProgress || !courseProgress.completed) {
+          return Response.json({ message: 'You have not completed this course.' }, { status: 403 })
+        }
+    
 
     if (!enrolledStudentIds.includes(currentUser.id)) {
       return Response.json({ message: 'You are not enrolled in this course.' }, { status: 409 })
     }
 
-    if (completedCourses.includes(courseId)) {
+    if (courseProgress && courseProgress.completed) {
       return Response.json({ message: 'You have already completed this course.' }, { status: 409 })
     }
 
@@ -84,7 +100,7 @@ async (req) => {
     })
 
     // Update user's course progress to mark as completed
-    const coursesProgress = currentUser.coursesProgress || []
+
     const courseProgressIndex = coursesProgress.findIndex((progress: CourseProgress) => {
       if (typeof progress.course === 'object' && progress.course !== null) {
         return progress.course.id === courseId

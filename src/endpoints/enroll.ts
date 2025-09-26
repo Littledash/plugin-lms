@@ -201,13 +201,13 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
           payload.logger.info(`User ${currentUser.id} course progress created for course ${courseId}`)
         }
 
-      return Response.json({ message: 'You are already enrolled in this course.' }, { status: 409 })
+      return Response.json({ message: 'You are already enrolled in this course.' }, { status: 200 })
     }
 
     if (
       completedCourseIds.includes(courseId) 
     ) {
-      return Response.json({ message: 'You have already completed this course.' }, { status: 409 })
+      return Response.json({ message: 'You have already completed this course.' }, { status: 200 })
     }
 
     await payload.update({
