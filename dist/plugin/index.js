@@ -210,7 +210,8 @@ export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
                 handler: generateCertificateHandler({
                     userSlug: collectionSlugMap.students,
                     courseSlug: collectionSlugMap.courses,
-                    mediaSlug: collectionSlugMap.media
+                    mediaSlug: collectionSlugMap.media,
+                    certificatesSlug: collectionSlugMap.certificates
                 })
             },
             {

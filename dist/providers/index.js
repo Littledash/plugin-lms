@@ -254,6 +254,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     courseId,
                     lessonId
@@ -291,6 +292,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     courseId,
                     quizId,
@@ -330,6 +332,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     groupId,
                     userId,
@@ -563,7 +566,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
     }, [
         baseAPIURL
     ]);
-    const generateCertificate = useCallback(async (courseId, options)=>{
+    const generateCertificate = useCallback(async (courseId, certificateId, options)=>{
         dispatch({
             type: 'SET_LOADING',
             payload: true
@@ -575,7 +578,8 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         try {
             console.log('Generating certificate for course', courseId);
             const requestBody = {
-                courseId
+                courseId,
+                certificateId
             };
             if (options?.userId) {
                 requestBody.userId = options.userId;
@@ -634,6 +638,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 headers: {
                     'Content-Type': 'application/json'
                 },
+                credentials: 'include',
                 body: JSON.stringify(requestBody)
             });
             if (!response.ok) throw new Error('Failed to add certificate');

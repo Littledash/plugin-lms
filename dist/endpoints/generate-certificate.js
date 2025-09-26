@@ -10,7 +10,7 @@ async function renderToBuffer(doc) {
     }
     return Buffer.concat(chunks);
 }
-export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', mediaSlug = 'media' })=>async (req)=>{
+export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', mediaSlug = 'media', certificatesSlug = 'certificates' })=>async (req)=>{
         await addDataAndFileToRequest(req);
         const data = req.data;
         const user = req.user;
@@ -43,6 +43,11 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                 id: courseId,
                 depth: 1
             });
+            const certificate = await payload.findByID({
+                collection: certificatesSlug,
+                id: certificateId,
+                depth: 1
+            });
             if (!currentUser) {
                 return Response.json({
                     message: 'User not found.'
@@ -50,36 +55,28 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     status: 404
                 });
             }
-            // Check if user has completed this course by looking at their completed courses
-            const completedCourses = (Array.isArray(currentUser?.completedCourses) ? currentUser.completedCourses : []).map((course)=>typeof course === 'object' ? course.id : course);
-            if (!completedCourses.includes(courseId)) {
+            // Check completed courses by looking at the course's courseCompletedStudents field (more reliable than join field)
+            const completedCourses = (Array.isArray(course?.courseCompletedStudents) ? course.courseCompletedStudents : []).map((student)=>typeof student === 'object' ? student.id : student);
+            if (!completedCourses.includes(currentUser.id)) {
                 return Response.json({
                     message: 'You have not completed this course.'
                 }, {
                     status: 403
                 });
             }
-            // Get certificate template from course awards
-            const certificateTemplate = course?.awards?.certificate;
-            if (!certificateTemplate) {
-                return Response.json({
-                    message: 'No certificate template configured for this course.'
-                }, {
-                    status: 404
-                });
-            }
+            console.log(certificate, 'certificate template');
             let certificatePDF = null;
             const certificateData = {
                 studentName: currentUser.firstName + ' ' + currentUser.lastName,
                 courseTitle: course.title,
                 completionDate: new Date().toLocaleDateString(),
-                certificateNumber: `CERT-${courseId}-${typeof certificateTemplate === 'object' ? certificateTemplate.id : certificateTemplate}-${currentUser.id}`,
-                templateImage: typeof certificateTemplate === 'object' ? certificateTemplate.template?.url : null,
+                certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
+                templateImage: certificate.template?.url,
                 fontFamily: 'Poppins',
-                authorName: typeof certificateTemplate === 'object' ? certificateTemplate.authors?.[0]?.name : null
+                authorName: certificate.authors?.[0]?.name
             };
             const pdfBuffer = await renderToBuffer(React.createElement(CertificateDocument, certificateData));
-            const certificateFileName = `certificate-${courseId}-${typeof certificateTemplate === 'object' ? certificateTemplate.id : certificateTemplate}-${currentUser.id}.pdf`;
+            const certificateFileName = `certificate-${courseId}-${certificate.id}-${currentUser.id}.pdf`;
             const existingCertificate = await payload.find({
                 collection: mediaSlug,
                 where: {
