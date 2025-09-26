@@ -43,8 +43,8 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
             }
             const enrolledStudentIds = (course?.enrolledStudents || []).map((student)=>typeof student === 'object' ? student.id : student);
             const enrolledGroupIds = (course?.enrolledGroups || []).map((group)=>typeof group === 'object' ? group.id : group);
-            const enrolledCourseIds = (currentUser.enrolledCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
-            const completedCourseIds = (currentUser.completedCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
+            const enrolledCourseIds = (Array.isArray(currentUser.enrolledCourses) ? currentUser.enrolledCourses : []).map((course)=>typeof course === 'object' ? course.id : course);
+            const completedCourseIds = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map((course)=>typeof course === 'object' ? course.id : course);
             if (isGroup) {
                 if (!companyName) {
                     payload.logger.error('Company name is required for group enrollment.');
@@ -143,7 +143,36 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                     }
                 }
             }
+            // Initialize course progress for the user
+            const coursesProgress = Array.isArray(currentUser.coursesProgress) ? currentUser.coursesProgress : [];
+            // Check if course progress already exists for this course
+            const courseProgressExists = coursesProgress.some((progress)=>{
+                if (typeof progress.course === 'object' && progress.course !== null) {
+                    return progress.course.id === courseId;
+                }
+                return progress.course === courseId;
+            });
             if (enrolledStudentIds?.includes(user.id) || enrolledCourseIds.includes(courseId)) {
+                if (!courseProgressExists) {
+                    // Create new course progress entry
+                    const newCourseProgress = {
+                        course: courseId,
+                        completed: false,
+                        completedLessons: [],
+                        completedQuizzes: []
+                    };
+                    await payload.update({
+                        collection: userSlug,
+                        id: currentUser.id,
+                        data: {
+                            coursesProgress: [
+                                ...coursesProgress,
+                                newCourseProgress
+                            ]
+                        }
+                    });
+                    payload.logger.info(`User ${currentUser.id} course progress created for course ${courseId}`);
+                }
                 return Response.json({
                     message: 'You are already enrolled in this course.'
                 }, {
@@ -167,15 +196,6 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                     ]
                 }
             });
-            // Initialize course progress for the user
-            const coursesProgress = currentUser.coursesProgress || [];
-            // Check if course progress already exists for this course
-            const courseProgressExists = coursesProgress.some((progress)=>{
-                if (typeof progress.course === 'object' && progress.course !== null) {
-                    return progress.course.id === courseId;
-                }
-                return progress.course === courseId;
-            });
             if (!courseProgressExists) {
                 // Create new course progress entry
                 const newCourseProgress = {
@@ -186,7 +206,7 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                 };
                 await payload.update({
                     collection: userSlug,
-                    id: user.id,
+                    id: currentUser.id,
                     data: {
                         coursesProgress: [
                             ...coursesProgress,
@@ -194,8 +214,9 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                         ]
                     }
                 });
+                payload.logger.info(`User ${currentUser.id} course progress created for course ${courseId}`);
             }
-            payload.logger.info(`User ${user.id} enrolled in course ${courseId}`);
+            payload.logger.info(`User ${currentUser.id} enrolled in course ${courseId}`);
             return Response.json({
                 success: true,
                 message: 'Successfully enrolled in course.'

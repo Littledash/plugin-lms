@@ -53,15 +53,21 @@ export const addCertificateToUserHandler = ({ userSlug = 'users', courseSlug = '
                     status: 404
                 });
             }
-            const completedCourses = (currentUser.completedCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
-            if (!completedCourses.includes(courseId)) {
+            const course = await payload.findByID({
+                collection: courseSlug,
+                id: courseId,
+                depth: 1
+            });
+            // Check completed courses by looking at the course's courseCompletedStudents field (more reliable than join field)
+            const completedCourses = (Array.isArray(course?.courseCompletedStudents) ? course.courseCompletedStudents : []).map((student)=>typeof student === 'object' ? student.id : student);
+            if (!completedCourses.includes(currentUser.id)) {
                 return Response.json({
                     message: 'You have not completed this course.'
                 }, {
                     status: 403
                 });
             }
-            const existingCertificates = (currentUser.certificates || []).map((cert)=>({
+            const existingCertificates = (Array.isArray(currentUser.certificates) ? currentUser.certificates : []).map((cert)=>({
                     certificateId: typeof cert.certificate === 'object' ? cert.certificate.id : cert.certificate,
                     courseId: typeof cert.course === 'object' ? cert.course.id : cert.course
                 }));

@@ -25,6 +25,8 @@ export type CourseProgress = {
     completed: boolean;
     /** The completion percentage of the course (0-100). */
     completionPercentage?: number;
+    /** The completion of the course (e.g. "1/3"). */
+    courseCompletion?: string;
     /** A list of lessons completed by the user. */
     completedLessons: Array<{
         lesson: DefaultDocumentIDType | {

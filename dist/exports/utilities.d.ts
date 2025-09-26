@@ -4,3 +4,5 @@ export { sanitizePluginConfig } from '../utilities/sanitizePluginConfig.js';
 export { getCollectionSlugMap } from '../utilities/getCollectionSlugMap.js';
 export { completedLesson } from '../utilities/completedLesson.js';
 export { isPreviousLessonCompleted } from '../utilities/isPreviousLessonCompleted.js';
+export { courseCompletion } from '../utilities/courseCompletion.js';
+export { courseCompletionPercentage } from '../utilities/courseCompletionPercentage.js';

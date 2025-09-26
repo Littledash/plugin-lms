@@ -7,7 +7,6 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
         const courseId = data?.courseId;
         const userId = data?.userId || '';
         const baseUrl = req.url ? req.url.split('/api')[0] : 'http://localhost:3000';
-        console.log('baseUrl', baseUrl);
         if (!user) {
             return Response.json({
                 message: 'You must be logged in to complete a course.'
@@ -40,9 +39,10 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
                 id: courseId,
                 depth: 1
             });
-            const enrolledCourses = (currentUser.enrolledCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
-            const completedCourses = (currentUser.completedCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
-            if (!enrolledCourses.includes(courseId)) {
+            // Check enrollment by looking at the course's enrolledStudents field (more reliable than join field)
+            const enrolledStudentIds = (Array.isArray(course?.enrolledStudents) ? course.enrolledStudents : []).map((student)=>typeof student === 'object' ? student.id : student);
+            const completedCourses = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map((course)=>typeof course === 'object' ? course.id : course);
+            if (!enrolledStudentIds.includes(currentUser.id)) {
                 return Response.json({
                     message: 'You are not enrolled in this course.'
                 }, {
@@ -56,21 +56,22 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
                     status: 409
                 });
             }
-            // Update course collection - add student to courseCompletedStudents while keeping them enrolled
-            const courseCompletedStudents = (course.courseCompletedStudents || []).map((student)=>typeof student === 'object' ? student.id : student);
-            // Only add to completed students if not already there
-            if (!courseCompletedStudents.includes(user.id)) {
-                await payload.update({
-                    collection: courseSlug,
-                    id: courseId,
-                    data: {
-                        courseCompletedStudents: [
-                            ...courseCompletedStudents,
-                            user.id
-                        ]
-                    }
-                });
-            }
+            // Update course collection - add student to courseCompletedStudents and remove from enrolledStudents
+            const courseCompletedStudents = (Array.isArray(course.courseCompletedStudents) ? course.courseCompletedStudents : []).map((student)=>typeof student === 'object' ? student.id : student);
+            // Remove user from enrolledStudents and add to courseCompletedStudents
+            const updatedEnrolledStudents = enrolledStudentIds.filter((id)=>id !== user.id);
+            const updatedCompletedStudents = courseCompletedStudents.includes(user.id) ? courseCompletedStudents : [
+                ...courseCompletedStudents,
+                user.id
+            ];
+            await payload.update({
+                collection: courseSlug,
+                id: courseId,
+                data: {
+                    enrolledStudents: updatedEnrolledStudents,
+                    courseCompletedStudents: updatedCompletedStudents
+                }
+            });
             // Update user's course progress to mark as completed
             const coursesProgress = currentUser.coursesProgress || [];
             const courseProgressIndex = coursesProgress.findIndex((progress)=>{
@@ -112,7 +113,8 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
                     const certificateResponse = await fetch(`${baseUrl}/api/lms/add-certificate-to-user`, {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            Authorization: `${userSlug} API-Key ${process.env.PAYLOAD_API_KEY}`
                         },
                         credentials: 'include',
                         body: JSON.stringify({

@@ -233,6 +233,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         await fetch(`${baseAPIURL}/lms/complete-lesson`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ courseId, lessonId }),
         })
         await fetchProgress() // Refetch progress to ensure state is up-to-date
@@ -253,6 +254,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         const response = await fetch(`${baseAPIURL}/lms/submit-quiz`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ courseId, quizId, answers }),
         })
         if (!response.ok) throw new Error('Failed to submit quiz')
@@ -274,6 +276,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         const response = await fetch(`${baseAPIURL}/lms/add-user-to-group`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ groupId, userId, role }),
         })
         if (!response.ok) throw new Error('Failed to add user to group')
@@ -396,7 +399,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const generateCertificate = useCallback(
-    async (courseId: DefaultDocumentIDType, options?: { userId?: DefaultDocumentIDType }) => {
+    async (courseId: DefaultDocumentIDType, certificateId: DefaultDocumentIDType, options?: { userId?: DefaultDocumentIDType }) => {
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
@@ -404,8 +407,9 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
 
         const requestBody: {
           courseId: DefaultDocumentIDType
+          certificateId: DefaultDocumentIDType
           userId?: DefaultDocumentIDType
-        } = { courseId }
+        } = { courseId, certificateId }
 
         if (options?.userId) {
           requestBody.userId = options.userId
@@ -447,6 +451,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         const response = await fetch(`${baseAPIURL}/lms/add-certificate-to-user`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(requestBody),
         })
         if (!response.ok) throw new Error('Failed to add certificate')

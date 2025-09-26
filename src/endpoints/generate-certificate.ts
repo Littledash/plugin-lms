@@ -6,6 +6,7 @@ type Args = {
   userSlug: string
   courseSlug: string
   mediaSlug: string
+  certificatesSlug: string
 }
 
 async function renderToBuffer(doc: React.ReactElement<DocumentProps>) {
@@ -19,13 +20,13 @@ async function renderToBuffer(doc: React.ReactElement<DocumentProps>) {
 
 type GenerateCertificateHandler = (args: Args) => Endpoint['handler']
 
-export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', mediaSlug = 'media' }) => async (req) => {
+export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', mediaSlug = 'media', certificatesSlug = 'certificates' }) => async (req) => {
   await addDataAndFileToRequest(req)
   const data = req.data
   const user = req.user
   const payload = req.payload
   const courseId = data?.courseId
-  const certificate = data?.certificate
+  const certificateId = data?.certificateId
   const userId = data?.userId
 
   if (!user) {
@@ -52,6 +53,12 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       depth: 1,
     })
 
+    const certificate = await payload.findByID({
+      collection: certificatesSlug as CollectionSlug,
+      id: certificateId,
+      depth: 1,
+    })
+
     if (!currentUser) {
       return Response.json({ message: 'User not found.' }, { status: 404 })
     }
@@ -64,6 +71,8 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
     if (!completedCourses.includes(currentUser.id)) {
       return Response.json({ message: 'You have not completed this course.' }, { status: 403 })
     }
+
+    console.log(certificate, 'certificate template')
 
     let certificatePDF = null
 
@@ -108,10 +117,6 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
 
     certificatePDF = certificateMedia
   }
-
-    // const certificatePDF = await generateCertificatePDF(courseId, user.id)
-
-
     
 
     payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`)

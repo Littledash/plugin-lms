@@ -16,7 +16,7 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
         const user = req.user;
         const payload = req.payload;
         const courseId = data?.courseId;
-        const certificate = data?.certificate;
+        const certificateId = data?.certificateId;
         const userId = data?.userId;
         if (!user) {
             return Response.json({
@@ -50,7 +50,8 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     status: 404
                 });
             }
-            const completedCourses = (currentUser.completedCourses || []).map((course)=>typeof course === 'object' ? course.id : course);
+            // Check if user has completed this course by looking at their completed courses
+            const completedCourses = (Array.isArray(currentUser?.completedCourses) ? currentUser.completedCourses : []).map((course)=>typeof course === 'object' ? course.id : course);
             if (!completedCourses.includes(courseId)) {
                 return Response.json({
                     message: 'You have not completed this course.'
@@ -58,18 +59,27 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     status: 403
                 });
             }
+            // Get certificate template from course awards
+            const certificateTemplate = course?.awards?.certificate;
+            if (!certificateTemplate) {
+                return Response.json({
+                    message: 'No certificate template configured for this course.'
+                }, {
+                    status: 404
+                });
+            }
             let certificatePDF = null;
             const certificateData = {
                 studentName: currentUser.firstName + ' ' + currentUser.lastName,
                 courseTitle: course.title,
                 completionDate: new Date().toLocaleDateString(),
-                certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
-                templateImage: certificate.template?.url,
+                certificateNumber: `CERT-${courseId}-${typeof certificateTemplate === 'object' ? certificateTemplate.id : certificateTemplate}-${currentUser.id}`,
+                templateImage: typeof certificateTemplate === 'object' ? certificateTemplate.template?.url : null,
                 fontFamily: 'Poppins',
-                authorName: certificate.authors?.[0]?.name
+                authorName: typeof certificateTemplate === 'object' ? certificateTemplate.authors?.[0]?.name : null
             };
             const pdfBuffer = await renderToBuffer(React.createElement(CertificateDocument, certificateData));
-            const certificateFileName = `certificate-${courseId}-${certificate.id}-${currentUser.id}.pdf`;
+            const certificateFileName = `certificate-${courseId}-${typeof certificateTemplate === 'object' ? certificateTemplate.id : certificateTemplate}-${currentUser.id}.pdf`;
             const existingCertificate = await payload.find({
                 collection: mediaSlug,
                 where: {
@@ -93,7 +103,6 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                 });
                 certificatePDF = certificateMedia;
             }
-            // const certificatePDF = await generateCertificatePDF(courseId, user.id)
             payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`);
             return Response.json({
                 success: true,

@@ -4,7 +4,11 @@ export const isPreviousLessonCompleted = (progress, course, lessonId)=>{
     if (!previousLesson) return true // If there is no previous lesson, then the previous lesson is completed
     ;
     const previousLessonId = typeof previousLesson.lesson === 'object' ? previousLesson.lesson.id : previousLesson.lesson;
-    return progress.find((p)=>(typeof p.course === 'object' ? p.course.id : p.course) === course.id)?.completedLessons.find((l)=>(typeof l.lesson === 'object' ? l.lesson.id : l.lesson) === previousLessonId) !== undefined;
+    const courseProgress = progress.find((p)=>(typeof p.course === 'object' ? p.course.id : p.course) === course.id);
+    if (!courseProgress) {
+        return false;
+    }
+    return courseProgress.completedLessons.find((l)=>(typeof l.lesson === 'object' ? l.lesson.id : l.lesson) === previousLessonId) !== undefined;
 };
 
 //# sourceMappingURL=isPreviousLessonCompleted.js.map
