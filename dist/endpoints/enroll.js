@@ -176,14 +176,14 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                 return Response.json({
                     message: 'You are already enrolled in this course.'
                 }, {
-                    status: 409
+                    status: 200
                 });
             }
             if (completedCourseIds.includes(courseId)) {
                 return Response.json({
                     message: 'You have already completed this course.'
                 }, {
-                    status: 409
+                    status: 200
                 });
             }
             await payload.update({

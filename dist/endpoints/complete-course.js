@@ -114,7 +114,6 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
                         }));
                     const hasExistingCertificate = existingCertificates.some((cert)=>cert.certificateId === certificateId && cert.courseId === courseId);
                     if (hasExistingCertificate) {
-                        payload.logger.info(`User ${user.id} already has a certificate for course ${courseId}`);
                         return Response.json({
                             message: 'You already have this certificate.'
                         }, {

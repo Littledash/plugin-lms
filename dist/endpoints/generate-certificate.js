@@ -55,9 +55,15 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     status: 404
                 });
             }
-            // Check completed courses by looking at the course's courseCompletedStudents field (more reliable than join field)
-            const completedCourses = (Array.isArray(course?.courseCompletedStudents) ? course.courseCompletedStudents : []).map((student)=>typeof student === 'object' ? student.id : student);
-            if (!completedCourses.includes(currentUser.id)) {
+            // Check if user has completed the course by looking at coursesProgress
+            const coursesProgress = currentUser.coursesProgress || [];
+            const courseProgress = coursesProgress.find((progress)=>{
+                if (typeof progress.course === 'object' && progress.course !== null) {
+                    return progress.course.id === courseId;
+                }
+                return progress.course === courseId;
+            });
+            if (!courseProgress || !courseProgress.completed) {
                 return Response.json({
                     message: 'You have not completed this course.'
                 }, {
