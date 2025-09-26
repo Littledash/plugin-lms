@@ -56,7 +56,7 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       return Response.json({ message: 'User not found.' }, { status: 404 })
     }
 
-    const completedCourses = (currentUser.completedCourses || []).map((course: string | TypedCollection[typeof courseSlug]) =>
+    const completedCourses = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map((course: string | TypedCollection[typeof courseSlug]) =>
       typeof course === 'object' ? course.id : course,
     )
 

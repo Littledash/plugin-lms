@@ -161,11 +161,46 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
       }
 
     }
+  
+    // Initialize course progress for the user
+    const coursesProgress = Array.isArray(currentUser.coursesProgress) ? currentUser.coursesProgress : []
+
+        
+    // Check if course progress already exists for this course
+    const courseProgressExists = coursesProgress.some((progress: CourseProgress) => {
+      if (typeof progress.course === 'object' && progress.course !== null) {
+        return progress.course.id === courseId
+      }
+      return progress.course === courseId
+    })
+
 
     if (
       enrolledStudentIds?.includes(user.id) ||
       enrolledCourseIds.includes(courseId)
     ) {
+        
+       if (!courseProgressExists) {
+          // Create new course progress entry
+          const newCourseProgress = {
+            course: courseId,
+            completed: false,
+            completedLessons: [],
+            completedQuizzes: [],
+          }
+          
+          await payload.update({
+            collection: userSlug as CollectionSlug,
+            id: currentUser.id,
+            data: {
+              coursesProgress: [...coursesProgress, newCourseProgress],
+            },
+          })
+
+
+          payload.logger.info(`User ${currentUser.id} course progress created for course ${courseId}`)
+        }
+
       return Response.json({ message: 'You are already enrolled in this course.' }, { status: 409 })
     }
 
@@ -183,16 +218,7 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
       },
     })
 
-    // Initialize course progress for the user
-    const coursesProgress = currentUser.coursesProgress || []
-    
-    // Check if course progress already exists for this course
-    const courseProgressExists = coursesProgress.some((progress: CourseProgress) => {
-      if (typeof progress.course === 'object' && progress.course !== null) {
-        return progress.course.id === courseId
-      }
-      return progress.course === courseId
-    })
+
     
     if (!courseProgressExists) {
       // Create new course progress entry
@@ -205,14 +231,15 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
       
       await payload.update({
         collection: userSlug as CollectionSlug,
-        id: user.id,
+        id: currentUser.id,
         data: {
           coursesProgress: [...coursesProgress, newCourseProgress],
         },
       })
+      payload.logger.info(`User ${currentUser.id} course progress created for course ${courseId}`)
     }
 
-    payload.logger.info(`User ${user.id} enrolled in course ${courseId}`)
+    payload.logger.info(`User ${currentUser.id} enrolled in course ${courseId}`)
 
     return Response.json({ success: true, message: 'Successfully enrolled in course.' })
   } catch (error: unknown) {
