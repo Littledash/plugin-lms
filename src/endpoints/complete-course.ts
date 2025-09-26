@@ -3,11 +3,12 @@ import type { CourseProgress } from '../providers/types.js'
 type Args = {
   userSlug: string
   courseSlug: string
+  certificatesSlug: string
 }
 
 type CompleteCourseHandler = (args: Args) => Endpoint['handler']
 
-export const completeCourseHandler: CompleteCourseHandler = ({ userSlug = 'users', courseSlug = 'courses'
+export const completeCourseHandler: CompleteCourseHandler = ({ userSlug = 'users', courseSlug = 'courses', certificatesSlug = 'certificates'
 }) => 
 async (req) => {
   await addDataAndFileToRequest(req)
@@ -16,7 +17,6 @@ async (req) => {
   const payload = req.payload
   const courseId = data?.courseId
   const userId = data?.userId || ''
-  const baseUrl = req.url ? req.url.split('/api')[0] : 'http://localhost:3000'
 
   if (!user) {
     return Response.json(
@@ -126,31 +126,37 @@ async (req) => {
           ? course.awards.certificate.id 
           : course.awards.certificate
 
-        // Use the existing add-certificate-to-user endpoint via HTTP
 
-        const certificateResponse = await fetch(`${baseUrl}/api/lms/add-certificate-to-user`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `${userSlug} API-Key ${process.env.PAYLOAD_API_KEY}`,
+          const existingCertificates = (Array.isArray(currentUser.certificates) ? currentUser.certificates : []).map((cert: { certificate: string | TypedCollection[typeof certificatesSlug], course: string | TypedCollection[typeof courseSlug] }) => ({
+            certificateId: typeof cert.certificate === 'object' ? cert.certificate.id : cert.certificate,
+            courseId: typeof cert.course === 'object' ? cert.course.id : cert.course
+          }))
 
+        const hasExistingCertificate = existingCertificates.some((cert: { certificateId: string | number, courseId: string | number }) => 
+          cert.certificateId === certificateId && cert.courseId === courseId
+        )
+
+        if (hasExistingCertificate) {
+          payload.logger.info(`User ${user.id} already has a certificate for course ${courseId}`)
+          return Response.json({ message: 'You already have this certificate.' }, { status: 200 })
+        }
+
+        await payload.update({
+          collection: userSlug as CollectionSlug,
+          id: currentUser.id,
+          data: {
+            certificates: [
+              ...(currentUser.certificates || []),
+              {
+                certificate: certificateId,
+                course: courseId,
+                completedDate: new Date().toISOString(),
+              },
+            ],
           },
-          credentials: 'include',
-          body: JSON.stringify({
-            courseId,
-            certificateId,
-            options: {
-              userId: user.id,
-            }
-          }),
         })
         
-        if (certificateResponse.ok) {
-          payload.logger.info(`Certificate ${certificateId} added to user ${user.id} for completing course ${courseId}`)
-        } else {
-          const errorData = await certificateResponse.json()
-          payload.logger.warn(`Failed to add certificate: ${errorData.message}`)
-        }
+        payload.logger.info(`Certificate ${certificateId} added to user ${user.id} for completing course ${courseId}`)
       } else {
         payload.logger.info(`Course ${courseId} does not have a certificate configured`)
       }
@@ -158,6 +164,7 @@ async (req) => {
       payload.logger.error(`Failed to add certificate to user: ${error instanceof Error ? error.message : 'An unknown error occurred.'}`)
       // Don't fail the entire course completion if certificate addition fails
     }
+      
 
     payload.logger.info(`User ${user.id} completed course ${courseId}`)
 

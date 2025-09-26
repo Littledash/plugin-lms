@@ -29,8 +29,6 @@ export type LMSAction =
   | { type: 'UPDATE_PROGRESS'; payload: CourseProgress[] }
   | { type: 'SET_ENROLLED_COURSES'; payload: DefaultDocumentIDType[] }
   | { type: 'SET_COMPLETED_COURSES'; payload: DefaultDocumentIDType[] }
-  | { type: 'ADD_CERTIFICATE'; payload: { id: DefaultDocumentIDType } }
-  | { type: 'GENERATE_CERTIFICATE'; payload: { id: DefaultDocumentIDType } }
   | { type: 'LOAD_FROM_STORAGE'; payload: { progress: CourseProgress[]; enrolledCourses: DefaultDocumentIDType[]; completedCourses: DefaultDocumentIDType[] } }
   | { type: 'RESET_STATE' }
 
@@ -129,17 +127,7 @@ export const lmsReducer = (state: LMSState, action: LMSAction): LMSState => {
         completedCourses: action.payload,
       }
 
-    case 'ADD_CERTIFICATE':
-      return {
-        ...state,
-        certificates: [...state.certificates, action.payload],
-      }
 
-    case 'GENERATE_CERTIFICATE':
-      return {
-        ...state,
-        certificates: [...state.certificates, action.payload],
-      }
 
     case 'LOAD_FROM_STORAGE':
       return {

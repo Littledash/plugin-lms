@@ -85,22 +85,6 @@ export const lmsReducer = (state, action)=>{
                 ...state,
                 completedCourses: action.payload
             };
-        case 'ADD_CERTIFICATE':
-            return {
-                ...state,
-                certificates: [
-                    ...state.certificates,
-                    action.payload
-                ]
-            };
-        case 'GENERATE_CERTIFICATE':
-            return {
-                ...state,
-                certificates: [
-                    ...state.certificates,
-                    action.payload
-                ]
-            };
         case 'LOAD_FROM_STORAGE':
             return {
                 ...state,

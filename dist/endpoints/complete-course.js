@@ -1,12 +1,11 @@
 import { addDataAndFileToRequest } from 'payload';
-export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'courses' })=>async (req)=>{
+export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'courses', certificatesSlug = 'certificates' })=>async (req)=>{
         await addDataAndFileToRequest(req);
         const data = req.data;
         const user = req.user;
         const payload = req.payload;
         const courseId = data?.courseId;
         const userId = data?.userId || '';
-        const baseUrl = req.url ? req.url.split('/api')[0] : 'http://localhost:3000';
         if (!user) {
             return Response.json({
                 message: 'You must be logged in to complete a course.'
@@ -109,28 +108,34 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
                 // Check if the course has a certificate configured
                 if (course.awards?.certificate) {
                     const certificateId = typeof course.awards.certificate === 'object' ? course.awards.certificate.id : course.awards.certificate;
-                    // Use the existing add-certificate-to-user endpoint via HTTP
-                    const certificateResponse = await fetch(`${baseUrl}/api/lms/add-certificate-to-user`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Authorization: `${userSlug} API-Key ${process.env.PAYLOAD_API_KEY}`
-                        },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            courseId,
-                            certificateId,
-                            options: {
-                                userId: user.id
-                            }
-                        })
-                    });
-                    if (certificateResponse.ok) {
-                        payload.logger.info(`Certificate ${certificateId} added to user ${user.id} for completing course ${courseId}`);
-                    } else {
-                        const errorData = await certificateResponse.json();
-                        payload.logger.warn(`Failed to add certificate: ${errorData.message}`);
+                    const existingCertificates = (Array.isArray(currentUser.certificates) ? currentUser.certificates : []).map((cert)=>({
+                            certificateId: typeof cert.certificate === 'object' ? cert.certificate.id : cert.certificate,
+                            courseId: typeof cert.course === 'object' ? cert.course.id : cert.course
+                        }));
+                    const hasExistingCertificate = existingCertificates.some((cert)=>cert.certificateId === certificateId && cert.courseId === courseId);
+                    if (hasExistingCertificate) {
+                        payload.logger.info(`User ${user.id} already has a certificate for course ${courseId}`);
+                        return Response.json({
+                            message: 'You already have this certificate.'
+                        }, {
+                            status: 200
+                        });
                     }
+                    await payload.update({
+                        collection: userSlug,
+                        id: currentUser.id,
+                        data: {
+                            certificates: [
+                                ...currentUser.certificates || [],
+                                {
+                                    certificate: certificateId,
+                                    course: courseId,
+                                    completedDate: new Date().toISOString()
+                                }
+                            ]
+                        }
+                    });
+                    payload.logger.info(`Certificate ${certificateId} added to user ${user.id} for completing course ${courseId}`);
                 } else {
                     payload.logger.info(`Course ${courseId} does not have a certificate configured`);
                 }

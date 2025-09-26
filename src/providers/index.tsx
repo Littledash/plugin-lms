@@ -28,8 +28,6 @@ const defaultContext: LMSContextType = {
   fetchTopics: async () => {},
   fetchLessons: async () => {},
   fetchQuizzes: async () => {},
-  generateCertificate: async () => {},
-  addCertificate: async () => {},
   isLoading: false,
   error: null,
 }
@@ -398,75 +396,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     [baseAPIURL],
   )
 
-  const generateCertificate = useCallback(
-    async (courseId: DefaultDocumentIDType, certificateId: DefaultDocumentIDType, options?: { userId?: DefaultDocumentIDType }) => {
-      dispatch({ type: 'SET_LOADING', payload: true })
-      dispatch({ type: 'SET_ERROR', payload: null })
-      try {
-        console.log('Generating certificate for course', courseId)
 
-        const requestBody: {
-          courseId: DefaultDocumentIDType
-          certificateId: DefaultDocumentIDType
-          userId?: DefaultDocumentIDType
-        } = { courseId, certificateId }
-
-        if (options?.userId) {
-          requestBody.userId = options.userId
-        }
-
-        const response = await fetch(`${baseAPIURL}/lms/generate-certificate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(requestBody),
-        })
-        if (!response.ok) throw new Error('Failed to generate certificate')
-        dispatch({ type: 'GENERATE_CERTIFICATE', payload: { id: courseId } })
-        await fetchProgress() // Refetch progress to ensure state is up-to-date
-      } catch (e: unknown) {
-        dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
-      } finally {
-        dispatch({ type: 'SET_LOADING', payload: false })
-      }
-    },
-    [baseAPIURL, fetchProgress],
-  )
-
-  const addCertificate = useCallback(
-    async (courseId: DefaultDocumentIDType, certificateId: DefaultDocumentIDType, options?: { userId?: DefaultDocumentIDType }) => {
-      dispatch({ type: 'SET_LOADING', payload: true })
-      dispatch({ type: 'SET_ERROR', payload: null })
-      try {
-        const requestBody: {
-          courseId: DefaultDocumentIDType
-          certificateId: DefaultDocumentIDType
-          userId?: DefaultDocumentIDType
-        } = { courseId, certificateId }
-
-        if (options?.userId) {
-          requestBody.userId = options.userId
-        }
-
-        const response = await fetch(`${baseAPIURL}/lms/add-certificate-to-user`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(requestBody),
-        })
-        if (!response.ok) throw new Error('Failed to add certificate')
-        // const result = await response.json()
-        dispatch({ type: 'ADD_CERTIFICATE', payload: { id: certificateId } })
-        
-        await fetchProgress() // Refetch progress to ensure state is up-to-date
-      } catch (e: unknown) {
-        dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
-      } finally {
-        dispatch({ type: 'SET_LOADING', payload: false })
-      }
-    },
-    [baseAPIURL, fetchProgress],
-  )
 
   const value: LMSContextType = {
     users: state.users,
@@ -490,8 +420,6 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     fetchTopics,
     fetchLessons,
     fetchQuizzes,
-    generateCertificate,
-    addCertificate,
     isLoading: state.isLoading,
     error: state.error,
   }

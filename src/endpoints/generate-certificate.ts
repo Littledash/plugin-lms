@@ -72,7 +72,6 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       return Response.json({ message: 'You have not completed this course.' }, { status: 403 })
     }
 
-    console.log(certificate, 'certificate template')
 
     let certificatePDF = null
 

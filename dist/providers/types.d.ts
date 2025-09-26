@@ -97,10 +97,6 @@ export type LMSContextType = {
     fetchLessons: (topicId: DefaultDocumentIDType) => Promise<void>;
     /** Fetches the quizzes for a specific lesson. */
     fetchQuizzes: (lessonId: DefaultDocumentIDType) => Promise<void>;
-    /** Generates a new certificate for a completed course. */
-    generateCertificate: (courseId: DefaultDocumentIDType, certificateId: DefaultDocumentIDType) => Promise<void>;
-    /** Adds an existing certificate to a user for a completed course. */
-    addCertificate: (courseId: DefaultDocumentIDType, certificateId: DefaultDocumentIDType) => Promise<void>;
     /** Whether the provider is currently fetching data. */
     isLoading: boolean;
     /** Any error that occurred during data fetching. */

@@ -64,7 +64,6 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     status: 403
                 });
             }
-            console.log(certificate, 'certificate template');
             let certificatePDF = null;
             const certificateData = {
                 studentName: currentUser.firstName + ' ' + currentUser.lastName,

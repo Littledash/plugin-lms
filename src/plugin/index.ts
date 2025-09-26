@@ -20,7 +20,6 @@ import { completeLessonHandler } from '../endpoints/complete-lesson.js'
 import { enrollHandler } from '../endpoints/enroll.js'
 import { submitQuizHandler } from '../endpoints/submit-quiz.js'
 import { completeCourseHandler } from '../endpoints/complete-course.js'
-import { addCertificateToUserHandler } from '../endpoints/add-certificate-to-user.js'
 import { addUserToGroupHandler } from '../endpoints/add-user-to-group.js'
 import { fetchProgressHandler } from '../endpoints/fetch-progress.js'
 import { generateCertificateHandler } from '../endpoints/generate-certificate.js'
@@ -259,14 +258,6 @@ export const lmsPlugin =
         path: '/lms/complete-course',
         method: 'post' as const,
         handler: completeCourseHandler({
-          userSlug: collectionSlugMap.students,
-          courseSlug: collectionSlugMap.courses,
-        }),
-      },
-      {
-        path: '/lms/add-certificate-to-user',
-        method: 'post' as const,
-        handler: addCertificateToUserHandler({
           userSlug: collectionSlugMap.students,
           courseSlug: collectionSlugMap.courses,
           certificatesSlug: collectionSlugMap.certificates,
