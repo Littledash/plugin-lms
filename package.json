@@ -1,6 +1,6 @@
 {
   "name": "@littledash/plugin-lms",
-  "version": "1.0.58",
+  "version": "1.0.59",
   "description": "A comprehensive Learning Management System (LMS) plugin for Payload CMS with courses, lessons, quizzes, certificates, and more.",
   "license": "MIT",
   "repository": {

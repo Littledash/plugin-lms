@@ -60,12 +60,26 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       depth: 1,
     })
 
+    if ( !course ) {
+      return Response.json({ message: 'Course not found.' }, { status: 404 })
+    }
+
+    if ( !certificate ) {
+      return Response.json({ message: 'Certificate not found.' }, { status: 404 })
+    }
+
     if (!currentUser) {
       return Response.json({ message: 'User not found.' }, { status: 404 })
     }
 
     let certificatePDF = null
 
+
+    //
+    //
+    payload.logger.info(`Course:`, JSON.stringify(course, null, 2));
+    payload.logger.info(`Certificate:`, JSON.stringify(certificate, null, 2));
+    payload.logger.info(`Current user:`, JSON.stringify(currentUser, null, 2));
   
     const certificateData = {
       studentName: currentUser.firstName + ' ' + currentUser.lastName,
@@ -95,7 +109,7 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
     }
   })
   payload.logger.info(`Existing certificate:`, JSON.stringify(existingCertificate, null, 2));
-  
+
   if (existingCertificate.docs.length > 0) {
     payload.logger.info(`Certificate already exists for user ${currentUser.id} for course ${courseId}`)
     certificatePDF = existingCertificate
