@@ -53,11 +53,18 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
       return Response.json({ message: 'Certificate not found.' }, { status: 404 })
     }
 
-    const completedCourses = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map((course: string | TypedCollection[typeof courseSlug]) =>
-      typeof course === 'object' ? course.id : course,
-    )
+    const course = await payload.findByID({
+      collection: courseSlug as CollectionSlug,
+      id: courseId,
+      depth: 1,
+    })
 
-    if (!completedCourses.includes(courseId)) {
+       // Check completed courses by looking at the course's courseCompletedStudents field (more reliable than join field)
+       const completedCourses  = (Array.isArray(course?.courseCompletedStudents) ? course.courseCompletedStudents : []).map((student: string | TypedCollection[typeof userSlug]) =>
+        typeof student === 'object' ? student.id : student,
+      )
+
+    if (!completedCourses.includes(currentUser.id)) {
       return Response.json({ message: 'You have not completed this course.' }, { status: 403 })
     }
 
