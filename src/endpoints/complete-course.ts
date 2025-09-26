@@ -46,14 +46,16 @@ async (req) => {
       depth: 1,
     })
 
-    const enrolledCourses = (Array.isArray(currentUser.enrolledCourses) ? currentUser.enrolledCourses : []).map(
-      (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
+    // Check enrollment by looking at the course's enrolledStudents field (more reliable than join field)
+    const enrolledStudentIds = (Array.isArray(course?.enrolledStudents) ? course.enrolledStudents : []).map((student: string | TypedCollection[typeof userSlug]) =>
+      typeof student === 'object' ? student.id : student,
     )
+    
     const completedCourses = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map(
       (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
     )
 
-    if (!enrolledCourses.includes(courseId)) {
+    if (!enrolledStudentIds.includes(currentUser.id)) {
       return Response.json({ message: 'You are not enrolled in this course.' }, { status: 409 })
     }
 
@@ -61,21 +63,25 @@ async (req) => {
       return Response.json({ message: 'You have already completed this course.' }, { status: 409 })
     }
 
-    // Update course collection - add student to courseCompletedStudents while keeping them enrolled
+    // Update course collection - add student to courseCompletedStudents and remove from enrolledStudents
     const courseCompletedStudents = (Array.isArray(course.courseCompletedStudents) ? course.courseCompletedStudents : []).map(
       (student: string | TypedCollection[typeof userSlug]) => (typeof student === 'object' ? student.id : student),
     )
 
-    // Only add to completed students if not already there
-    if (!courseCompletedStudents.includes(user.id)) {
-      await payload.update({
-        collection: courseSlug as CollectionSlug,
-        id: courseId,
-        data: {
-          courseCompletedStudents: [...courseCompletedStudents, user.id],
-        },
-      })
-    }
+    // Remove user from enrolledStudents and add to courseCompletedStudents
+    const updatedEnrolledStudents = enrolledStudentIds.filter(id => id !== user.id)
+    const updatedCompletedStudents = courseCompletedStudents.includes(user.id) 
+      ? courseCompletedStudents 
+      : [...courseCompletedStudents, user.id]
+
+    await payload.update({
+      collection: courseSlug as CollectionSlug,
+      id: courseId,
+      data: {
+        enrolledStudents: updatedEnrolledStudents,
+        courseCompletedStudents: updatedCompletedStudents,
+      },
+    })
 
     // Update user's course progress to mark as completed
     const coursesProgress = currentUser.coursesProgress || []
