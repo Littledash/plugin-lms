@@ -74,13 +74,13 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
       templateImage: certificate.template?.url, // A4 landscape
       fontFamily: 'Poppins',
-      authorName: certificate.authors?.[0]?.name
+      authorName: certificate.authors?.[0]?.firstName + ' ' + certificate.authors?.[0]?.lastName
   }
 
   payload.logger.info(`Generating certificate for user ${currentUser.id} for course ${courseId}`)
-  
+  payload.logger.info(`Certificate data:`, JSON.stringify(certificateData, null, 2));
   const pdfBuffer = await renderToBuffer(React.createElement(CertificateDocument, certificateData) as React.ReactElement<DocumentProps>);
-
+  payload.logger.info(`PDF buffer:`, pdfBuffer);
   payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`)
 
   
@@ -94,7 +94,8 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       }
     }
   })
-
+  payload.logger.info(`Existing certificate:`, JSON.stringify(existingCertificate, null, 2));
+  
   if (existingCertificate.docs.length > 0) {
     payload.logger.info(`Certificate already exists for user ${currentUser.id} for course ${courseId}`)
     certificatePDF = existingCertificate
