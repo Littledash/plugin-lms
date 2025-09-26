@@ -1,8 +1,8 @@
-import { addDataAndFileToRequest, CollectionSlug, TypedCollection, type Endpoint } from 'payload'
+import { addDataAndFileToRequest, CollectionSlug, type Endpoint } from 'payload'
 import { renderToStream, type DocumentProps } from '@react-pdf/renderer'
 import React from 'react'
 import { CertificateDocument } from '../ui/Certificate/index.js'
-import type { CourseProgress } from '../providers/types.js'
+
 type Args = {
   userSlug: string
   courseSlug: string
@@ -64,21 +64,6 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       return Response.json({ message: 'User not found.' }, { status: 404 })
     }
 
-
-    // Check if user has completed the course by looking at coursesProgress
-    const coursesProgress = currentUser.coursesProgress || []
-    const courseProgress = coursesProgress.find((progress: CourseProgress) => {
-      if (typeof progress.course === 'object' && progress.course !== null) {
-        return progress.course.id === courseId
-      }
-      return progress.course === courseId
-    })
-
-    if (!courseProgress || !courseProgress.completed) {
-      return Response.json({ message: 'You have not completed this course.' }, { status: 403 })
-    }
-
-
     let certificatePDF = null
 
   
@@ -92,8 +77,13 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       authorName: certificate.authors?.[0]?.name
   }
 
+  payload.logger.info(`Generating certificate for user ${currentUser.id} for course ${courseId}`)
+  
   const pdfBuffer = await renderToBuffer(React.createElement(CertificateDocument, certificateData) as React.ReactElement<DocumentProps>);
 
+  payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`)
+
+  
   const certificateFileName = `certificate-${courseId}-${certificate.id}-${currentUser.id}.pdf`;
   
   const existingCertificate = await payload.find({
@@ -106,9 +96,10 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
   })
 
   if (existingCertificate.docs.length > 0) {
-    
+    payload.logger.info(`Certificate already exists for user ${currentUser.id} for course ${courseId}`)
     certificatePDF = existingCertificate
   } else {
+    payload.logger.info(`Creating new certificate for user ${currentUser.id} for course ${courseId}`)
   //   certificatePDF = await generateCertificatePDF(courseId, user.id)
    const certificateMedia = await payload.create({
       collection: mediaSlug as CollectionSlug,
@@ -119,8 +110,10 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
         filesize:  pdfBuffer?.length,
       }
     })
-
+    
+    payload.logger.info(`Created new certificate for user ${currentUser.id} for course ${courseId}`)
     certificatePDF = certificateMedia
+    payload.logger.info(`Set certificatePDF to ${certificatePDF.id}`)
   }
     
 
