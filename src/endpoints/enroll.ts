@@ -52,11 +52,11 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
       typeof group === 'object' ? group.id : group,
     )
 
-    const enrolledCourseIds = (currentUser.enrolledCourses || []).map(
+    const enrolledCourseIds = (Array.isArray(currentUser.enrolledCourses) ? currentUser.enrolledCourses : []).map(
       (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
     )
 
-    const completedCourseIds = (currentUser.completedCourses || []).map(
+    const completedCourseIds = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map(
       (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
     )
     
