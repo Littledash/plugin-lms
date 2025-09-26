@@ -69,10 +69,10 @@ async (req) => {
     )
 
     // Remove user from enrolledStudents and add to courseCompletedStudents
-    const updatedEnrolledStudents = enrolledStudentIds.filter(id => id !== user.id)
-    const updatedCompletedStudents = courseCompletedStudents.includes(user.id) 
+    const updatedEnrolledStudents = enrolledStudentIds.filter(id => id !== currentUser.id)
+    const updatedCompletedStudents = courseCompletedStudents.includes(currentUser.id) 
       ? courseCompletedStudents 
-      : [...courseCompletedStudents, user.id]
+      : [...courseCompletedStudents, currentUser.id]
 
     await payload.update({
       collection: courseSlug as CollectionSlug,
@@ -156,7 +156,7 @@ async (req) => {
           },
         })
         
-        payload.logger.info(`Certificate ${certificateId} added to user ${user.id} for completing course ${courseId}`)
+        payload.logger.info(`Certificate ${certificateId} added to user ${currentUser.id} for completing course ${courseId}`)
       } else {
         payload.logger.info(`Course ${courseId} does not have a certificate configured`)
       }
@@ -166,7 +166,7 @@ async (req) => {
     }
       
 
-    payload.logger.info(`User ${user.id} completed course ${courseId}`)
+    payload.logger.info(`User ${currentUser.id} completed course ${courseId}`)
 
     return Response.json({ success: true, message: 'Successfully completed course.' })
   } catch (error: unknown) {
