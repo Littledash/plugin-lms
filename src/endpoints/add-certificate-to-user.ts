@@ -53,7 +53,7 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
       return Response.json({ message: 'Certificate not found.' }, { status: 404 })
     }
 
-    const completedCourses = (currentUser.completedCourses || []).map((course: string | TypedCollection[typeof courseSlug]) =>
+    const completedCourses = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map((course: string | TypedCollection[typeof courseSlug]) =>
       typeof course === 'object' ? course.id : course,
     )
 
@@ -61,12 +61,12 @@ export const addCertificateToUserHandler: AddCertificateToUserHandler = ({ userS
       return Response.json({ message: 'You have not completed this course.' }, { status: 403 })
     }
 
-    const existingCertificates = (currentUser.certificates || []).map((cert: { certificate: string | TypedCollection[typeof certificatesSlug], course: string | TypedCollection[typeof courseSlug] }) => ({
+    const existingCertificates = (Array.isArray(currentUser.certificates) ? currentUser.certificates : []).map((cert: { certificate: string | TypedCollection[typeof certificatesSlug], course: string | TypedCollection[typeof courseSlug] }) => ({
       certificateId: typeof cert.certificate === 'object' ? cert.certificate.id : cert.certificate,
       courseId: typeof cert.course === 'object' ? cert.course.id : cert.course
     }))
 
-    const hasExistingCertificate = existingCertificates.some((cert: { certificateId: string, courseId: string }) => 
+    const hasExistingCertificate = existingCertificates.some((cert: { certificateId: string | number, courseId: string | number }) => 
       cert.certificateId === certificateId && cert.courseId === courseId
     )
 
