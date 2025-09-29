@@ -271,6 +271,7 @@ export const lmsPlugin =
           courseSlug: collectionSlugMap.courses,
           mediaSlug: collectionSlugMap.media,
           certificatesSlug: collectionSlugMap.certificates,
+          baseUrl: incomingConfig.serverURL,
         }),
       },
       {

@@ -326,6 +326,7 @@ export type LMSPluginConfig = {
        * @default 'groups'
        */
       groupSlug: string
+      baseUrl?: string
     }) => Promise<Record<string, unknown>> | Record<string, unknown>
 }
 
