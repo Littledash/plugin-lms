@@ -17,6 +17,12 @@ importers:
       lint-staged:
         specifier: ^16.1.2
         version: 16.1.2
+      object-assign:
+        specifier: ^4.1.1
+        version: 4.1.1
+      scheduler:
+        specifier: ^0.23.0
+        version: 0.23.2
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -5227,6 +5233,9 @@ packages:
     resolution: {integrity: sha512-vcF3Ckow6g939GMA4PeU7b2K/9FALXk2KF9J87txdHzXbUF9XRQRwSxcAs/fGaTnJeBFd7UoV22j3lzMLdM0Pw==}
     engines: {node: '>=14.0.0'}
     hasBin: true
+
+  scheduler@0.23.2:
+    resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
 
   scheduler@0.25.0:
     resolution: {integrity: sha512-xFVuu11jh+xcO7JOAGJNOXld8/TcEHK/4CituBUeUb5hqxJLj9YuemAEuvm9gQ/+pgXYfbQuqAkiYu+u7YEsNA==}
@@ -12062,6 +12071,10 @@ snapshots:
       chokidar: 3.6.0
       immutable: 4.3.7
       source-map-js: 1.2.1
+
+  scheduler@0.23.2:
+    dependencies:
+      loose-envify: 1.4.0
 
   scheduler@0.25.0: {}
 

@@ -2,6 +2,9 @@ import React from 'react'
 import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { CertificateDocument } from '../ui/Certificate/index.js'
 
+// Workaround for React 19 compatibility
+const ReactPDF = React
+
 type createPDFProps = {
     studentName: string;
     courseTitle: string;
@@ -45,17 +48,19 @@ export const createPDF = async ({
     try {
         // First try with a simple test document to isolate the issue
         console.log('Creating simple test PDF first...')
-        const testPDF = pdf(
-            <Document>
-                <Page size="A4">
-                    <View>
-                        <Text>Test Certificate</Text>
-                        <Text>Student: {studentName}</Text>
-                        <Text>Course: {courseTitle}</Text>
-                    </View>
-                </Page>
-            </Document>
+        
+        // Create the document element explicitly
+        const testDocument = React.createElement(Document, null,
+            React.createElement(Page, { size: "A4" },
+                React.createElement(View, null,
+                    React.createElement(Text, null, "Test Certificate"),
+                    React.createElement(Text, null, `Student: ${studentName}`),
+                    React.createElement(Text, null, `Course: ${courseTitle}`)
+                )
+            )
         )
+        
+        const testPDF = pdf(testDocument)
         
         console.log('Test PDF object created, calling toBlob()...')
         const testBlob = await testPDF.toBlob()
@@ -63,6 +68,8 @@ export const createPDF = async ({
         
         // If test works, try with the full certificate
         console.log('Test PDF successful, now creating full certificate...')
+        
+        // Use JSX for the certificate document since it's a custom component
         const PDF = pdf(
             <CertificateDocument
                 studentName={studentName}

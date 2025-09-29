@@ -1,7 +1,9 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { jsx as _jsx } from "react/jsx-runtime";
 import React from 'react';
 import { pdf, Document, Page, Text, View } from '@react-pdf/renderer';
 import { CertificateDocument } from '../ui/Certificate/index.js';
+// Workaround for React 19 compatibility
+const ReactPDF = React;
 export const createPDF = async ({ studentName, courseTitle, completionDate, certificateNumber, templateImage, fontFamily, authorName })=>{
     console.log('createPDF called with data:', {
         studentName,
@@ -24,35 +26,17 @@ export const createPDF = async ({ studentName, courseTitle, completionDate, cert
     try {
         // First try with a simple test document to isolate the issue
         console.log('Creating simple test PDF first...');
-        const testPDF = pdf(/*#__PURE__*/ _jsx(Document, {
-            children: /*#__PURE__*/ _jsx(Page, {
-                size: "A4",
-                children: /*#__PURE__*/ _jsxs(View, {
-                    children: [
-                        /*#__PURE__*/ _jsx(Text, {
-                            children: "Test Certificate"
-                        }),
-                        /*#__PURE__*/ _jsxs(Text, {
-                            children: [
-                                "Student: ",
-                                studentName
-                            ]
-                        }),
-                        /*#__PURE__*/ _jsxs(Text, {
-                            children: [
-                                "Course: ",
-                                courseTitle
-                            ]
-                        })
-                    ]
-                })
-            })
-        }));
+        // Create the document element explicitly
+        const testDocument = /*#__PURE__*/ React.createElement(Document, null, /*#__PURE__*/ React.createElement(Page, {
+            size: "A4"
+        }, /*#__PURE__*/ React.createElement(View, null, /*#__PURE__*/ React.createElement(Text, null, "Test Certificate"), /*#__PURE__*/ React.createElement(Text, null, `Student: ${studentName}`), /*#__PURE__*/ React.createElement(Text, null, `Course: ${courseTitle}`))));
+        const testPDF = pdf(testDocument);
         console.log('Test PDF object created, calling toBlob()...');
         const testBlob = await testPDF.toBlob();
         console.log('Test PDF created successfully, size:', testBlob.size);
         // If test works, try with the full certificate
         console.log('Test PDF successful, now creating full certificate...');
+        // Use JSX for the certificate document since it's a custom component
         const PDF = pdf(/*#__PURE__*/ _jsx(CertificateDocument, {
             studentName: studentName,
             courseTitle: courseTitle,
