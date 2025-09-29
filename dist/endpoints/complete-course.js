@@ -58,10 +58,10 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
             // Update course collection - add student to courseCompletedStudents and remove from enrolledStudents
             const courseCompletedStudents = (Array.isArray(course.courseCompletedStudents) ? course.courseCompletedStudents : []).map((student)=>typeof student === 'object' ? student.id : student);
             // Remove user from enrolledStudents and add to courseCompletedStudents
-            const updatedEnrolledStudents = enrolledStudentIds.filter((id)=>id !== user.id);
-            const updatedCompletedStudents = courseCompletedStudents.includes(user.id) ? courseCompletedStudents : [
+            const updatedEnrolledStudents = enrolledStudentIds.filter((id)=>id !== currentUser.id);
+            const updatedCompletedStudents = courseCompletedStudents.includes(currentUser.id) ? courseCompletedStudents : [
                 ...courseCompletedStudents,
-                user.id
+                currentUser.id
             ];
             await payload.update({
                 collection: courseSlug,
@@ -134,7 +134,7 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
                             ]
                         }
                     });
-                    payload.logger.info(`Certificate ${certificateId} added to user ${user.id} for completing course ${courseId}`);
+                    payload.logger.info(`Certificate ${certificateId} added to user ${currentUser.id} for completing course ${courseId}`);
                 } else {
                     payload.logger.info(`Course ${courseId} does not have a certificate configured`);
                 }
@@ -142,7 +142,7 @@ export const completeCourseHandler = ({ userSlug = 'users', courseSlug = 'course
                 payload.logger.error(`Failed to add certificate to user: ${error instanceof Error ? error.message : 'An unknown error occurred.'}`);
             // Don't fail the entire course completion if certificate addition fails
             }
-            payload.logger.info(`User ${user.id} completed course ${courseId}`);
+            payload.logger.info(`User ${currentUser.id} completed course ${courseId}`);
             return Response.json({
                 success: true,
                 message: 'Successfully completed course.'

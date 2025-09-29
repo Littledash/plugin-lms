@@ -1,15 +1,5 @@
 import { addDataAndFileToRequest } from 'payload';
-import { renderToStream } from '@react-pdf/renderer';
-import React from 'react';
-import { CertificateDocument } from '../ui/Certificate/index.js';
-async function renderToBuffer(doc) {
-    const stream = await renderToStream(doc);
-    const chunks = [];
-    for await (const chunk of stream){
-        chunks.push(chunk);
-    }
-    return Buffer.concat(chunks);
-}
+import { createPDF } from '../utilities/createPDF.js';
 export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', mediaSlug = 'media', certificatesSlug = 'certificates' })=>async (req)=>{
         await addDataAndFileToRequest(req);
         const data = req.data;
@@ -48,6 +38,20 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                 id: certificateId,
                 depth: 1
             });
+            if (!course) {
+                return Response.json({
+                    message: 'Course not found.'
+                }, {
+                    status: 404
+                });
+            }
+            if (!certificate) {
+                return Response.json({
+                    message: 'Certificate not found.'
+                }, {
+                    status: 404
+                });
+            }
             if (!currentUser) {
                 return Response.json({
                     message: 'User not found.'
@@ -55,32 +59,36 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     status: 404
                 });
             }
-            // Check if user has completed the course by looking at coursesProgress
-            const coursesProgress = currentUser.coursesProgress || [];
-            const courseProgress = coursesProgress.find((progress)=>{
-                if (typeof progress.course === 'object' && progress.course !== null) {
-                    return progress.course.id === courseId;
-                }
-                return progress.course === courseId;
-            });
-            if (!courseProgress || !courseProgress.completed) {
+            let certificatePDF = null;
+            //
+            //
+            payload.logger.info(`Course:`, JSON.stringify(course, null, 2));
+            payload.logger.info(`Certificate:`, JSON.stringify(certificate, null, 2));
+            payload.logger.info(`Current user:`, JSON.stringify(currentUser, null, 2));
+            // Validate required data
+            if (!currentUser.firstName || !currentUser.lastName) {
                 return Response.json({
-                    message: 'You have not completed this course.'
+                    message: 'User name is incomplete.'
                 }, {
-                    status: 403
+                    status: 400
                 });
             }
-            let certificatePDF = null;
+            if (!course.title) {
+                return Response.json({
+                    message: 'Course title is missing.'
+                }, {
+                    status: 400
+                });
+            }
             const certificateData = {
-                studentName: currentUser.firstName + ' ' + currentUser.lastName,
+                studentName: `${currentUser.firstName} ${currentUser.lastName}`,
                 courseTitle: course.title,
                 completionDate: new Date().toLocaleDateString(),
                 certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
-                templateImage: certificate.template?.url,
+                templateImage: certificate.template?.url || '',
                 fontFamily: 'Poppins',
-                authorName: certificate.authors?.[0]?.name
+                authorName: certificate.authors && certificate.authors.length > 0 ? `${certificate.authors[0]?.firstName || ''} ${certificate.authors[0]?.lastName || ''}`.trim() : undefined
             };
-            const pdfBuffer = await renderToBuffer(React.createElement(CertificateDocument, certificateData));
             const certificateFileName = `certificate-${courseId}-${certificate.id}-${currentUser.id}.pdf`;
             const existingCertificate = await payload.find({
                 collection: mediaSlug,
@@ -90,20 +98,56 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     }
                 }
             });
+            payload.logger.info(`Existing certificate:`, JSON.stringify(existingCertificate, null, 2));
             if (existingCertificate.docs.length > 0) {
+                payload.logger.info(`Certificate already exists for user ${currentUser.id} for course ${courseId}`);
                 certificatePDF = existingCertificate;
             } else {
-                //   certificatePDF = await generateCertificatePDF(courseId, user.id)
+                payload.logger.info(`Creating new certificate for user ${currentUser.id} for course ${courseId}`);
+                payload.logger.info(`Generating certificate for user ${currentUser.id} for course ${courseId}`);
+                payload.logger.info(`Certificate data:`, JSON.stringify(certificateData, null, 2));
+                payload.logger.info(`Creating PDF for user ${currentUser.id} for course ${courseId}`);
+                payload.logger.info(`About to call createPDF with certificate data:`, JSON.stringify(certificateData, null, 2));
+                let createPDFRes;
+                try {
+                    payload.logger.info(`Calling createPDF function...`);
+                    createPDFRes = await createPDF(certificateData);
+                    payload.logger.info(`PDF created successfully for user ${currentUser.id} for course ${courseId}`);
+                } catch (pdfError) {
+                    payload.logger.error(`Failed to create PDF for user ${currentUser.id} for course ${courseId}`);
+                    payload.logger.error(`PDF Error type:`, typeof pdfError);
+                    payload.logger.error(`PDF Error details:`, pdfError);
+                    payload.logger.error(`PDF Error stack:`, pdfError instanceof Error ? pdfError.stack : 'No stack trace available');
+                    payload.logger.error(`PDF Error message:`, pdfError instanceof Error ? pdfError.message : String(pdfError));
+                    payload.logger.error(`PDF Error name:`, pdfError instanceof Error ? pdfError.name : 'Not an Error object');
+                    // Try to stringify the error for more details
+                    try {
+                        payload.logger.error(`PDF Error JSON:`, JSON.stringify(pdfError, null, 2));
+                    } catch (stringifyError) {
+                        payload.logger.error(`Could not stringify error:`, stringifyError);
+                    }
+                    return Response.json({
+                        message: 'Failed to generate certificate PDF.',
+                        error: pdfError instanceof Error ? pdfError.message : String(pdfError),
+                        details: pdfError
+                    }, {
+                        status: 500
+                    });
+                }
+                payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`);
+                const pdfFormData = new FormData();
+                pdfFormData.append('file', createPDFRes, certificateFileName);
+                pdfFormData.append('_payload', JSON.stringify({
+                    title: 'Certificate - ' + course.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName,
+                    mimeType: 'application/pdf'
+                }));
                 const certificateMedia = await payload.create({
                     collection: mediaSlug,
-                    data: {
-                        filename: certificateFileName,
-                        title: 'Certificate - ' + course.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName,
-                        mimeType: 'application/pdf',
-                        filesize: pdfBuffer?.length
-                    }
+                    data: pdfFormData
                 });
+                payload.logger.info(`Created new certificate for user ${currentUser.id} for course ${courseId}`);
                 certificatePDF = certificateMedia;
+                payload.logger.info(`Set certificatePDF to ${certificatePDF.id}`);
             }
             payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`);
             return Response.json({
