@@ -1,6 +1,6 @@
 {
   "name": "@littledash/plugin-lms",
-  "version": "1.0.68",
+  "version": "1.0.69",
   "description": "A comprehensive Learning Management System (LMS) plugin for Payload CMS with courses, lessons, quizzes, certificates, and more.",
   "license": "MIT",
   "repository": {
@@ -344,10 +344,11 @@
   },
   "registry": "https://registry.npmjs.org/",
   "dependencies": {
-    "pdf-lib": "^1.17.1",
+    "@pdf-lib/fontkit": "^1.1.1",
     "dotenv": "^17.2.2",
     "lint-staged": "^16.2.3",
     "object-assign": "^4.1.1",
+    "pdf-lib": "^1.17.1",
     "scheduler": "^0.26.0"
   },
   "lint-staged": {

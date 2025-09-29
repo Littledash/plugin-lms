@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
 
 type createPDFProps = {
     studentName: string;
@@ -39,6 +40,9 @@ export const createPDF = async ({
         
         // Create a new PDF document
         const pdfDoc = await PDFDocument.create()
+        
+        // Register fontkit for custom font support
+        pdfDoc.registerFontkit(fontkit)
         
         // Add a page (A4 size in landscape orientation)
         const page = pdfDoc.addPage([842, 595]) // A4 landscape dimensions

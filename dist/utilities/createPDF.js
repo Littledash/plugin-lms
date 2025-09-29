@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
 export const createPDF = async ({ studentName, courseTitle, completionDate, certificateNumber, templateImage, fontFamily, authorName })=>{
     console.log('createPDF called with data:', {
         studentName,
@@ -17,6 +18,8 @@ export const createPDF = async ({ studentName, courseTitle, completionDate, cert
         console.log('Creating PDF with pdf-lib...');
         // Create a new PDF document
         const pdfDoc = await PDFDocument.create();
+        // Register fontkit for custom font support
+        pdfDoc.registerFontkit(fontkit);
         // Add a page (A4 size in landscape orientation)
         const page = pdfDoc.addPage([
             842,
