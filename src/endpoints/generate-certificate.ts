@@ -167,9 +167,11 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
     },
   })
 
+  const certificateMediaData = await certificateMedia.json()
+
     payload.logger.info(`Created new certificate for user ${currentUser.id} for course ${courseId}`)
-    certificatePDF = certificateMedia
-    payload.logger.info(`Set certificatePDF to ${certificatePDF.id}`)
+    certificatePDF = certificateMediaData
+    payload.logger.info(`Set certificatePDF to ${certificateMediaData.id}`)
   }
     
 

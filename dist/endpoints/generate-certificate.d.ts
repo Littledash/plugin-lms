@@ -4,6 +4,7 @@ type Args = {
     courseSlug: string;
     mediaSlug: string;
     certificatesSlug: string;
+    baseUrl?: string;
 };
 type GenerateCertificateHandler = (args: Args) => Endpoint['handler'];
 export declare const generateCertificateHandler: GenerateCertificateHandler;
