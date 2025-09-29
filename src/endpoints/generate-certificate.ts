@@ -104,24 +104,24 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
     payload.logger.info(`Certificate data:`, JSON.stringify(certificateData, null, 2));
   
     payload.logger.info(`Creating PDF for user ${currentUser.id} for course ${courseId}`)
-    const createPDFReq = await createPDF(certificateData)
+    // const createPDFReq = await createPDF(certificateData)
 
     // const createPDFRes = createPDFReq
     payload.logger.info(`PDF created for user ${currentUser.id} for course ${courseId}`)
-    
+
     payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`)
     const pdfFormData = new FormData()
-    pdfFormData.append('file', createPDFReq, certificateFileName)
+    // pdfFormData.append('file', createPDFReq, certificateFileName)
     pdfFormData.append('title', 'Certificate - ' + course.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName)
 
-   const certificateMedia = await payload.create({
-      collection: mediaSlug as CollectionSlug,
-        data: pdfFormData
-    })
+  //  const certificateMedia = await payload.create({
+  //     collection: mediaSlug as CollectionSlug,
+  //       data: pdfFormData
+  //   })
     
     payload.logger.info(`Created new certificate for user ${currentUser.id} for course ${courseId}`)
-    certificatePDF = certificateMedia
-    payload.logger.info(`Set certificatePDF to ${certificatePDF.id}`)
+    // certificatePDF = certificateMedia
+    // payload.logger.info(`Set certificatePDF to ${certificatePDF.id}`)
   }
     
 
