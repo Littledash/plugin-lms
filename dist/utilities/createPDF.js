@@ -1,9 +1,7 @@
 import { jsx as _jsx } from "react/jsx-runtime";
 import React from 'react';
-import { pdf, Document, Page, Text, View } from '@react-pdf/renderer';
+import { pdf, Document, Page, Text, View } from '@alexandernanberg/react-pdf-renderer';
 import { CertificateDocument } from '../ui/Certificate/index.js';
-// Workaround for React 19 compatibility
-const ReactPDF = React;
 export const createPDF = async ({ studentName, courseTitle, completionDate, certificateNumber, templateImage, fontFamily, authorName })=>{
     console.log('createPDF called with data:', {
         studentName,

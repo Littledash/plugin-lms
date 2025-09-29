@@ -1,22 +1,7 @@
 import React from 'react'
-import { pdf, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { pdf, Document, Page, Text, View, StyleSheet } from '@alexandernanberg/react-pdf-renderer'
 import { CertificateDocument } from '../ui/Certificate/index.js'
 
-// Workaround for React 19 compatibility
-const ReactPDF = React
-
-// Additional React 19 compatibility workaround
-if (typeof window !== 'undefined') {
-  // Ensure React 19 compatibility in browser environment
-  (window as any).React = React
-}
-
-// Create a React 19 compatible render function
-const renderToReactPDF = (element: React.ReactElement) => {
-  // Use React.createElement to avoid JSX issues with React 19
-  const props = element.props as any
-  return React.createElement(element.type, props, ...(props.children || []))
-}
 
 type createPDFProps = {
     studentName: string;
@@ -54,61 +39,50 @@ export const createPDF = async ({
 
     // Check if CertificateDocument is available
     console.log('CertificateDocument type:', typeof CertificateDocument)
-    console.log('CertificateDocument:', CertificateDocument)
     if (!CertificateDocument) {
         throw new Error('CertificateDocument component is not available')
     }
-    
-    // Check if pdf function is available
-    console.log('pdf function type:', typeof pdf)
-    if (!pdf) {
-        throw new Error('pdf function is not available')
-    }
 
     try {
-        // Create the certificate document using React.createElement for React 19 compatibility
-        console.log('Creating certificate PDF with React 19 compatibility...')
+        // First try with a simple test document to isolate the issue
+        console.log('Creating simple test PDF first...')
         
-        // Try multiple approaches for React 19 compatibility
-        let PDF
-        
-        try {
-            // Approach 1: Direct JSX (might work in some cases)
-            console.log('Trying approach 1: Direct JSX...')
-            PDF = pdf(
-                React.createElement(CertificateDocument, {
-                    studentName,
-                    courseTitle,
-                    completionDate,
-                    certificateNumber,
-                    templateImage,
-                    fontFamily,
-                    authorName
-                }) as any
-            )
-        } catch (jsxError) {
-            console.log('Approach 1 failed, trying approach 2...', jsxError)
-            
-            // Approach 2: Create a simple document structure
-            console.log('Trying approach 2: Simple document structure...')
-            const simpleDocument = React.createElement(Document, null,
-                React.createElement(Page, { size: "A4", orientation: "landscape" },
-                    React.createElement(View, { style: { padding: 40, textAlign: 'center' } },
-                        React.createElement(Text, { style: { fontSize: 24, marginBottom: 20 } }, "Certificate of Completion"),
-                        React.createElement(Text, { style: { fontSize: 32, marginBottom: 20 } }, studentName),
-                        React.createElement(Text, { style: { fontSize: 20, marginBottom: 10 } }, courseTitle),
-                        React.createElement(Text, { style: { fontSize: 16, marginBottom: 10 } }, completionDate),
-                        React.createElement(Text, { style: { fontSize: 12, marginBottom: 40 } }, `Certificate Number: ${certificateNumber}`),
-                        authorName && React.createElement(Text, { style: { fontSize: 14 } }, `Author: ${authorName}`)
-                    )
+        // Create the document element explicitly
+        const testDocument = React.createElement(Document, null,
+            React.createElement(Page, { size: "A4" },
+                React.createElement(View, null,
+                    React.createElement(Text, null, "Test Certificate"),
+                    React.createElement(Text, null, `Student: ${studentName}`),
+                    React.createElement(Text, null, `Course: ${courseTitle}`)
                 )
             )
-            PDF = pdf(simpleDocument)
-        }
+        )
         
-        console.log('PDF object created, calling toBlob()...')
+        const testPDF = pdf(testDocument)
+        
+        console.log('Test PDF object created, calling toBlob()...')
+        const testBlob = await testPDF.toBlob()
+        console.log('Test PDF created successfully, size:', testBlob.size)
+        
+        // If test works, try with the full certificate
+        console.log('Test PDF successful, now creating full certificate...')
+        
+        // Use JSX for the certificate document since it's a custom component
+        const PDF = pdf(
+            <CertificateDocument
+                studentName={studentName}
+                courseTitle={courseTitle}
+                completionDate={completionDate}
+                certificateNumber={certificateNumber}
+                templateImage={templateImage}
+                fontFamily={fontFamily}
+                authorName={authorName}
+            />
+        )
+
+        console.log('Full PDF object created, calling toBlob()')
         const blob = await PDF.toBlob()
-        console.log('PDF blob created successfully, size:', blob.size)
+        console.log('Full PDF blob created successfully, size:', blob.size)
         return blob
     } catch (error) {
         console.error('Error in createPDF:', error)
@@ -123,30 +97,6 @@ export const createPDF = async ({
             console.error('Error properties:', Object.getOwnPropertyNames(error))
         }
         
-        // Try fallback approach for React 19 compatibility
-        console.log('Attempting fallback approach for React 19 compatibility...')
-        try {
-            // Create a simple document without the custom component
-            const fallbackDocument = React.createElement(Document, null,
-                React.createElement(Page, { size: "A4", orientation: "landscape" },
-                    React.createElement(View, { style: { padding: 40, textAlign: 'center' } },
-                        React.createElement(Text, { style: { fontSize: 24, marginBottom: 20 } }, "Certificate of Completion"),
-                        React.createElement(Text, { style: { fontSize: 32, marginBottom: 20 } }, studentName),
-                        React.createElement(Text, { style: { fontSize: 20, marginBottom: 10 } }, courseTitle),
-                        React.createElement(Text, { style: { fontSize: 16, marginBottom: 10 } }, completionDate),
-                        React.createElement(Text, { style: { fontSize: 12, marginBottom: 40 } }, `Certificate Number: ${certificateNumber}`),
-                        authorName && React.createElement(Text, { style: { fontSize: 14 } }, `Author: ${authorName}`)
-                    )
-                )
-            )
-            
-            const fallbackPDF = pdf(fallbackDocument)
-            const fallbackBlob = await fallbackPDF.toBlob()
-            console.log('Fallback PDF created successfully, size:', fallbackBlob.size)
-            return fallbackBlob
-        } catch (fallbackError) {
-            console.error('Fallback approach also failed:', fallbackError)
-            throw error // Throw the original error
-        }
+        throw error
     }
 }
