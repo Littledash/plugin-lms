@@ -1,3 +1,4 @@
+import React from 'react'
 import { pdf } from '@react-pdf/renderer'
 import { CertificateDocument } from '../ui/Certificate/index.js'
 
@@ -20,9 +21,7 @@ export const createPDF = async ({
     fontFamily,
     authorName,
 }: createPDFProps) => {
-	const PDF = pdf()
-
-	PDF.updateContainer(
+	const PDF = pdf(
 		<CertificateDocument
 			studentName={studentName}
 			courseTitle={courseTitle}
@@ -31,8 +30,7 @@ export const createPDF = async ({
 			templateImage={templateImage}
 			fontFamily={fontFamily}
 			authorName={authorName}
-
-		/>,
+		/>
 	)
 
 	return await PDF.toBlob()

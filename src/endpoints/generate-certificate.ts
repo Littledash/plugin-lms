@@ -70,15 +70,26 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
     payload.logger.info(`Certificate:`, JSON.stringify(certificate, null, 2));
     payload.logger.info(`Current user:`, JSON.stringify(currentUser, null, 2));
   
+    // Validate required data
+    if (!currentUser.firstName || !currentUser.lastName) {
+      return Response.json({ message: 'User name is incomplete.' }, { status: 400 })
+    }
+    
+    if (!course.title) {
+      return Response.json({ message: 'Course title is missing.' }, { status: 400 })
+    }
+
     const certificateData = {
-      studentName: currentUser.firstName + ' ' + currentUser.lastName,
-      courseTitle: course.title, // should be the course title
+      studentName: `${currentUser.firstName} ${currentUser.lastName}`,
+      courseTitle: course.title,
       completionDate: new Date().toLocaleDateString(),
       certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
-      templateImage: certificate.template?.url, // A4 landscape
+      templateImage: certificate.template?.url || '', // Provide empty string as fallback
       fontFamily: 'Poppins',
-      authorName: certificate.authors ? certificate.authors?.[0]?.firstName + ' ' + certificate.authors?.[0]?.lastName : undefined
-  }
+      authorName: certificate.authors && certificate.authors.length > 0 
+        ? `${certificate.authors[0]?.firstName || ''} ${certificate.authors[0]?.lastName || ''}`.trim()
+        : undefined
+    }
 
 
 
@@ -104,10 +115,15 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
     payload.logger.info(`Certificate data:`, JSON.stringify(certificateData, null, 2));
   
     payload.logger.info(`Creating PDF for user ${currentUser.id} for course ${courseId}`)
-    const createPDFReq = await createPDF(certificateData)
-
-    const createPDFRes = createPDFReq
-    payload.logger.info(`PDF created for user ${currentUser.id} for course ${courseId}`)
+    
+    let createPDFRes
+    try {
+      createPDFRes = await createPDF(certificateData)
+      payload.logger.info(`PDF created for user ${currentUser.id} for course ${courseId}`)
+    } catch (pdfError) {
+      payload.logger.error(`Failed to create PDF for user ${currentUser.id} for course ${courseId}:`, pdfError)
+      return Response.json({ message: 'Failed to generate certificate PDF.' }, { status: 500 })
+    }
 
     payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`)
     const pdfFormData = new FormData()
