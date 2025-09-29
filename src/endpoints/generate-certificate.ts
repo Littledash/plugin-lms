@@ -1,22 +1,11 @@
 import { addDataAndFileToRequest, CollectionSlug, type Endpoint } from 'payload'
-import { renderToStream, type DocumentProps } from '@react-pdf/renderer'
-import React from 'react'
-import { CertificateDocument } from '../ui/Certificate/index.js'
+import { createPDF } from '../utilities/createPDF.js'
 
 type Args = {
   userSlug: string
   courseSlug: string
   mediaSlug: string
   certificatesSlug: string
-}
-
-async function renderToBuffer(doc: React.ReactElement<DocumentProps>) {
-  const stream = await renderToStream(doc)
-  const chunks: Buffer[] = []
-  for await (const chunk of stream) {
-    chunks.push(chunk as Buffer)
-  }
-  return Buffer.concat(chunks)
 }
 
 type GenerateCertificateHandler = (args: Args) => Endpoint['handler']
@@ -88,14 +77,10 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
       templateImage: certificate.template?.url, // A4 landscape
       fontFamily: 'Poppins',
-      authorName: certificate.authors?.[0]?.firstName + ' ' + certificate.authors?.[0]?.lastName
+      authorName: certificate.authors ? certificate.authors?.[0]?.firstName + ' ' + certificate.authors?.[0]?.lastName : undefined
   }
 
-  payload.logger.info(`Generating certificate for user ${currentUser.id} for course ${courseId}`)
-  payload.logger.info(`Certificate data:`, JSON.stringify(certificateData, null, 2));
-  const pdfBuffer = await renderToBuffer(React.createElement(CertificateDocument, certificateData) as React.ReactElement<DocumentProps>);
-  payload.logger.info(`PDF buffer:`, pdfBuffer);
-  payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`)
+
 
   
   const certificateFileName = `certificate-${courseId}-${certificate.id}-${currentUser.id}.pdf`;
@@ -115,15 +100,23 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
     certificatePDF = existingCertificate
   } else {
     payload.logger.info(`Creating new certificate for user ${currentUser.id} for course ${courseId}`)
-  //   certificatePDF = await generateCertificatePDF(courseId, user.id)
+    payload.logger.info(`Generating certificate for user ${currentUser.id} for course ${courseId}`)
+    payload.logger.info(`Certificate data:`, JSON.stringify(certificateData, null, 2));
+  
+    payload.logger.info(`Creating PDF for user ${currentUser.id} for course ${courseId}`)
+    const createPDFReq = await createPDF(certificateData)
+
+    // const createPDFRes = createPDFReq
+    payload.logger.info(`PDF created for user ${currentUser.id} for course ${courseId}`)
+    
+    payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`)
+    const pdfFormData = new FormData()
+    pdfFormData.append('file', createPDFReq, certificateFileName)
+    pdfFormData.append('title', 'Certificate - ' + course.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName)
+
    const certificateMedia = await payload.create({
       collection: mediaSlug as CollectionSlug,
-      data: {
-        filename: certificateFileName,
-        title: 'Certificate - ' + course.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName,
-        mimeType: 'application/pdf',
-        filesize:  pdfBuffer?.length,
-      }
+        data: pdfFormData
     })
     
     payload.logger.info(`Created new certificate for user ${currentUser.id} for course ${courseId}`)
