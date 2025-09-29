@@ -135,8 +135,14 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     });
                 }
                 payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`);
+                // Convert Uint8Array to Blob - use type assertion to handle ArrayBufferLike issue
+                const pdfBlob = new Blob([
+                    createPDFRes
+                ], {
+                    type: 'application/pdf'
+                });
                 const pdfFormData = new FormData();
-                pdfFormData.append('file', createPDFRes, certificateFileName);
+                pdfFormData.append('file', pdfBlob, certificateFileName);
                 pdfFormData.append('_payload', JSON.stringify({
                     title: 'Certificate - ' + course.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName,
                     mimeType: 'application/pdf'
