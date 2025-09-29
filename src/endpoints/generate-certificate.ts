@@ -6,11 +6,12 @@ type Args = {
   courseSlug: string
   mediaSlug: string
   certificatesSlug: string
+  baseUrl?: string
 }
 
 type GenerateCertificateHandler = (args: Args) => Endpoint['handler']
 
-export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', mediaSlug = 'media', certificatesSlug = 'certificates' }) => async (req) => {
+export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', mediaSlug = 'media', certificatesSlug = 'certificates', baseUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL }) => async (req) => {
   await addDataAndFileToRequest(req)
   const data = req.data
   const user = req.user
@@ -158,11 +159,14 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       })
     )
 
-  const certificateMedia = await payload.create({
-      collection: mediaSlug as CollectionSlug,
-        data: pdfFormData
-    })
-    
+  const certificateMedia = await fetch(`${baseUrl}/api/${mediaSlug}`, {
+    method: 'POST',
+    body: pdfFormData,
+    headers: {
+      Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`,
+    },
+  })
+
     payload.logger.info(`Created new certificate for user ${currentUser.id} for course ${courseId}`)
     certificatePDF = certificateMedia
     payload.logger.info(`Set certificatePDF to ${certificatePDF.id}`)
