@@ -16,6 +16,7 @@ const defaultContext: LMSContextType = {
   certificates: [],
   enrolledCourses: [],
   completedCourses: [],
+  quizStarted: null,
   enroll: async () => {},
   completeCourse: async () => {},
   completeLesson: async () => {},

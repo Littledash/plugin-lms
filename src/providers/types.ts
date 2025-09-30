@@ -64,9 +64,11 @@ export type LMSContextType = {
   /** A list of course IDs the current user is enrolled in. */
   enrolledCourses: DefaultDocumentIDType[]
   /** A list of course IDs the current user has completed. */
-  completedCourses: DefaultDocumentIDType[]
-  /** Enrolls the current user in a course. */
-  enroll: (
+    completedCourses: DefaultDocumentIDType[]
+    /** The quiz that the current user is started. */
+    quizStarted: DefaultDocumentIDType | null
+    /** Enrolls the current user in a course. */
+    enroll: (
     courseId: DefaultDocumentIDType,
     options?: {
       isGroup?: boolean
