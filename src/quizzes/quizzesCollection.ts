@@ -68,6 +68,16 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
       },
     },
     {
+      name: 'minimumScore',
+      type: 'number',
+      min: 0,
+      max: 100,
+      defaultValue: 100,
+      admin: {
+          description: 'Minimum score required (0-100) to pass the quiz',
+      }
+  },
+    {
       name: 'authors',
       type: 'relationship',
       relationTo: studentsCollectionSlug,

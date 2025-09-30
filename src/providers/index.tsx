@@ -19,6 +19,9 @@ const defaultContext: LMSContextType = {
   enroll: async () => {},
   completeCourse: async () => {},
   completeLesson: async () => {},
+  startQuiz: async () => {},
+  setQuizCompleted: async () => {},
+  setQuizExited: async () => {},
   submitQuiz: async () => {},
   addUserToGroup: async () => {},
   getProgress: () => undefined,
@@ -244,6 +247,30 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     [baseAPIURL, fetchProgress],
   )
 
+  const startQuiz = useCallback(
+    async (quizId: DefaultDocumentIDType) => {
+      dispatch({ type: 'SET_LOADING', payload: true })
+      dispatch({ type: 'SET_ERROR', payload: null })
+      dispatch({ type: 'SET_QUIZ_STARTED', payload: { quizId, startedAt: new Date().toISOString() } })
+      
+    },
+    [],
+  )
+
+  const setQuizCompleted = useCallback(
+    async (quizId: DefaultDocumentIDType, score: number) => {
+      dispatch({ type: 'SET_QUIZ_COMPLETED', payload: { quizId, completedAt: new Date().toISOString(), score } })
+    },
+    [],
+  )
+
+  const setQuizExited = useCallback(
+    async (quizId: DefaultDocumentIDType) => {
+      dispatch({ type: 'SET_QUIZ_EXITED', payload: { quizId, exitedAt: new Date().toISOString() } })
+    },
+    [],
+  )
+
   const submitQuiz = useCallback(
     async (courseId: DefaultDocumentIDType, quizId: DefaultDocumentIDType, answers: Record<string, unknown>) => {
       dispatch({ type: 'SET_LOADING', payload: true })
@@ -256,6 +283,10 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
           body: JSON.stringify({ courseId, quizId, answers }),
         })
         if (!response.ok) throw new Error('Failed to submit quiz')
+        const data = await response.json()
+        if (data.passed) {
+          dispatch({ type: 'SET_QUIZ_COMPLETED', payload: { quizId, completedAt: new Date().toISOString(), score: data.score } })
+        }
         await fetchProgress() // Refetch progress to ensure state is up-to-date
       } catch (e: unknown) {
         dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
@@ -411,6 +442,9 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     enroll,
     completeCourse,
     completeLesson,
+    startQuiz,
+    setQuizCompleted,
+    setQuizExited,
     submitQuiz,
     addUserToGroup,
     getProgress,

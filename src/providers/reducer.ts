@@ -23,6 +23,19 @@ export type LMSAction =
   | { type: 'SET_TOPICS'; payload: Topic[] }
   | { type: 'SET_LESSONS'; payload: Lesson[] }
   | { type: 'SET_QUIZZES'; payload: Quiz[] }
+  | { type: 'SET_QUIZ_STARTED'; payload: {
+    quizId: DefaultDocumentIDType
+    startedAt: string
+  } }
+  | { type: 'SET_QUIZ_EXITED'; payload: {
+    quizId: DefaultDocumentIDType
+    exitedAt: string
+  } }
+  | { type: 'SET_QUIZ_COMPLETED'; payload: {
+    quizId: DefaultDocumentIDType
+    completedAt: string
+    score: number
+  } }
   | { type: 'SET_CERTIFICATES'; payload: Certificate[] }
   | { type: 'ENROLL_IN_COURSE'; payload: DefaultDocumentIDType }
   | { type: 'COMPLETE_COURSE'; payload: DefaultDocumentIDType }
@@ -127,6 +140,24 @@ export const lmsReducer = (state: LMSState, action: LMSAction): LMSState => {
         completedCourses: action.payload,
       }
 
+    case 'SET_QUIZ_STARTED':
+      return {
+        ...state,
+        quizzes: state.quizzes.map((quiz) => quiz.id === action.payload.quizId ? { ...quiz, startedAt: action.payload.startedAt } : quiz),
+        isLoading: false,
+      }
+      
+    case 'SET_QUIZ_COMPLETED':
+      return {
+        ...state,
+        quizzes: state.quizzes.map((quiz) => quiz.id === action.payload.quizId ? { ...quiz, completedAt: action.payload.completedAt, score: action.payload.score } : quiz),
+      }
+
+    case 'SET_QUIZ_EXITED':
+      return {
+        ...state,
+        quizzes: state.quizzes.map((quiz) => quiz.id === action.payload.quizId ? { ...quiz, exitedAt: action.payload.exitedAt } : quiz),
+      }
 
 
     case 'LOAD_FROM_STORAGE':

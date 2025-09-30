@@ -87,6 +87,10 @@ export type LMSContextType = {
     quizId: DefaultDocumentIDType,
     answers: Record<string, unknown>,
   ) => Promise<void>
+  /** Sets a quiz as completed. */
+  setQuizCompleted: (quizId: DefaultDocumentIDType, score: number) => Promise<void>
+  /** Sets a quiz as exited. */
+  setQuizExited: (quizId: DefaultDocumentIDType) => Promise<void>
   /** Adds a user to a group with a specific role. */
   addUserToGroup: (
     groupId: DefaultDocumentIDType,
@@ -107,6 +111,8 @@ export type LMSContextType = {
   fetchLessons: (topicId: DefaultDocumentIDType) => Promise<void>
   /** Fetches the quizzes for a specific lesson. */
   fetchQuizzes: (lessonId: DefaultDocumentIDType) => Promise<void>
+  /** Starts a quiz. */
+  startQuiz: (quizId: DefaultDocumentIDType) => Promise<void>
   /** Whether the provider is currently fetching data. */
   isLoading: boolean
   /** Any error that occurred during data fetching. */
