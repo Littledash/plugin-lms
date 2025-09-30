@@ -1,6 +1,6 @@
 import { addDataAndFileToRequest } from 'payload';
 import { createPDF } from '../utilities/createPDF.js';
-export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', mediaSlug = 'media', certificatesSlug = 'certificates' })=>async (req)=>{
+export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'courses', mediaSlug = 'media', certificatesSlug = 'certificates', baseUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL })=>async (req)=>{
         await addDataAndFileToRequest(req);
         const data = req.data;
         const user = req.user;
@@ -147,13 +147,17 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     title: 'Certificate - ' + course.title + ' - ' + currentUser.firstName + ' ' + currentUser.lastName,
                     mimeType: 'application/pdf'
                 }));
-                const certificateMedia = await payload.create({
-                    collection: mediaSlug,
-                    data: pdfFormData
+                const certificateMedia = await fetch(`${baseUrl}/api/${mediaSlug}`, {
+                    method: 'POST',
+                    body: pdfFormData,
+                    headers: {
+                        Authorization: `users API-Key ${process.env.PAYLOAD_API_KEY}`
+                    }
                 });
+                const certificateMediaData = await certificateMedia.json();
                 payload.logger.info(`Created new certificate for user ${currentUser.id} for course ${courseId}`);
-                certificatePDF = certificateMedia;
-                payload.logger.info(`Set certificatePDF to ${certificatePDF.id}`);
+                certificatePDF = certificateMediaData;
+                payload.logger.info(`Set certificatePDF to ${certificateMediaData.id}`);
             }
             payload.logger.info(`Generated certificate for user ${currentUser.id} for course ${courseId}`);
             return Response.json({

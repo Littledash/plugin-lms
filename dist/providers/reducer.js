@@ -8,6 +8,7 @@ export const initialState = {
     certificates: [],
     enrolledCourses: [],
     completedCourses: [],
+    quizStarted: null,
     isLoading: false,
     error: null
 };
@@ -84,6 +85,35 @@ export const lmsReducer = (state, action)=>{
             return {
                 ...state,
                 completedCourses: action.payload
+            };
+        case 'SET_QUIZ_STARTED':
+            return {
+                ...state,
+                quizzes: state.quizzes.map((quiz)=>quiz.id === action.payload.quizId ? {
+                        ...quiz,
+                        startedAt: action.payload.startedAt
+                    } : quiz),
+                quizStarted: action.payload.quizId,
+                isLoading: false
+            };
+        case 'SET_QUIZ_COMPLETED':
+            return {
+                ...state,
+                quizzes: state.quizzes.map((quiz)=>quiz.id === action.payload.quizId ? {
+                        ...quiz,
+                        completedAt: action.payload.completedAt,
+                        score: action.payload.score
+                    } : quiz),
+                quizStarted: null
+            };
+        case 'SET_QUIZ_EXITED':
+            return {
+                ...state,
+                quizzes: state.quizzes.map((quiz)=>quiz.id === action.payload.quizId ? {
+                        ...quiz,
+                        exitedAt: action.payload.exitedAt
+                    } : quiz),
+                quizStarted: null
             };
         case 'LOAD_FROM_STORAGE':
             return {

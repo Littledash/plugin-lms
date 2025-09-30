@@ -202,7 +202,8 @@ export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
                     userSlug: collectionSlugMap.students,
                     courseSlug: collectionSlugMap.courses,
                     mediaSlug: collectionSlugMap.media,
-                    certificatesSlug: collectionSlugMap.certificates
+                    certificatesSlug: collectionSlugMap.certificates,
+                    baseUrl: incomingConfig.serverURL
                 })
             },
             {

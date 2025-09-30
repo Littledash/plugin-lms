@@ -10,6 +10,7 @@ export type LMSState = {
     certificates: Certificate[];
     enrolledCourses: DefaultDocumentIDType[];
     completedCourses: DefaultDocumentIDType[];
+    quizStarted: DefaultDocumentIDType | null;
     isLoading: boolean;
     error: Error | null;
 };
@@ -34,6 +35,25 @@ export type LMSAction = {
 } | {
     type: 'SET_QUIZZES';
     payload: Quiz[];
+} | {
+    type: 'SET_QUIZ_STARTED';
+    payload: {
+        quizId: DefaultDocumentIDType;
+        startedAt: string;
+    };
+} | {
+    type: 'SET_QUIZ_EXITED';
+    payload: {
+        quizId: DefaultDocumentIDType;
+        exitedAt: string;
+    };
+} | {
+    type: 'SET_QUIZ_COMPLETED';
+    payload: {
+        quizId: DefaultDocumentIDType;
+        completedAt: string;
+        score: number;
+    };
 } | {
     type: 'SET_CERTIFICATES';
     payload: Certificate[];

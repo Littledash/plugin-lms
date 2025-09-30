@@ -440,6 +440,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     certificates: state.certificates,
     enrolledCourses: state.enrolledCourses,
     completedCourses: state.completedCourses,
+    quizStarted: state.quizStarted,
     enroll,
     completeCourse,
     completeLesson,

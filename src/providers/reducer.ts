@@ -27,18 +27,16 @@ export type LMSAction =
   | { type: 'SET_QUIZ_STARTED'; payload: {
     quizId: DefaultDocumentIDType
     startedAt: string
-    quizStarted: DefaultDocumentIDType | null
   } }
   | { type: 'SET_QUIZ_EXITED'; payload: {
     quizId: DefaultDocumentIDType
     exitedAt: string
-    quizStarted: DefaultDocumentIDType | null
+
   } }
   | { type: 'SET_QUIZ_COMPLETED'; payload: {
     quizId: DefaultDocumentIDType
     completedAt: string
     score: number
-    quizStarted: DefaultDocumentIDType | null
   } }
   | { type: 'SET_CERTIFICATES'; payload: Certificate[] }
   | { type: 'ENROLL_IN_COURSE'; payload: DefaultDocumentIDType }
@@ -157,6 +155,7 @@ export const lmsReducer = (state: LMSState, action: LMSAction): LMSState => {
       return {
         ...state,
         quizzes: state.quizzes.map((quiz) => quiz.id === action.payload.quizId ? { ...quiz, completedAt: action.payload.completedAt, score: action.payload.score } : quiz),
+        quizStarted: null,
       }
 
     case 'SET_QUIZ_EXITED':

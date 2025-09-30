@@ -13,9 +13,13 @@ const defaultContext = {
     certificates: [],
     enrolledCourses: [],
     completedCourses: [],
+    quizStarted: null,
     enroll: async ()=>{},
     completeCourse: async ()=>{},
     completeLesson: async ()=>{},
+    startQuiz: async ()=>{},
+    setQuizCompleted: async ()=>{},
+    setQuizExited: async ()=>{},
     submitQuiz: async ()=>{},
     addUserToGroup: async ()=>{},
     getProgress: ()=>undefined,
@@ -275,6 +279,42 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         baseAPIURL,
         fetchProgress
     ]);
+    const startQuiz = useCallback(async (quizId)=>{
+        dispatch({
+            type: 'SET_LOADING',
+            payload: true
+        });
+        dispatch({
+            type: 'SET_ERROR',
+            payload: null
+        });
+        dispatch({
+            type: 'SET_QUIZ_STARTED',
+            payload: {
+                quizId,
+                startedAt: new Date().toISOString()
+            }
+        });
+    }, []);
+    const setQuizCompleted = useCallback(async (quizId, score)=>{
+        dispatch({
+            type: 'SET_QUIZ_COMPLETED',
+            payload: {
+                quizId,
+                completedAt: new Date().toISOString(),
+                score
+            }
+        });
+    }, []);
+    const setQuizExited = useCallback(async (quizId)=>{
+        dispatch({
+            type: 'SET_QUIZ_EXITED',
+            payload: {
+                quizId,
+                exitedAt: new Date().toISOString()
+            }
+        });
+    }, []);
     const submitQuiz = useCallback(async (courseId, quizId, answers)=>{
         dispatch({
             type: 'SET_LOADING',
@@ -298,6 +338,17 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 })
             });
             if (!response.ok) throw new Error('Failed to submit quiz');
+            const data = await response.json();
+            if (data.passed) {
+                dispatch({
+                    type: 'SET_QUIZ_COMPLETED',
+                    payload: {
+                        quizId,
+                        completedAt: new Date().toISOString(),
+                        score: data.score
+                    }
+                });
+            }
             await fetchProgress() // Refetch progress to ensure state is up-to-date
             ;
         } catch (e) {
@@ -574,9 +625,13 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         certificates: state.certificates,
         enrolledCourses: state.enrolledCourses,
         completedCourses: state.completedCourses,
+        quizStarted: state.quizStarted,
         enroll,
         completeCourse,
         completeLesson,
+        startQuiz,
+        setQuizCompleted,
+        setQuizExited,
         submitQuiz,
         addUserToGroup,
         getProgress,
