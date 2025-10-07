@@ -23,7 +23,13 @@ const defaultContext: LMSContextType = {
   startQuiz: async () => {},
   setQuizCompleted: async () => {},
   setQuizExited: async () => {},
-  submitQuiz: async () => {},
+  submitQuiz: async () => {
+    return {
+      passed: false,
+      score: 0,
+      message: 'An unknown error occurred submitting quiz. Please try again.',
+    }
+  },
   addUserToGroup: async () => {},
   getProgress: () => undefined,
   fetchProgress: async () => {},
