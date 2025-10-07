@@ -287,8 +287,10 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         const data = await response.json()
         if (data.passed) {
           dispatch({ type: 'SET_QUIZ_COMPLETED', payload: { quizId, completedAt: new Date().toISOString(), score: data.score } })
+          
         }
         await fetchProgress() // Refetch progress to ensure state is up-to-date
+        return data // Return the response data
       } catch (e: unknown) {
         dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
       } finally {
