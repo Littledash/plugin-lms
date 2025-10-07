@@ -11,7 +11,10 @@ export type LMSState = {
   certificates: Certificate[]
   enrolledCourses: DefaultDocumentIDType[]
   completedCourses: DefaultDocumentIDType[]
-  quizStarted: DefaultDocumentIDType | null
+  quizStarted: {
+    quizId: DefaultDocumentIDType | null
+    courseId: DefaultDocumentIDType | null
+  } | null
   isLoading: boolean
   error: Error | null
 }
@@ -26,10 +29,12 @@ export type LMSAction =
   | { type: 'SET_QUIZZES'; payload: Quiz[] }
   | { type: 'SET_QUIZ_STARTED'; payload: {
     quizId: DefaultDocumentIDType
+    courseId: DefaultDocumentIDType
     startedAt: string
   } }
   | { type: 'SET_QUIZ_EXITED'; payload: {
     quizId: DefaultDocumentIDType
+    courseId: DefaultDocumentIDType
     exitedAt: string
 
   } }
@@ -57,7 +62,7 @@ export const initialState: LMSState = {
   certificates: [],
   enrolledCourses: [],
   completedCourses: [],
-  quizStarted: null,
+  quizStarted:  null,
   isLoading: false,
   error: null,
 }
@@ -147,7 +152,10 @@ export const lmsReducer = (state: LMSState, action: LMSAction): LMSState => {
       return {
         ...state,
         quizzes: state.quizzes.map((quiz) => quiz.id === action.payload.quizId ? { ...quiz, startedAt: action.payload.startedAt } : quiz),
-        quizStarted: action.payload.quizId,
+        quizStarted: {
+          quizId: action.payload.quizId,
+          courseId: action.payload.courseId,
+        },
         isLoading: false,
       }
       

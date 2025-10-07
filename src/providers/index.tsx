@@ -249,10 +249,10 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const startQuiz = useCallback(
-    async (quizId: DefaultDocumentIDType) => {
+    async (quizId: DefaultDocumentIDType, courseId: DefaultDocumentIDType) => {
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
-      dispatch({ type: 'SET_QUIZ_STARTED', payload: { quizId, startedAt: new Date().toISOString() } })
+      dispatch({ type: 'SET_QUIZ_STARTED', payload: { quizId, courseId, startedAt: new Date().toISOString() } })
       
     },
     [],
@@ -266,8 +266,8 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const setQuizExited = useCallback(
-    async (quizId: DefaultDocumentIDType) => {
-      dispatch({ type: 'SET_QUIZ_EXITED', payload: { quizId, exitedAt: new Date().toISOString() } })
+    async (quizId: DefaultDocumentIDType, courseId: DefaultDocumentIDType) => {
+      dispatch({ type: 'SET_QUIZ_EXITED', payload: { quizId, courseId, exitedAt: new Date().toISOString() } })
     },
     [],
   )
