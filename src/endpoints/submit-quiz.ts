@@ -135,7 +135,7 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
 
     return Response.json({ success: true, message: 'Quiz submitted successfully but you did not pass. You can try again. Required score: ' + quiz.minimumScore + '%', score, passed: false })
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'An unknown error occurred.'
+    const message = error instanceof Error ? error.message : 'An unknown error occurred submitting quiz. Please try again.'
     payload.logger.error(message)
     return Response.json({ message }, { status: 500 })
   }

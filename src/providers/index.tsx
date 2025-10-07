@@ -293,6 +293,11 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         return data // Return the response data
       } catch (e: unknown) {
         dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
+        return {
+          passed: false,
+          score: 0,
+          message: 'An unknown error occurred submitting quiz. Please try again.',
+        }
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false })
       }
