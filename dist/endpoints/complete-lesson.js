@@ -69,6 +69,50 @@ export const completeLessonHandler = ({ userSlug = 'users' })=>async (req)=>{
                     completedAt: new Date().toISOString()
                 });
             }
+            // Check if all lessons in the course are completed
+            try {
+                const course = await payload.findByID({
+                    collection: 'courses',
+                    id: courseId,
+                    depth: 1
+                });
+                if (course && course.lessons) {
+                    // Count total required lessons (non-optional)
+                    const totalRequiredLessons = course.lessons.filter((lessonItem)=>!lessonItem.isOptional);
+                    // Get completed lesson IDs
+                    const completedLessonIds = courseProgress.completedLessons.map((lesson)=>typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson);
+                    // Check if all required lessons are completed
+                    const allRequiredLessonsCompleted = totalRequiredLessons.every((lessonItem)=>{
+                        const lessonId = typeof lessonItem.lesson === 'object' && lessonItem.lesson !== null ? lessonItem.lesson.id : lessonItem.lesson;
+                        return completedLessonIds.includes(lessonId);
+                    });
+                    if (allRequiredLessonsCompleted && !courseProgress.completed) {
+                        // Mark course as completed
+                        courseProgress.completed = true;
+                        courseProgress.completedAt = new Date().toISOString();
+                        // Update course collection - add student to courseCompletedStudents and remove from enrolledStudents
+                        const enrolledStudentIds = (Array.isArray(course.enrolledStudents) ? course.enrolledStudents : []).map((student)=>typeof student === 'object' ? student.id : student);
+                        const courseCompletedStudents = (Array.isArray(course.courseCompletedStudents) ? course.courseCompletedStudents : []).map((student)=>typeof student === 'object' ? student.id : student);
+                        // Remove user from enrolledStudents and add to courseCompletedStudents
+                        const updatedEnrolledStudents = enrolledStudentIds.filter((id)=>id !== user.id);
+                        const updatedCompletedStudents = courseCompletedStudents.includes(user.id) ? courseCompletedStudents : [
+                            ...courseCompletedStudents,
+                            user.id
+                        ];
+                        await payload.update({
+                            collection: 'courses',
+                            id: courseId,
+                            data: {
+                                enrolledStudents: updatedEnrolledStudents,
+                                courseCompletedStudents: updatedCompletedStudents
+                            }
+                        });
+                        payload.logger.info(`User ${user.id} completed course ${courseId} after completing lesson ${lessonId}`);
+                    }
+                }
+            } catch (error) {
+                payload.logger.warn(`Could not check course completion for course ${courseId}: ${error}`);
+            }
             await payload.update({
                 collection: userSlug,
                 id: user.id,

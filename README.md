@@ -175,7 +175,7 @@ This plugin is highly configurable. You can enable or disable features and custo
 | `lessons`      | `boolean \| { ... }`               | Enables and configures the `lessons` collection.                                                        |
 | `topics`       | `boolean \| { ... }`               | Enables and configures the `topics` collection.                                                         |
 | `quizzes`      | `boolean \| { ... }`               | Enables and configures the `quizzes` collection.                                                        |
-| `questions`    | `boolean \| { ... }`               | Enables and configures the `questions` collection for quizzes.                                          |
+| `questions`    | `boolean \| { questionTypes?: QuestionTypeOption[], questionsCollection?: CollectionOverride }` | Enables and configures the `questions` collection for quizzes. You can customize available question types. |
 | `categories`   | `boolean \| { ... }`               | Enables and configures the `categories` collection for courses.                                         |
 | `tags`         | `boolean \| { ... }`               | Enables and configures the `tags` collection for content organization.                                  |
 | `certificates` | `boolean \| { ... }`               | Enables and configures the `certificates` collection for course completion awards.                      |
@@ -183,6 +183,40 @@ This plugin is highly configurable. You can enable or disable features and custo
 | `currencies`   | `{ defaultCurrency: string, supportedCurrencies: Currency[] }` | **Required.** Configures the default and supported currencies for course pricing. |
 | `endpoints`    | `Endpoint[]`                       | An array of custom [Payload endpoints](https://payloadcms.com/docs/rest-api/endpoints) to add to your config. |
 
+### Customizing Question Types
+
+You can customize which question types are available in your LMS by providing a `questionTypes` array in the questions configuration:
+
+```typescript
+// payload.config.ts
+import { buildConfig } from 'payload/config'
+import { lmsPlugin } from '@littledash/plugin-lms'
+
+export default buildConfig({
+  plugins: [
+    lmsPlugin({
+      questions: {
+        questionTypes: [
+          { label: 'Multiple Choice', value: 'multipleChoice' },
+          { label: 'True/False', value: 'trueFalse' },
+          { label: 'Essay', value: 'essay' },
+          { label: 'Fill in the Blank', value: 'fillInBlank' },
+        ],
+      },
+    })
+  ]
+})
+```
+
+If you don't specify `questionTypes`, the plugin will use all available question types by default:
+- Multiple Choice
+- True/False
+- Sorting
+- Fill in the Blank
+- Assessment
+- Essay/Open Answer
+- Free Choice
+- Single Choice
 
 ## React Provider & Context Usage
 

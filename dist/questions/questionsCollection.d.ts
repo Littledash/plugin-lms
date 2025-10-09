@@ -1,14 +1,16 @@
 import { CollectionConfig } from 'payload';
-import { FieldsOverride } from '../types.js';
+import { FieldsOverride, QuestionTypeOption } from '../types.js';
 /**
  * Props interface for configuring the questions collection
  * @property overrides - Optional configuration overrides for fields and collection settings
+ * @property questionTypes - Optional array of question type options to override defaults
  */
 type Props = {
     studentsCollectionSlug?: string;
     overrides?: {
         fields?: FieldsOverride;
     } & Partial<Omit<CollectionConfig, 'fields'>>;
+    questionTypes?: QuestionTypeOption[];
 };
 /**
  * Creates a questions collection configuration for Payload CMS

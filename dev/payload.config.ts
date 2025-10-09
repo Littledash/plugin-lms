@@ -134,7 +134,14 @@ export default buildConfig({
       topics: true,
       tags: true,
       certificates: true,
-      questions: true,
+      questions: {
+        questionTypes: [
+          { label: 'Multiple Choice', value: 'multipleChoice' },
+          { label: 'True/False', value: 'trueFalse' },
+          { label: 'Essay', value: 'essay' },
+          { label: 'Fill in the Blank', value: 'fillInBlank' },
+        ],
+      },
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || 'test-secret_key',

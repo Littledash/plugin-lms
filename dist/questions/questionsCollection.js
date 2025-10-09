@@ -5,8 +5,45 @@
  * @param props - Configuration properties for the questions collection
  * @returns CollectionConfig object for questions
  */ export const questionsCollection = (props)=>{
-    const { overrides, studentsCollectionSlug = 'users' } = props || {};
+    const { overrides, studentsCollectionSlug = 'users', questionTypes } = props || {};
     const fieldsOverride = overrides?.fields;
+    // Default question types
+    const defaultQuestionTypes = [
+        {
+            label: 'Multiple Choice',
+            value: 'multipleChoice'
+        },
+        {
+            label: 'True/False',
+            value: 'trueFalse'
+        },
+        {
+            label: 'Sorting',
+            value: 'sorting'
+        },
+        {
+            label: 'Fill in the Blank',
+            value: 'fillInBlank'
+        },
+        {
+            label: 'Assessment',
+            value: 'assessment'
+        },
+        {
+            label: 'Essay/Open Answer',
+            value: 'essay'
+        },
+        {
+            label: 'Free Choice',
+            value: 'freeChoice'
+        },
+        {
+            label: 'Single Choice',
+            value: 'singleChoice'
+        }
+    ];
+    // Use provided question types or fall back to defaults
+    const availableQuestionTypes = questionTypes || defaultQuestionTypes;
     /**
    * Default fields for the questions collection
    * Includes question details, access control, and content organization
@@ -34,40 +71,7 @@
             name: 'questionType',
             type: 'select',
             required: true,
-            options: [
-                {
-                    label: 'Multiple Choice',
-                    value: 'multipleChoice'
-                },
-                {
-                    label: 'True/False',
-                    value: 'trueFalse'
-                },
-                {
-                    label: 'Sorting',
-                    value: 'sorting'
-                },
-                {
-                    label: 'Fill in the Blank',
-                    value: 'fillInBlank'
-                },
-                {
-                    label: 'Assessment',
-                    value: 'assessment'
-                },
-                {
-                    label: 'Essay/Open Answer',
-                    value: 'essay'
-                },
-                {
-                    label: 'Free Choice',
-                    value: 'freeChoice'
-                },
-                {
-                    label: 'Single Choice',
-                    value: 'singleChoice'
-                }
-            ]
+            options: availableQuestionTypes
         },
         {
             name: 'question',

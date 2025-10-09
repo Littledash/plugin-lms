@@ -214,9 +214,15 @@ export const lmsPlugin =
           ? sanitizedPluginConfig.questions.questionsCollection
           : undefined
 
+      const questionTypes =
+        typeof sanitizedPluginConfig.questions === 'object'
+          ? sanitizedPluginConfig.questions.questionTypes
+          : undefined
+
       const questions = questionsCollection({
         studentsCollectionSlug: collectionSlugMap.students,
         overrides: collectionOverrides,
+        questionTypes,
       })
       incomingConfig.collections.push(questions)
     }

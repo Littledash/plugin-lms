@@ -148,9 +148,11 @@ export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
         }
         if (sanitizedPluginConfig.questions) {
             const collectionOverrides = typeof sanitizedPluginConfig.questions === 'object' ? sanitizedPluginConfig.questions.questionsCollection : undefined;
+            const questionTypes = typeof sanitizedPluginConfig.questions === 'object' ? sanitizedPluginConfig.questions.questionTypes : undefined;
             const questions = questionsCollection({
                 studentsCollectionSlug: collectionSlugMap.students,
-                overrides: collectionOverrides
+                overrides: collectionOverrides,
+                questionTypes
             });
             incomingConfig.collections.push(questions);
         }

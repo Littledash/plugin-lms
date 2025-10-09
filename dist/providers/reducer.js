@@ -93,7 +93,10 @@ export const lmsReducer = (state, action)=>{
                         ...quiz,
                         startedAt: action.payload.startedAt
                     } : quiz),
-                quizStarted: action.payload.quizId,
+                quizStarted: {
+                    quizId: action.payload.quizId,
+                    courseId: action.payload.courseId
+                },
                 isLoading: false
             };
         case 'SET_QUIZ_COMPLETED':

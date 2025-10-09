@@ -82,8 +82,13 @@ export type TagsConfig = {
 export type CertificateConfig = {
     certificatesCollection?: CollectionOverride;
 };
+export type QuestionTypeOption = {
+    label: string;
+    value: string;
+};
 export type QuestionsConfig = {
     questionsCollection?: CollectionOverride;
+    questionTypes?: QuestionTypeOption[];
 };
 export type TopicsConfig = {
     topicsCollection?: CollectionOverride;

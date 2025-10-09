@@ -1,13 +1,15 @@
 import { CollectionConfig, Field } from 'payload'
-import { FieldsOverride } from '../types.js'
+import { FieldsOverride, QuestionTypeOption } from '../types.js'
 
 /**
  * Props interface for configuring the questions collection
  * @property overrides - Optional configuration overrides for fields and collection settings
+ * @property questionTypes - Optional array of question type options to override defaults
  */
 type Props = {
   studentsCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
+  questionTypes?: QuestionTypeOption[]
 }
 
 /**
@@ -18,8 +20,23 @@ type Props = {
  * @returns CollectionConfig object for questions
  */
 export const questionsCollection: (props?: Props) => CollectionConfig<'questions'> = (props) => {
-  const { overrides, studentsCollectionSlug = 'users' } = props || {}
+  const { overrides, studentsCollectionSlug = 'users', questionTypes } = props || {}
   const fieldsOverride = overrides?.fields
+
+  // Default question types
+  const defaultQuestionTypes: QuestionTypeOption[] = [
+    { label: 'Multiple Choice', value: 'multipleChoice' },
+    { label: 'True/False', value: 'trueFalse' },
+    { label: 'Sorting', value: 'sorting' },
+    { label: 'Fill in the Blank', value: 'fillInBlank' },
+    { label: 'Assessment', value: 'assessment' },
+    { label: 'Essay/Open Answer', value: 'essay' },
+    { label: 'Free Choice', value: 'freeChoice' },
+    { label: 'Single Choice', value: 'singleChoice' },
+  ]
+
+  // Use provided question types or fall back to defaults
+  const availableQuestionTypes = questionTypes || defaultQuestionTypes
 
   /**
    * Default fields for the questions collection
@@ -49,16 +66,7 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       name: 'questionType',
       type: 'select',
       required: true,
-      options: [
-        { label: 'Multiple Choice', value: 'multipleChoice' },
-        { label: 'True/False', value: 'trueFalse' },
-        { label: 'Sorting', value: 'sorting' },
-        { label: 'Fill in the Blank', value: 'fillInBlank' },
-        { label: 'Assessment', value: 'assessment' },
-        { label: 'Essay/Open Answer', value: 'essay' },
-        { label: 'Free Choice', value: 'freeChoice' },
-        { label: 'Single Choice', value: 'singleChoice' },
-      ],
+      options: availableQuestionTypes,
     },
     {
       name: 'question',

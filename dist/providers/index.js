@@ -20,7 +20,13 @@ const defaultContext = {
     startQuiz: async ()=>{},
     setQuizCompleted: async ()=>{},
     setQuizExited: async ()=>{},
-    submitQuiz: async ()=>{},
+    submitQuiz: async ()=>{
+        return {
+            passed: false,
+            score: 0,
+            message: 'An unknown error occurred submitting quiz. Please try again.'
+        };
+    },
     addUserToGroup: async ()=>{},
     getProgress: ()=>undefined,
     fetchProgress: async ()=>{},
@@ -279,7 +285,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         baseAPIURL,
         fetchProgress
     ]);
-    const startQuiz = useCallback(async (quizId)=>{
+    const startQuiz = useCallback(async (quizId, courseId)=>{
         dispatch({
             type: 'SET_LOADING',
             payload: true
@@ -292,6 +298,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             type: 'SET_QUIZ_STARTED',
             payload: {
                 quizId,
+                courseId,
                 startedAt: new Date().toISOString()
             }
         });
@@ -306,11 +313,12 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             }
         });
     }, []);
-    const setQuizExited = useCallback(async (quizId)=>{
+    const setQuizExited = useCallback(async (quizId, courseId)=>{
         dispatch({
             type: 'SET_QUIZ_EXITED',
             payload: {
                 quizId,
+                courseId,
                 exitedAt: new Date().toISOString()
             }
         });
@@ -351,11 +359,18 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             }
             await fetchProgress() // Refetch progress to ensure state is up-to-date
             ;
+            return data // Return the response data
+            ;
         } catch (e) {
             dispatch({
                 type: 'SET_ERROR',
                 payload: e instanceof Error ? e : new Error('An unknown error occurred')
             });
+            return {
+                passed: false,
+                score: 0,
+                message: 'An unknown error occurred submitting quiz. Please try again.'
+            };
         } finally{
             dispatch({
                 type: 'SET_LOADING',
