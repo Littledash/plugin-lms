@@ -1,4 +1,24 @@
 /**
+ * @fileoverview Utility functions for checking lesson completion status
+ * 
+ * This module provides functions to check if a lesson is completed, including
+ * both lesson completion and quiz completion requirements.
+ * 
+ * @example
+ * ```typescript
+ * import { completedLesson, lessonHasQuizzes, allQuizzesCompleted } from './completedLesson'
+ * 
+ * // Check lesson completion including quiz completion
+ * const status = completedLesson(progress, courseId, lessonObject)
+ * console.log(status) // { isCompleted: boolean, hasQuizzes: boolean, allQuizzesCompleted: boolean, lessonCompleted: boolean }
+ * 
+ * // Check if lesson has quizzes
+ * const hasQuizzes = lessonHasQuizzes(lessonObject)
+ * 
+ * // Check if all quizzes for a lesson are completed
+ * const allQuizzesDone = allQuizzesCompleted(courseProgress, lessonObject)
+ * ```
+ */ /**
  * Checks if a lesson has any quizzes associated with it
  * @param lesson - The lesson object to check
  * @returns boolean indicating if the lesson has quizzes
@@ -22,10 +42,9 @@
  * Checks if a lesson is completed, including both lesson completion and quiz completion
  * @param progress - The user's progress across all courses
  * @param courseId - The ID of the course
- * @param lessonId - The ID of the lesson
- * @param lesson - Optional lesson object (if not provided, only checks lesson completion)
+ * @param lesson - The lesson object to check
  * @returns object with completion status details
- */ export const completedLesson = (progress, courseId, lessonId, lesson)=>{
+ */ export const completedLesson = (progress, courseId, lesson)=>{
     const courseProgress = progress.find((p)=>(typeof p.course === 'object' ? p.course.id : p.course) === courseId);
     if (!courseProgress) {
         return {
@@ -35,16 +54,7 @@
             lessonCompleted: false
         };
     }
-    const lessonCompleted = Boolean(courseProgress.completedLessons.find((l)=>typeof l.lesson === 'object' ? l.lesson.id : l.lesson === lessonId));
-    // If no lesson object provided, return basic completion status
-    if (!lesson) {
-        return {
-            isCompleted: lessonCompleted,
-            hasQuizzes: false,
-            allQuizzesCompleted: false,
-            lessonCompleted
-        };
-    }
+    const lessonCompleted = Boolean(courseProgress.completedLessons.find((l)=>typeof l.lesson === 'object' ? l.lesson.id : l.lesson === lesson.id));
     const hasQuizzes = lessonHasQuizzes(lesson);
     const allQuizzesCompletedForLesson = allQuizzesCompleted(courseProgress, lesson);
     // A lesson is fully completed if:

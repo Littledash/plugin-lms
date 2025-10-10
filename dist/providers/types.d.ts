@@ -3,15 +3,15 @@ import type React from 'react';
 export type LMSUser = TypedCollection['users'];
 export type Course = TypedCollection['courses'];
 export type Lesson = TypedCollection['lessons'] & {
-    topic?: DefaultDocumentIDType | Topic;
-    course?: DefaultDocumentIDType | Course;
+    topic?: DefaultDocumentIDType | Topic | null;
+    course?: DefaultDocumentIDType | Course | null;
 };
 export type Quiz = TypedCollection['quizzes'] & {
-    lesson?: DefaultDocumentIDType | Lesson;
+    lesson?: DefaultDocumentIDType | Lesson | null;
 };
 export type Certificate = TypedCollection['certificates'];
 export type Topic = TypedCollection['topics'] & {
-    course?: DefaultDocumentIDType | Course;
+    course?: DefaultDocumentIDType | Course | null;
 };
 /**
  * Represents the progress of a user in a specific course.

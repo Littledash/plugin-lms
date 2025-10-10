@@ -10,13 +10,9 @@ import { CourseProgress, Progress, Lesson, Quiz } from '../providers/types.js'
  * ```typescript
  * import { completedLesson, lessonHasQuizzes, allQuizzesCompleted } from './completedLesson'
  * 
- * // Basic usage - only checks if lesson is marked as completed
- * const basicStatus = completedLesson(progress, courseId, lessonId)
- * console.log(basicStatus.isCompleted) // true/false
- * 
- * // Advanced usage - includes quiz completion checking
- * const fullStatus = completedLesson(progress, courseId, lessonId, lessonObject)
- * console.log(fullStatus) // { isCompleted: boolean, hasQuizzes: boolean, allQuizzesCompleted: boolean, lessonCompleted: boolean }
+ * // Check lesson completion including quiz completion
+ * const status = completedLesson(progress, courseId, lessonObject)
+ * console.log(status) // { isCompleted: boolean, hasQuizzes: boolean, allQuizzesCompleted: boolean, lessonCompleted: boolean }
  * 
  * // Check if lesson has quizzes
  * const hasQuizzes = lessonHasQuizzes(lessonObject)
@@ -88,15 +84,6 @@ export const completedLesson = (
     )
   )
 
-  // If no lesson object provided, return basic completion status
-  if (!lesson) {
-    return {
-      isCompleted: lessonCompleted,
-      hasQuizzes: false,
-      allQuizzesCompleted: false,
-      lessonCompleted
-    }
-  }
 
   const hasQuizzes = lessonHasQuizzes(lesson)
   const allQuizzesCompletedForLesson = allQuizzesCompleted(courseProgress, lesson)
