@@ -19,7 +19,7 @@ export const addUserToGroupHandler: AddUserToGroupHandler = ({
   const userId = data?.userId
   const role = data?.role // 'leader' or 'student'
 
-  if (!user) {
+  if (!user || !userId) {
     return Response.json(
       { message: 'You must be logged in to add users to a group.' },
       { status: 401 },

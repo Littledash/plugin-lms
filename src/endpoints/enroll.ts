@@ -20,7 +20,7 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
   const userId = data?.userId || ''
   let isLeader = data?.isLeader || false
 
-  if (!user) {
+  if (!user || !userId) {
     return Response.json({ message: 'You must be logged in to enroll.' }, { status: 401 })
   }
 

@@ -18,7 +18,7 @@ async (req) => {
   const courseId = data?.courseId
   const userId = data?.userId || ''
 
-  if (!user) {
+  if (!user || !userId) {
     return Response.json(
       { message: 'You must be logged in to complete a course.' },
       { status: 401 },
