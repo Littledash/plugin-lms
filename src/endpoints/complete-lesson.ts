@@ -17,6 +17,8 @@ export const completeLessonHandler: CompleteLessonHandler = ({ userSlug = 'users
   const courseId = data?.courseId
   const lessonId = data?.lessonId
 
+  let courseFinished = false
+
   if (!user) {
     return Response.json(
       { message: 'You must be logged in to complete a lesson.' },
@@ -132,6 +134,7 @@ export const completeLessonHandler: CompleteLessonHandler = ({ userSlug = 'users
           })
 
           payload.logger.info(`User ${user.id} completed course ${courseId} after completing lesson ${lessonId}`)
+          courseFinished = true
         }
       }
     } catch (error) {
@@ -148,6 +151,9 @@ export const completeLessonHandler: CompleteLessonHandler = ({ userSlug = 'users
 
     payload.logger.info(`User ${user.id} completed lesson ${lessonId} in course ${courseId}`)
 
+    if (courseFinished) {
+      return Response.json({ success: true, message: 'Successfully completed course and lesson.' })
+    }
     return Response.json({ success: true, message: 'Successfully completed lesson.' })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'An unknown error occurred.'

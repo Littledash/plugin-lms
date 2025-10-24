@@ -42,17 +42,25 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
     let correctAnswers = 0
     if (quiz.questions && Array.isArray(quiz.questions)) {
       for (const question of quiz.questions) {
-        if (
-          question &&
-          typeof question === 'object' &&
-          'answers' in question &&
-          Array.isArray(question.answers)
-        ) {
+        if (question && typeof question === 'object') {
           const submittedAnswer = answers[question.id]
-          const correctAnswer = question.answers.find((a: { isCorrect: boolean; id: string }) => a.isCorrect)?.id
-          if (submittedAnswer === correctAnswer) {
-            correctAnswers++
+          
+          // Handle different question types
+          if (question.questionType === 'trueFalse') {
+            // For true/false questions, compare with correctAnswer field
+            if (submittedAnswer === question.correctAnswer) {
+              correctAnswers++
+            }
+          } else if (question.questionType === 'multipleChoice' || question.questionType === 'singleChoice') {
+            // For multiple choice questions, find the correct choice ID
+            if (question.choices && Array.isArray(question.choices)) {
+              const correctChoice = question.choices.find((choice: { isCorrect: boolean; id: string }) => choice.isCorrect)
+              if (correctChoice && submittedAnswer === correctChoice.id) {
+                correctAnswers++
+              }
+            }
           }
+          // Add support for other question types as needed
         }
       }
     }
