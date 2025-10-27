@@ -120,8 +120,12 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
         return cq.quiz === quizId
       })
       if (quizIndex !== -1) {
-        courseProgress.completedQuizzes[quizIndex].score = score
-        courseProgress.completedQuizzes[quizIndex].completedAt = new Date().toISOString()
+
+        // Update the quiz score if the new score is higher. The user can only improve their score on the same quiz.
+        if (score > courseProgress.completedQuizzes[quizIndex].score) {
+          courseProgress.completedQuizzes[quizIndex].score = score
+          courseProgress.completedQuizzes[quizIndex].completedAt = new Date().toISOString()
+        }
       }
     }
 
