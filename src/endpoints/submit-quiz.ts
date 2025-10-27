@@ -162,6 +162,8 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
         }
       }
 
+      payload.logger.info(`User ${user.id} completed lesson ${lessonId} in course ${courseId}`)
+
       // Check if all lessons in the course are completed
       try {
         const course = await payload.findByID({
@@ -228,6 +230,8 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
           coursesProgress,
         },
       })
+
+      payload.logger.info(`User ${user.id} submitted quiz ${quizId} in course ${courseId} and scored ${score}`)
       
       return Response.json({ success: true, message: 'Quiz submitted successfully and successfully passed', score, passed: true })
     }
