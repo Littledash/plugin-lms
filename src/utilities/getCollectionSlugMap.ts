@@ -11,6 +11,7 @@ export const getCollectionSlugMap = ({ sanitizedPluginConfig }: Props): Collecti
   const defaultSlugMap: CollectionSlugMap = {
     addresses: 'addresses',
     courses: 'courses',
+    coupons: 'coupons',
     groups: 'groups',
     lessons: 'lessons',
     quizzes: 'quizzes',

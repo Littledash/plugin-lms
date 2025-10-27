@@ -8,7 +8,7 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
         const courseId = data?.courseId;
         const certificateId = data?.certificateId;
         const userId = data?.userId;
-        if (!user) {
+        if (!user || !userId) {
             return Response.json({
                 message: 'You must be logged in to generate a certificate.'
             }, {

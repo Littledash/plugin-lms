@@ -38,12 +38,24 @@ export const submitQuizHandler = ({ userSlug = 'users', quizzesSlug = 'quizzes' 
             let correctAnswers = 0;
             if (quiz.questions && Array.isArray(quiz.questions)) {
                 for (const question of quiz.questions){
-                    if (question && typeof question === 'object' && 'answers' in question && Array.isArray(question.answers)) {
+                    if (question && typeof question === 'object') {
                         const submittedAnswer = answers[question.id];
-                        const correctAnswer = question.answers.find((a)=>a.isCorrect)?.id;
-                        if (submittedAnswer === correctAnswer) {
-                            correctAnswers++;
+                        // Handle different question types
+                        if (question.questionType === 'trueFalse') {
+                            // For true/false questions, compare with correctAnswer field
+                            if (submittedAnswer === question.correctAnswer) {
+                                correctAnswers++;
+                            }
+                        } else if (question.questionType === 'multipleChoice' || question.questionType === 'singleChoice') {
+                            // For multiple choice questions, find the correct choice ID
+                            if (question.choices && Array.isArray(question.choices)) {
+                                const correctChoice = question.choices.find((choice)=>choice.isCorrect);
+                                if (correctChoice && submittedAnswer === correctChoice.id) {
+                                    correctAnswers++;
+                                }
+                            }
                         }
+                    // Add support for other question types as needed
                     }
                 }
             }
@@ -101,8 +113,11 @@ export const submitQuizHandler = ({ userSlug = 'users', quizzesSlug = 'quizzes' 
                     return cq.quiz === quizId;
                 });
                 if (quizIndex !== -1) {
-                    courseProgress.completedQuizzes[quizIndex].score = score;
-                    courseProgress.completedQuizzes[quizIndex].completedAt = new Date().toISOString();
+                    // Update the quiz score if the new score is higher. The user can only improve their score on the same quiz.
+                    if (score > courseProgress.completedQuizzes[quizIndex].score) {
+                        courseProgress.completedQuizzes[quizIndex].score = score;
+                        courseProgress.completedQuizzes[quizIndex].completedAt = new Date().toISOString();
+                    }
                 }
             }
             await payload.update({
@@ -132,6 +147,7 @@ export const submitQuizHandler = ({ userSlug = 'users', quizzesSlug = 'quizzes' 
                         });
                     }
                 }
+                payload.logger.info(`User ${user.id} completed lesson ${lessonId} in course ${courseId}`);
                 // Check if all lessons in the course are completed
                 try {
                     const course = await payload.findByID({
@@ -184,6 +200,7 @@ export const submitQuizHandler = ({ userSlug = 'users', quizzesSlug = 'quizzes' 
                         coursesProgress
                     }
                 });
+                payload.logger.info(`User ${user.id} submitted quiz ${quizId} in course ${courseId} and scored ${score}`);
                 return Response.json({
                     success: true,
                     message: 'Quiz submitted successfully and successfully passed',

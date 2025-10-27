@@ -111,6 +111,7 @@ export type TopicsConfig = {
 export type CollectionSlugMap = {
   addresses: string
   courses: string
+  coupons: string
   groups: string
   lessons: string
   quizzes: string
@@ -332,6 +333,12 @@ export type LMSPluginConfig = {
        * @default 'groups'
        */
       groupSlug: string
+      /**
+       * Slug of the collection to use for coupons.
+       *
+       * @default 'coupons'
+       */
+      couponsSlug: string
       baseUrl?: string
     }) => Promise<Record<string, unknown>> | Record<string, unknown>
 }

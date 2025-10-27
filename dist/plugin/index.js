@@ -93,7 +93,8 @@ export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
         if (sanitizedPluginConfig.groups) {
             const collectionOverrides = typeof sanitizedPluginConfig.groups === 'object' ? sanitizedPluginConfig.groups.groupsCollection : undefined;
             const groups = groupsCollection({
-                // coursesCollectionSlug: collectionSlugMap.courses,
+                coursesCollectionSlug: collectionSlugMap.courses,
+                couponsCollectionSlug: collectionSlugMap.coupons,
                 usersCollectionSlug: collectionSlugMap.students,
                 // certificatesCollectionSlug: collectionSlugMap.certificates,
                 overrides: collectionOverrides

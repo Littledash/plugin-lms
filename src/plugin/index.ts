@@ -129,7 +129,8 @@ export const lmsPlugin =
           : undefined
 
       const groups = groupsCollection({
-        // coursesCollectionSlug: collectionSlugMap.courses,
+        coursesCollectionSlug: collectionSlugMap.courses,
+        couponsCollectionSlug: collectionSlugMap.coupons,
         usersCollectionSlug: collectionSlugMap.students,
         // certificatesCollectionSlug: collectionSlugMap.certificates,
         overrides: collectionOverrides,

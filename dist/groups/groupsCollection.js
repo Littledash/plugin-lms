@@ -1,7 +1,6 @@
 import { slugField } from '../fields/slug.js';
 export const groupsCollection = (props)=>{
-    const { overrides, // coursesCollectionSlug = 'courses',
-    usersCollectionSlug = 'users' } = props || {};
+    const { overrides, coursesCollectionSlug = 'courses', usersCollectionSlug = 'users', couponsCollectionSlug = 'coupons' } = props || {};
     const fieldsOverride = overrides?.fields;
     const defaultFields = [
         {
@@ -14,18 +13,53 @@ export const groupsCollection = (props)=>{
             type: 'richText'
         },
         ...slugField(),
-        // {
-        //   name: 'courses',
-        //   type: 'relationship',
-        //   relationTo: coursesCollectionSlug,
-        //   hasMany: true,
-        //   admin: {
-        //     position: 'sidebar',
-        //     description: 'The courses that are part of the group',
-        //     allowCreate: false,
-        //     allowEdit: false,
-        //   },
-        // },
+        {
+            name: 'purchasedCourses',
+            type: 'array',
+            fields: [
+                {
+                    name: 'seatManagement',
+                    type: 'group',
+                    required: true,
+                    fields: [
+                        {
+                            name: 'seatsTotal',
+                            type: 'number',
+                            required: true,
+                            defaultValue: 1,
+                            admin: {
+                                description: 'Total seats purchased for this group'
+                            }
+                        },
+                        {
+                            name: 'seatsUsed',
+                            type: 'number',
+                            defaultValue: 0,
+                            admin: {
+                                readOnly: true
+                            }
+                        },
+                        {
+                            name: 'course',
+                            type: 'relationship',
+                            relationTo: coursesCollectionSlug,
+                            hasMany: false,
+                            admin: {
+                                description: 'The course that is associated with the group'
+                            }
+                        },
+                        {
+                            name: 'coupon',
+                            type: 'relationship',
+                            relationTo: couponsCollectionSlug,
+                            admin: {
+                                description: 'The coupon that is associated with the group'
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
         {
             name: 'students',
             type: 'relationship',
@@ -49,85 +83,6 @@ export const groupsCollection = (props)=>{
                 allowCreate: false,
                 allowEdit: false
             }
-        },
-        // {
-        //   name: 'accessMode',
-        //   type: 'select',
-        //   options: [
-        //     { label: 'Free', value: 'free' },
-        //     { label: 'Buy Now', value: 'buy_now' },
-        //     { label: 'Recurring', value: 'recurring' },
-        //     { label: 'Closed', value: 'closed' },
-        //   ],
-        //   defaultValue: 'free',
-        //   admin: {
-        //     description: 'The access mode of the group',
-        //   },
-        // },
-        // {
-        //   name: 'price',
-        //   type: 'number',
-        //   required: true,
-        //   admin: {
-        //     condition: (_, siblingData) =>
-        //       siblingData.accessMode === 'buy_now' || siblingData.accessMode === 'recurring',
-        //   },
-        // },
-        // {
-        //   name: 'billingCycle',
-        //   type: 'group',
-        //   admin: {
-        //     condition: (_, siblingData) => siblingData.accessMode === 'recurring',
-        //   },
-        //   fields: [
-        //     {
-        //       name: 'interval',
-        //       type: 'select',
-        //       options: [
-        //         { label: 'Day', value: 'day' },
-        //         { label: 'Week', value: 'week' },
-        //         { label: 'Month', value: 'month' },
-        //         { label: 'Year', value: 'year' },
-        //       ],
-        //       required: true,
-        //     },
-        //     {
-        //       name: 'frequency',
-        //       type: 'number',
-        //       required: true,
-        //     },
-        //   ],
-        // },
-        // {
-        //   type: 'row',
-        //   fields: [
-        //     {
-        //       name: 'startDate',
-        //       type: 'date',
-        //       admin: {
-        //         date: {
-        //           pickerAppearance: 'dayOnly',
-        //         },
-        //         description: 'The start date of the group',
-        //         width: '50%',
-        //       },
-        //     },
-        //     {
-        //       name: 'endDate',
-        //       type: 'date',
-        //       admin: {
-        //         date: {
-        //           pickerAppearance: 'dayOnly',
-        //         },
-        //         description: 'The end date of the group',
-        //         width: '50%',
-        //       },
-        //     },
-        //   ],
-        // },
-        {
-            name: 'studentLimit',
-            type: 'number'
         }
     ];
     const fields = fieldsOverride && typeof fieldsOverride === 'function' ? fieldsOverride({

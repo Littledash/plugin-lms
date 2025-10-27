@@ -60,7 +60,13 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             payload: null
         });
         try {
-            const response = await fetch(`${baseAPIURL}/lms/fetch-progress`);
+            const response = await fetch(`${baseAPIURL}/lms/fetch-progress`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
             if (!response.ok) throw new Error('Failed to fetch user progress');
             const data = await response.json();
             const { coursesProgress, enrolledCourses, completedCourses } = data;

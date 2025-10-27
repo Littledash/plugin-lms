@@ -1,12 +1,13 @@
 import { CollectionConfig } from 'payload'
 import { slugField } from '../fields/slug.js'
-import { isAdminOrGroupLeader } from '../access/isAdminOrGroupLeader.js'
-import { isMemberOfGroup } from '../access/isMemberOfGroup.js'
+// import { isAdminOrGroupLeader } from '../access/isAdminOrGroupLeader.js'
+// import { isMemberOfGroup } from '../access/isMemberOfGroup.js'
 import { FieldsOverride } from '../types.js'
 
 type Props = {
-  // coursesCollectionSlug?: string
+  coursesCollectionSlug?: string
   usersCollectionSlug?: string
+  couponsCollectionSlug?: string
   // certificatesCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
@@ -14,8 +15,9 @@ type Props = {
 export const groupsCollection: (props?: Props) => CollectionConfig = (props) => {
   const {
     overrides,
-    // coursesCollectionSlug = 'courses',
+    coursesCollectionSlug = 'courses',
     usersCollectionSlug = 'users',
+    couponsCollectionSlug = 'coupons',
     // certificatesCollectionSlug = 'certificates',
   } = props || {}
 
@@ -33,18 +35,45 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
       type: 'richText',
     },
     ...slugField(),
-    // {
-    //   name: 'courses',
-    //   type: 'relationship',
-    //   relationTo: coursesCollectionSlug,
-    //   hasMany: true,
-    //   admin: {
-    //     position: 'sidebar',
-    //     description: 'The courses that are part of the group',
-    //     allowCreate: false,
-    //     allowEdit: false,
-    //   },
-    // },
+    {
+      name: 'purchasedCourses',
+      type: 'array',
+      fields: [
+        {
+          name: 'seatManagement',
+          type: 'group',
+          required: true,
+          fields: [
+            {
+              name: 'seatsTotal',
+              type: 'number',
+              required: true,
+              defaultValue: 1,
+              admin: { description: 'Total seats purchased for this group' },
+            },
+            {
+              name: 'seatsUsed',
+              type: 'number',
+              defaultValue: 0,
+              admin: { readOnly: true },
+            },
+            {
+              name: 'course',
+              type: 'relationship',
+              relationTo: coursesCollectionSlug,
+              hasMany: false,
+              admin: { description: 'The course that is associated with the group' },
+            },
+            {
+              name: 'coupon',
+              type: 'relationship',
+              relationTo: couponsCollectionSlug,
+              admin: { description: 'The coupon that is associated with the group' },
+            }
+          ],
+        },
+      ],
+    },
     {
       name: 'students',
       type: 'relationship',
@@ -156,10 +185,10 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
     //     },
     //   ],
     // },
-    {
-      name: 'studentLimit',
-      type: 'number',
-    },
+    // {
+    //   name: 'studentLimit',
+    //   type: 'number',
+    // },
     // {
     //   name: 'materials',
     //   type: 'richText',

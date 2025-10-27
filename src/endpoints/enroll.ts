@@ -19,6 +19,8 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
   const companyName = data?.companyName || ''
   const userId = data?.userId || ''
   let isLeader = data?.isLeader || false
+  const totalSeats = data?.totalSeats || 1
+  const couponId = data?.couponId || null
 
   if (!user || !userId) {
     return Response.json({ message: 'You must be logged in to enroll.' }, { status: 401 })
@@ -48,7 +50,7 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
     const enrolledStudentIds = (course?.enrolledStudents || []).map((student: string | TypedCollection[typeof userSlug]) =>
       typeof student === 'object' ? student.id : student,
     )
-    const enrolledGroupIds = (course?.enrolledGroups || []).map((group: string | TypedCollection[typeof groupSlug]) =>
+    const enrolledGroupIds = (course?.courseEnrolledGroups || []).map((group: string | TypedCollection[typeof groupSlug]) =>
       typeof group === 'object' ? group.id : group,
     )
 
@@ -60,7 +62,7 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
       (course: string | TypedCollection[typeof courseSlug]) => (typeof course === 'object' ? course.id : course),
     )
     
-    if (isGroup) {
+    if (isGroup ) {
       if (!companyName) {
         payload.logger.error('Company name is required for group enrollment.')
         return Response.json({ message: 'Company name is required for group enrollment.' }, { status: 400 })
@@ -90,9 +92,12 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
             typeof student === 'string' ? student : student.id,
           )
 
-          const currentCourses = (group.courses || []).map((c: string | TypedCollection[typeof courseSlug]) =>
-            typeof c === 'string' ? c : c.id,
-          )
+          const currentPurchasedCourses = (group.purchasedCourses || [])
+            .map((purchasedCourse: TypedCollection[typeof groupSlug]['purchasedCourses'][number]) => purchasedCourse?.seatManagement?.course)
+            .filter(Boolean)
+            .map((course: string | TypedCollection[typeof courseSlug]) =>
+              typeof course === 'string' ? course : course.id,
+            )
 
           const updatedData: Partial<TypedCollection[typeof groupSlug]> = {}
 
@@ -104,8 +109,33 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
             updatedData.students = [...currentStudents, user.id]
           }
 
-          if (!currentCourses.includes(courseId)) {
-            updatedData.courses = [...currentCourses, courseId]
+          if (!currentPurchasedCourses.includes(courseId)) {
+            // Add the course to purchasedCourses with seat management structure
+            const newPurchasedCourse = {
+              seatManagement: {
+                seatsTotal: totalSeats,
+                seatsUsed: 1,
+                course: courseId,
+                coupon: couponId || null
+              }
+            }
+            updatedData.purchasedCourses = [...(group.purchasedCourses || []), newPurchasedCourse]
+          } else {
+            // Group already has this course - increment seatsUsed
+            const updatedPurchasedCourses = (group.purchasedCourses || []).map((purchasedCourse: TypedCollection[typeof groupSlug]['purchasedCourses'][number]) => {
+              if (purchasedCourse?.seatManagement?.course === courseId || 
+                  (typeof purchasedCourse?.seatManagement?.course === 'object' && purchasedCourse?.seatManagement?.course?.id === courseId)) {
+                return {
+                  ...purchasedCourse,
+                  seatManagement: {
+                    ...purchasedCourse.seatManagement,
+                    seatsUsed: (purchasedCourse.seatManagement.seatsUsed || 0) + 1
+                  }
+                }
+              }
+              return purchasedCourse
+            })
+            updatedData.purchasedCourses = updatedPurchasedCourses
           }
 
           if (Object.keys(updatedData).length > 0) {
@@ -125,7 +155,16 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
           const newGroupData = {
             title: companyName,
             ...(isLeader ? { leaders: [user.id] } : { students: [user.id] }),
-            courses: [courseId],
+            purchasedCourses: [
+              {
+                seatManagement: {
+                  seatsTotal: totalSeats,
+                  seatsUsed: 1,
+                  course: courseId,
+                  coupon: couponId || null
+                }
+              }
+            ],
           }
           
           const newGroup = await payload.create({

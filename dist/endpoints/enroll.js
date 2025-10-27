@@ -9,7 +9,9 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
         const companyName = data?.companyName || '';
         const userId = data?.userId || '';
         let isLeader = data?.isLeader || false;
-        if (!user) {
+        const totalSeats = data?.totalSeats || 1;
+        const couponId = data?.couponId || null;
+        if (!user || !userId) {
             return Response.json({
                 message: 'You must be logged in to enroll.'
             }, {
@@ -42,7 +44,7 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                 });
             }
             const enrolledStudentIds = (course?.enrolledStudents || []).map((student)=>typeof student === 'object' ? student.id : student);
-            const enrolledGroupIds = (course?.enrolledGroups || []).map((group)=>typeof group === 'object' ? group.id : group);
+            const enrolledGroupIds = (course?.courseEnrolledGroups || []).map((group)=>typeof group === 'object' ? group.id : group);
             const enrolledCourseIds = (Array.isArray(currentUser.enrolledCourses) ? currentUser.enrolledCourses : []).map((course)=>typeof course === 'object' ? course.id : course);
             const completedCourseIds = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map((course)=>typeof course === 'object' ? course.id : course);
             if (isGroup) {
@@ -70,7 +72,7 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                         payload.logger.info(`Found existing group '${companyName}' with id ${group?.id}`);
                         const currentLeaders = (group.leaders || []).map((leader)=>typeof leader === 'string' ? leader : leader.id);
                         const currentStudents = (group.students || []).map((student)=>typeof student === 'string' ? student : student.id);
-                        const currentCourses = (group.courses || []).map((c)=>typeof c === 'string' ? c : c.id);
+                        const currentPurchasedCourses = (group.purchasedCourses || []).map((purchasedCourse)=>purchasedCourse?.seatManagement?.course).filter(Boolean).map((course)=>typeof course === 'string' ? course : course.id);
                         const updatedData = {};
                         if (isLeader && !currentLeaders.includes(user.id)) {
                             updatedData.leaders = [
@@ -84,11 +86,35 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                                 user.id
                             ];
                         }
-                        if (!currentCourses.includes(courseId)) {
-                            updatedData.courses = [
-                                ...currentCourses,
-                                courseId
+                        if (!currentPurchasedCourses.includes(courseId)) {
+                            // Add the course to purchasedCourses with seat management structure
+                            const newPurchasedCourse = {
+                                seatManagement: {
+                                    seatsTotal: totalSeats,
+                                    seatsUsed: 1,
+                                    course: courseId,
+                                    coupon: couponId || null
+                                }
+                            };
+                            updatedData.purchasedCourses = [
+                                ...group.purchasedCourses || [],
+                                newPurchasedCourse
                             ];
+                        } else {
+                            // Group already has this course - increment seatsUsed
+                            const updatedPurchasedCourses = (group.purchasedCourses || []).map((purchasedCourse)=>{
+                                if (purchasedCourse?.seatManagement?.course === courseId || typeof purchasedCourse?.seatManagement?.course === 'object' && purchasedCourse?.seatManagement?.course?.id === courseId) {
+                                    return {
+                                        ...purchasedCourse,
+                                        seatManagement: {
+                                            ...purchasedCourse.seatManagement,
+                                            seatsUsed: (purchasedCourse.seatManagement.seatsUsed || 0) + 1
+                                        }
+                                    };
+                                }
+                                return purchasedCourse;
+                            });
+                            updatedData.purchasedCourses = updatedPurchasedCourses;
                         }
                         if (Object.keys(updatedData).length > 0) {
                             await payload.update({
@@ -113,8 +139,15 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                                     user.id
                                 ]
                             },
-                            courses: [
-                                courseId
+                            purchasedCourses: [
+                                {
+                                    seatManagement: {
+                                        seatsTotal: totalSeats,
+                                        seatsUsed: 1,
+                                        course: courseId,
+                                        coupon: couponId || null
+                                    }
+                                }
                             ]
                         };
                         const newGroup = await payload.create({

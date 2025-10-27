@@ -8,7 +8,7 @@ export const addUserToGroupHandler = ({ userSlug = 'users', groupSlug = 'groups'
         const userId = data?.userId;
         const role = data?.role // 'leader' or 'student'
         ;
-        if (!user) {
+        if (!user || !userId) {
             return Response.json({
                 message: 'You must be logged in to add users to a group.'
             }, {
@@ -33,6 +33,18 @@ export const addUserToGroupHandler = ({ userSlug = 'users', groupSlug = 'groups'
             });
         }
         try {
+            const currentUser = await payload.findByID({
+                collection: userSlug,
+                id: userId ? userId : user.id,
+                depth: 1
+            });
+            if (!currentUser) {
+                return Response.json({
+                    message: 'User not found.'
+                }, {
+                    status: 404
+                });
+            }
             const group = await payload.findByID({
                 collection: groupSlug,
                 id: groupId,
@@ -48,26 +60,14 @@ export const addUserToGroupHandler = ({ userSlug = 'users', groupSlug = 'groups'
             // Authorization check: only admins or leaders of the group can add users
             const isLeader = group.leaders?.some((leader)=>{
                 const leaderId = typeof leader === 'object' ? leader.id : leader;
-                return leaderId === user.id;
+                return leaderId === currentUser.id;
             });
-            const isAdmin = user.roles?.includes('admin');
+            const isAdmin = currentUser.roles?.includes('admin');
             if (!isAdmin && !isLeader) {
                 return Response.json({
                     message: 'You are not authorized to add users to this group.'
                 }, {
                     status: 403
-                });
-            }
-            const targetUser = await payload.findByID({
-                collection: userSlug,
-                id: userId,
-                depth: 1
-            });
-            if (!targetUser) {
-                return Response.json({
-                    message: 'User not found.'
-                }, {
-                    status: 404
                 });
             }
             // Check if user is already in the group
@@ -88,22 +88,22 @@ export const addUserToGroupHandler = ({ userSlug = 'users', groupSlug = 'groups'
                 });
             }
             // Add user to the appropriate role
-            const updateData = {};
+            const updatedData = {};
             if (role === 'leader') {
-                updateData.leaders = [
+                updatedData.leaders = [
                     ...currentLeaders,
-                    userId
+                    currentUser.id
                 ];
             } else {
-                updateData.users = [
+                updatedData.students = [
                     ...currentStudents,
-                    userId
+                    currentUser.id
                 ];
             }
             await payload.update({
                 collection: groupSlug,
                 id: groupId,
-                data: updateData
+                data: updatedData
             });
             payload.logger.info(`User ${userId} added to group ${groupId} as ${role}`);
             return Response.json({

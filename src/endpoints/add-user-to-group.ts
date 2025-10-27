@@ -9,7 +9,7 @@ type AddUserToGroupHandler = (args: Args) => Endpoint['handler']
 
 export const addUserToGroupHandler: AddUserToGroupHandler = ({ 
   userSlug = 'users', 
-  groupSlug = 'groups' 
+  groupSlug = 'groups',
 }) => async (req) => {
   await addDataAndFileToRequest(req)
   const data = req.data
@@ -93,19 +93,21 @@ export const addUserToGroupHandler: AddUserToGroupHandler = ({
     }
 
     // Add user to the appropriate role
-    const updateData: Record<string, string[]> = {}
+    const updatedData: Record<string, string[]> = {}
     
     if (role === 'leader') {
-      updateData.leaders = [...currentLeaders, currentUser.id]
+      updatedData.leaders = [...currentLeaders, currentUser.id]
     } else {
-      updateData.users = [...currentStudents, currentUser.id]
+      updatedData.students = [...currentStudents, currentUser.id]
     }
-
+    
     await payload.update({
       collection: groupSlug as CollectionSlug,
       id: groupId,
-      data: updateData,
+      data: updatedData,
     })
+
+    
 
     payload.logger.info(`User ${userId} added to group ${groupId} as ${role}`)
 

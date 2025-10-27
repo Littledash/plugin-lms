@@ -5,6 +5,7 @@
     const defaultSlugMap = {
         addresses: 'addresses',
         courses: 'courses',
+        coupons: 'coupons',
         groups: 'groups',
         lessons: 'lessons',
         quizzes: 'quizzes',
