@@ -109,12 +109,14 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
             updatedData.students = [...currentStudents, user.id]
           }
 
+          const seatsUsed = currentLeaders.length + currentStudents.length
+
           if (!currentPurchasedCourses.includes(courseId)) {
             // Add the course to purchasedCourses with seat management structure
             const newPurchasedCourse = {
               seatManagement: {
                 seatsTotal: totalSeats,
-                seatsUsed: 1,
+                seatsUsed: seatsUsed > 0 ? ( seatsUsed + 1 ) : 1,
                 course: courseId,
                 coupon: couponId || null
               }
@@ -198,6 +200,26 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
           }
       
       }
+
+
+      if (isLeader && !currentUser.roles?.includes('leader') && group) {
+
+        payload.logger.info(`Adding leader role to user ${currentUser.id} for group ${group?.title}`)
+
+        const currentRoles = currentUser.roles || []
+        const newRoles = [...currentRoles, 'leader']
+
+        await payload.update({
+          collection: userSlug as CollectionSlug,
+          id: currentUser.id,
+          data: {
+            roles: newRoles,
+          },
+        })
+
+      }
+
+      payload.logger.info(`User ${currentUser.id} is now a leader of group ${group?.title}`)
 
     }
   
