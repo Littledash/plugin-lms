@@ -185,10 +185,10 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
     //     },
     //   ],
     // },
-    // {
-    //   name: 'studentLimit',
-    //   type: 'number',
-    // },
+    {
+      name: 'studentLimit',
+      type: 'number',
+    },
     // {
     //   name: 'materials',
     //   type: 'richText',
