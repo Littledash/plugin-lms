@@ -102,6 +102,9 @@ export const isAdminOrAuthorOrEnrolledInCourseFieldLevel: FieldAccess = async ({
               students: {
                 contains: user.id,
               },
+              leaders: {
+                contains: user.id,
+              },
             },
           },
         },

@@ -106,6 +106,19 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
                 read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
               },
             },
+            {
+              name: 'downloadableFiles',
+              type: 'upload',
+              relationTo: mediaCollectionSlug,
+              hasMany: true,
+              admin: {
+                description:
+                  'The downloadable files of the lesson',
+              },
+              access: {
+                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+              },
+            },
             embeddedVideo({
               mediaCollectionSlug,
               overrides: {
