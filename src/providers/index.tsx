@@ -78,6 +78,13 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
           credentials: 'include',
         }
       )
+      
+      // Handle 401 (Unauthorized) - user is not logged in, this is expected
+      if (response.status === 401) {
+        // User is not logged in, silently return without setting error
+        return
+      }
+      
       if (!response.ok) throw new Error('Failed to fetch user progress')
       const data = await response.json()
       const { coursesProgress, enrolledCourses, completedCourses } = data
