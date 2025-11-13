@@ -99,6 +99,7 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       options: [
         { label: 'True', value: 'true' },
         { label: 'False', value: 'false' },
+        { label: 'Both', value: 'both' },
       ],
     },
     {

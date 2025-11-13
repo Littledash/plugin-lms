@@ -48,7 +48,10 @@ export const submitQuizHandler: SubmitQuizHandler = ({ userSlug = 'users', quizz
           // Handle different question types
           if (question.questionType === 'trueFalse') {
             // For true/false questions, compare with correctAnswer field
-            if (submittedAnswer === question.correctAnswer) {
+            // If correctAnswer is 'both', accept either 'true' or 'false'
+            if (question.correctAnswer === 'both' 
+              ? (submittedAnswer === 'true' || submittedAnswer === 'false')
+              : submittedAnswer === question.correctAnswer) {
               correctAnswers++
             }
           } else if (question.questionType === 'multipleChoice' || question.questionType === 'singleChoice') {
