@@ -63,24 +63,24 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
     )
     
     if (isGroup ) {
-      if (!companyName) {
-        payload.logger.error('Company name is required for group enrollment.')
-        return Response.json({ message: 'Company name is required for group enrollment.' }, { status: 400 })
-      }
+
 
       let group: TypedCollection[typeof groupSlug] | null = null
-
+        
       if (groupSlug) {
-        const { docs: existingGroups }= await payload.find({
+    
+        
+        const { docs: existingGroups } = await payload.find({
           collection: groupSlug as CollectionSlug,
           where: {
-            title: {
-              equals: companyName,
-            },
+            or: [
+              ...(companyName ? [{ title: { equals: companyName } }] : []),
+              ...(couponId ? [{ 'purchasedCourses.seatManagement.coupon': { equals: couponId } }] : []),
+            ],
           },
           depth: 1,
         })
-
+  
         if (existingGroups.length > 0) {
           group = existingGroups[0] || null
           payload.logger.info(`Found existing group '${companyName}' with id ${group?.id}`)
@@ -153,6 +153,12 @@ export const enrollHandler: EnrollHandler = ({ userSlug = 'users', courseSlug = 
           
 
         } else {
+
+          if (!companyName) {
+            payload.logger.error('Company name is required to create a new group for group enrollment.')
+            return Response.json({ message: 'Company name is required to create a new group for group enrollment.' }, { status: 400 })
+          }
+
           payload.logger.info(`No existing group found for '${companyName}'`)
           const newGroupData = {
             title: companyName,
