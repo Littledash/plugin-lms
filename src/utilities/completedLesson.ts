@@ -4,7 +4,8 @@ import { CourseProgress, Progress, Lesson, Quiz } from '../providers/types.js'
  * @fileoverview Utility functions for checking lesson completion status
  * 
  * This module provides functions to check if a lesson is completed, including
- * both lesson completion and quiz completion requirements.
+ * both lesson completion and quiz completion requirements. Quizzes are considered
+ * completed only if the user's score meets or exceeds the quiz's minimum score requirement.
  * 
  * @example
  * ```typescript
@@ -17,7 +18,7 @@ import { CourseProgress, Progress, Lesson, Quiz } from '../providers/types.js'
  * // Check if lesson has quizzes
  * const hasQuizzes = lessonHasQuizzes(lessonObject)
  * 
- * // Check if all quizzes for a lesson are completed
+ * // Check if all quizzes for a lesson are completed and passed (score >= minimumScore)
  * const allQuizzesDone = allQuizzesCompleted(courseProgress, lessonObject)
  * ```
  */
@@ -32,25 +33,51 @@ export const lessonHasQuizzes = (lesson: Lesson): boolean => {
 }
 
 /**
- * Checks if all quizzes for a lesson are completed
+ * Checks if a quiz score meets the minimum passing requirement
+ * @param score - The user's score on the quiz
+ * @param minimumScore - The minimum score required to pass the quiz
+ * @returns boolean indicating if the quiz is passed
+ */
+const isScorePassing = (score: number, minimumScore?: number | null): boolean => {
+  // Default minimumScore is 100 if not specified
+  const requiredScore = minimumScore ?? 100
+  return score >= requiredScore
+}
+
+/**
+ * Checks if all quizzes for a lesson are completed and passed (score meets minimum requirement)
  * @param courseProgress - The course progress object
  * @param lesson - The lesson object to check
- * @returns boolean indicating if all quizzes are completed
+ * @returns boolean indicating if all quizzes are completed and passed
  */
 export const allQuizzesCompleted = (courseProgress: CourseProgress, lesson: Lesson): boolean => {
   if (!lessonHasQuizzes(lesson)) {
     return true // No quizzes means "all quizzes completed"
   }
 
-  const lessonQuizIds = lesson.quizzes.map((quiz: Quiz | string) => 
-    typeof quiz === 'object' ? quiz.id : quiz
-  )
-
-  return lessonQuizIds.every((quizId: string) => 
-    courseProgress.completedQuizzes.some((cq) => 
+  return lesson.quizzes.every((quiz: Quiz | string) => {
+    const quizId = typeof quiz === 'object' ? quiz.id : quiz
+    const minimumScore = typeof quiz === 'object' ? quiz.minimumScore : undefined
+    
+    // Find the completed quiz entry
+    const completedQuizEntry = courseProgress.completedQuizzes.find((cq) => 
       typeof cq.quiz === 'object' ? cq.quiz.id === quizId : cq.quiz === quizId
     )
-  )
+    
+    // Quiz must be completed
+    if (!completedQuizEntry) {
+      return false
+    }
+    
+    // If we have the quiz object with minimumScore, check if the score meets the requirement
+    if (typeof quiz === 'object' && minimumScore !== undefined) {
+      return isScorePassing(completedQuizEntry.score, minimumScore)
+    }
+    
+    // If we don't have the quiz object, we can't verify minimum score
+    // Default to requiring 100% if minimumScore is not available
+    return isScorePassing(completedQuizEntry.score, 100)
+  })
 }
 
 /**
