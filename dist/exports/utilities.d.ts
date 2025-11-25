@@ -6,3 +6,4 @@ export { completedLesson, lessonHasQuizzes, allQuizzesCompleted } from '../utili
 export { isPreviousLessonCompleted } from '../utilities/isPreviousLessonCompleted.js';
 export { courseCompletion } from '../utilities/courseCompletion.js';
 export { courseCompletionPercentage } from '../utilities/courseCompletionPercentage.js';
+export { completedQuiz } from '../utilities/completedQuiz.js';

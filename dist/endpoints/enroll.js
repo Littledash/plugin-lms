@@ -48,22 +48,27 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
             const enrolledCourseIds = (Array.isArray(currentUser.enrolledCourses) ? currentUser.enrolledCourses : []).map((course)=>typeof course === 'object' ? course.id : course);
             const completedCourseIds = (Array.isArray(currentUser.completedCourses) ? currentUser.completedCourses : []).map((course)=>typeof course === 'object' ? course.id : course);
             if (isGroup) {
-                if (!companyName) {
-                    payload.logger.error('Company name is required for group enrollment.');
-                    return Response.json({
-                        message: 'Company name is required for group enrollment.'
-                    }, {
-                        status: 400
-                    });
-                }
                 let group = null;
                 if (groupSlug) {
                     const { docs: existingGroups } = await payload.find({
                         collection: groupSlug,
                         where: {
-                            title: {
-                                equals: companyName
-                            }
+                            or: [
+                                ...companyName ? [
+                                    {
+                                        title: {
+                                            equals: companyName
+                                        }
+                                    }
+                                ] : [],
+                                ...couponId ? [
+                                    {
+                                        'purchasedCourses.seatManagement.coupon': {
+                                            equals: couponId
+                                        }
+                                    }
+                                ] : []
+                            ]
                         },
                         depth: 1
                     });
@@ -86,12 +91,13 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                                 user.id
                             ];
                         }
+                        const seatsUsed = currentLeaders.length + currentStudents.length;
                         if (!currentPurchasedCourses.includes(courseId)) {
                             // Add the course to purchasedCourses with seat management structure
                             const newPurchasedCourse = {
                                 seatManagement: {
                                     seatsTotal: totalSeats,
-                                    seatsUsed: 1,
+                                    seatsUsed: seatsUsed > 0 ? seatsUsed + 1 : 1,
                                     course: courseId,
                                     coupon: couponId || null
                                 }
@@ -127,6 +133,14 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                             payload.logger.info(`Group ${group.id} already up-to-date.`);
                         }
                     } else {
+                        if (!companyName) {
+                            payload.logger.error('Company name is required to create a new group for group enrollment.');
+                            return Response.json({
+                                message: 'Company name is required to create a new group for group enrollment.'
+                            }, {
+                                status: 400
+                            });
+                        }
                         payload.logger.info(`No existing group found for '${companyName}'`);
                         const newGroupData = {
                             title: companyName,
@@ -175,6 +189,22 @@ export const enrollHandler = ({ userSlug = 'users', courseSlug = 'courses', grou
                         payload.logger.info(`Group ${group.title} is already enrolled in course ${course.title}`);
                     }
                 }
+                if (isLeader && !currentUser.roles?.includes('leader') && group) {
+                    payload.logger.info(`Adding leader role to user ${currentUser.id} for group ${group?.title}`);
+                    const currentRoles = currentUser.roles || [];
+                    const newRoles = [
+                        ...currentRoles,
+                        'leader'
+                    ];
+                    await payload.update({
+                        collection: userSlug,
+                        id: currentUser.id,
+                        data: {
+                            roles: newRoles
+                        }
+                    });
+                }
+                payload.logger.info(`User ${currentUser.id} is now a leader of group ${group?.title}`);
             }
             // Initialize course progress for the user
             const coursesProgress = Array.isArray(currentUser.coursesProgress) ? currentUser.coursesProgress : [];

@@ -93,6 +93,9 @@ export const isAdminOrAuthorOrEnrolledInCourseFieldLevel = async ({ req: { user,
                         contains: {
                             students: {
                                 contains: user.id
+                            },
+                            leaders: {
+                                contains: user.id
                             }
                         }
                     }

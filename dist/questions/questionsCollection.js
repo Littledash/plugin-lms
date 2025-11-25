@@ -121,6 +121,10 @@
                 {
                     label: 'False',
                     value: 'false'
+                },
+                {
+                    label: 'Both',
+                    value: 'both'
                 }
             ]
         },

@@ -3,7 +3,8 @@ import { CourseProgress, Progress, Lesson } from '../providers/types.js';
  * @fileoverview Utility functions for checking lesson completion status
  *
  * This module provides functions to check if a lesson is completed, including
- * both lesson completion and quiz completion requirements.
+ * both lesson completion and quiz completion requirements. Quizzes are considered
+ * completed only if the user's score meets or exceeds the quiz's minimum score requirement.
  *
  * @example
  * ```typescript
@@ -16,7 +17,7 @@ import { CourseProgress, Progress, Lesson } from '../providers/types.js';
  * // Check if lesson has quizzes
  * const hasQuizzes = lessonHasQuizzes(lessonObject)
  *
- * // Check if all quizzes for a lesson are completed
+ * // Check if all quizzes for a lesson are completed and passed (score >= minimumScore)
  * const allQuizzesDone = allQuizzesCompleted(courseProgress, lessonObject)
  * ```
  */
@@ -27,10 +28,10 @@ import { CourseProgress, Progress, Lesson } from '../providers/types.js';
  */
 export declare const lessonHasQuizzes: (lesson: Lesson) => boolean;
 /**
- * Checks if all quizzes for a lesson are completed
+ * Checks if all quizzes for a lesson are completed and passed (score meets minimum requirement)
  * @param courseProgress - The course progress object
  * @param lesson - The lesson object to check
- * @returns boolean indicating if all quizzes are completed
+ * @returns boolean indicating if all quizzes are completed and passed
  */
 export declare const allQuizzesCompleted: (courseProgress: CourseProgress, lesson: Lesson) => boolean;
 /**

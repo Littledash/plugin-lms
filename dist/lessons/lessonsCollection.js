@@ -78,6 +78,18 @@ import { videoProgression } from '../fields/videoProgression.js';
                                 read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
                             }
                         },
+                        {
+                            name: 'downloadableFiles',
+                            type: 'upload',
+                            relationTo: mediaCollectionSlug,
+                            hasMany: true,
+                            admin: {
+                                description: 'The downloadable files of the lesson'
+                            },
+                            access: {
+                                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                            }
+                        },
                         embeddedVideo({
                             mediaCollectionSlug,
                             overrides: {
