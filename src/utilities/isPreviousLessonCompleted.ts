@@ -11,11 +11,7 @@ export const isPreviousLessonCompleted = (
       (l: { lesson: DefaultDocumentIDType | { id: DefaultDocumentIDType } }) => 
         typeof l.lesson === 'object' && l.lesson !== null && l.lesson.id === lessonId,
     )
-    console.log(lessonIndex,'lessonIndex')
-    console.log(course.lessons,'course.lessons')
-    console.log(lessonId,'lessonId')
-    console.log(course,'course')
-    console.log(progress,'progress')
+
     
     const previousLesson = lessonIndex !== undefined && lessonIndex > 0 ? course.lessons?.[lessonIndex - 1] : undefined
     if (!previousLesson) return true // If there is no previous lesson, then the previous lesson is completed
