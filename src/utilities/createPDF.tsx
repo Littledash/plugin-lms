@@ -1,5 +1,28 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb, PDFFont, PDFImage, PDFPage } from 'pdf-lib'
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - @pdf-lib/fontkit doesn't have proper TypeScript definitions
 import fontkit from '@pdf-lib/fontkit'
+
+// Type for Payload rich text field (Lexical editor state)
+type RichTextNode = {
+    type: string
+    version: number
+    text?: string
+    children?: RichTextNode[]
+    [k: string]: unknown
+}
+
+type RichText = {
+    root: {
+        type: string
+        children: RichTextNode[]
+        direction: ('ltr' | 'rtl') | null
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | ''
+        indent: number
+        version: number
+    }
+    [k: string]: unknown
+}
 
 type createPDFProps = {
     studentName: string;
@@ -7,8 +30,53 @@ type createPDFProps = {
     completionDate: string;
     certificateNumber: string;
     templateImage: string;
+    description: string | RichText;
     fontFamily: string;
     authorName?: string;
+}
+
+/**
+ * Extracts plain text from a Payload rich text field (Lexical editor state)
+ * Recursively traverses the node structure to extract all text content
+ */
+const extractPlainTextFromRichText = (richText: string | RichText): string => {
+    // If it's already a string, return it
+    if (typeof richText === 'string') {
+        return richText
+    }
+
+    // If it's not a valid rich text object, return empty string
+    if (!richText || typeof richText !== 'object' || !richText.root) {
+        return ''
+    }
+
+    const extractTextFromNode = (node: RichTextNode): string => {
+        let text = ''
+
+        // If the node has text property, add it
+        if (node.text && typeof node.text === 'string') {
+            text += node.text
+        }
+
+        // Recursively process children
+        if (node.children && Array.isArray(node.children)) {
+            for (const child of node.children) {
+                text += extractTextFromNode(child)
+            }
+        }
+
+        return text
+    }
+
+    // Extract text from root's children
+    let result = ''
+    if (richText.root.children && Array.isArray(richText.root.children)) {
+        for (const child of richText.root.children) {
+            result += extractTextFromNode(child)
+        }
+    }
+
+    return result.trim()
 }
 
 export const createPDF = async ({
@@ -17,6 +85,7 @@ export const createPDF = async ({
     completionDate,
     certificateNumber,
     templateImage,
+    description,
     fontFamily,
     authorName,
 }: createPDFProps): Promise<Uint8Array> => {
@@ -26,6 +95,7 @@ export const createPDF = async ({
         completionDate,
         certificateNumber,
         templateImage,
+        description,
         fontFamily,
         authorName
     })
@@ -45,10 +115,11 @@ export const createPDF = async ({
         pdfDoc.registerFontkit(fontkit)
         
         // Add a page (A4 size in landscape orientation)
-        const page = pdfDoc.addPage([842, 595]) // A4 landscape dimensions
+        const page: PDFPage = pdfDoc.addPage([842, 595]) // A4 landscape dimensions
         
         // Embed fonts - use Google Fonts or fallback to standard fonts
-        let primaryFont, boldFont
+        let primaryFont: PDFFont
+        let boldFont: PDFFont
         
         if (fontFamily && fontFamily.toLowerCase() !== 'poppins') {
             try {
@@ -158,7 +229,7 @@ export const createPDF = async ({
                 const imageBytes = await imageResponse.arrayBuffer()
                 
                 // Determine image type and embed accordingly
-                let image
+                let image: PDFImage
                 if (templateImage.toLowerCase().includes('.jpg') || templateImage.toLowerCase().includes('.jpeg')) {
                     image = await pdfDoc.embedJpg(imageBytes)
                 } else if (templateImage.toLowerCase().includes('.png')) {
@@ -189,37 +260,92 @@ export const createPDF = async ({
             }
         }
         
-        // Add certificate content - New template only requires first name, last name, and date
+        // Add certificate content - Updated template layout
         const centerX = width / 2
         
-        // Certificate title (commented out - now part of template image)
-        // page.drawText('Certificate of Completion', {
-        //     x: centerX - 120,
-        //     y: height - 120,
-        //     size: 24,
-        //     font: boldFont,
-        //     color: rgb(0, 0, 0),
-        // })
+        // Helper function to center text horizontally
+        const getCenteredX = (text: string, fontSize: number, font: PDFFont): number => {
+            try {
+                // pdf-lib fonts have widthOfTextAtSize method
+                const textWidth = font.widthOfTextAtSize(text, fontSize)
+                return centerX - (textWidth / 2)
+            } catch {
+                // Fallback: estimate based on character count (approximate)
+                const estimatedWidth = text.length * (fontSize * 0.6)
+                return centerX - (estimatedWidth / 2)
+            }
+        }
         
-        // Student name - positioned for new template
+        // Starting Y position (adjust based on template image)
+        let currentY = height - 200
+        
+        // "This certifies that" - static text, 20pt, above student name
+        const certifiesText = "This certifies that"
+        page.drawText(certifiesText, {
+            x: getCenteredX(certifiesText, 20, primaryFont),
+            y: currentY,
+            size: 20,
+            font: primaryFont,
+            color: rgb(0, 0, 0),
+        })
+        
+        // Student name - 22pt, pink color
+        currentY -= 50
         page.drawText(studentName, {
-            x: centerX - (studentName.length * 6),
-            y: height - 280,
-            size: 18,
+            x: getCenteredX(studentName, 22, boldFont),
+            y: currentY,
+            size: 22,
             font: boldFont,
             color: rgb(0.8, 0.2, 0.4), // Pink color to match template
         })
         
-        // Course title (commented out - now part of template image)
-        // page.drawText(courseTitle, {
-        //     x: centerX - (courseTitle.length * 6),
-        //     y: height - 220,
-        //     size: 16,
-        //     font: primaryFont,
-        //     color: rgb(0, 0, 0),
-        // })
+        // Description text - "has completed a 1 hour online Masterclass on the topic of" - 20pt
+        currentY -= 50
+        const descriptionText = description 
+            ? extractPlainTextFromRichText(description) || "has completed a 1 hour online Masterclass on the topic of"
+            : "has completed a 1 hour online Masterclass on the topic of"
+        page.drawText(descriptionText, {
+            x: getCenteredX(descriptionText, 20, primaryFont),
+            y: currentY,
+            size: 20,
+            font: primaryFont,
+            color: rgb(0, 0, 0),
+        })
         
-        // Completion date - positioned for new template
+        // Course title - 24pt, dark blue
+        currentY -= 50
+        page.drawText(courseTitle, {
+            x: getCenteredX(courseTitle, 24, primaryFont),
+            y: currentY,
+            size: 24,
+            font: primaryFont,
+            color: rgb(64 / 255, 84 / 255, 165 / 255), // Dark blue color
+        })
+        
+        // "presented by" - 20pt, above author name
+        if (authorName) {
+            currentY -= 50
+            const presentedByText = "presented by"
+            page.drawText(presentedByText, {
+                x: getCenteredX(presentedByText, 20, primaryFont),
+                y: currentY,
+                size: 20,
+                font: primaryFont,
+                color: rgb(0, 0, 0),
+            })
+            
+            // Author name - below "presented by"
+            currentY -= 40
+            page.drawText(authorName, {
+                x: getCenteredX(authorName, 20, primaryFont),
+                y: currentY,
+                size: 20,
+                font: primaryFont,
+                color: rgb(0, 0, 0),
+            })
+        }
+        
+        // Completion date - positioned at bottom right
         page.drawText(completionDate, {
             x: centerX - 40,
             y: height - 450,
@@ -228,29 +354,9 @@ export const createPDF = async ({
             color: rgb(0, 0, 0),
         })
         
-        // Certificate number (removed - not needed in new template)
-        // page.drawText(`Certificate Number: ${certificateNumber}`, {
-        //     x: centerX - 100,
-        //     y: height - 300,
-        //     size: 12,
-        //     font: primaryFont,
-        //     color: rgb(0.5, 0.5, 0.5),
-        // })
-        
-        // Author name (removed - not needed in new template)
-        // if (authorName) {
-        //     page.drawText(`Author: ${authorName}`, {
-        //         x: centerX - 60,
-        //         y: height - 340,
-        //         size: 14,
-        //         font: primaryFont,
-        //         color: rgb(0, 0, 0),
-        //     })
-        // }
-        
         // Set document metadata
         pdfDoc.setTitle(`Certificate of Completion - ${studentName}`)
-        pdfDoc.setAuthor('LMS System')
+        pdfDoc.setAuthor(authorName || 'LMS System')
         pdfDoc.setSubject(`Certificate for ${courseTitle}`)
         pdfDoc.setKeywords(['certificate', 'completion', 'course', 'education'])
         pdfDoc.setCreationDate(new Date())

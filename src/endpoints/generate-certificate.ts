@@ -86,6 +86,7 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       completionDate: new Date().toLocaleDateString(),
       certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
       templateImage: certificate.template?.url || '', // Provide empty string as fallback
+      description: certificate.description || 'Certificate of Completion',
       fontFamily: 'Poppins',
       authorName: certificate.authors && certificate.authors.length > 0 
         ? `${certificate.authors[0]?.firstName || ''} ${certificate.authors[0]?.lastName || ''}`.trim()

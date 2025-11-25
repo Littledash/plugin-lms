@@ -69,6 +69,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   const fetchProgress = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true })
     dispatch({ type: 'SET_ERROR', payload: null })
+    
     try {
       const response = await fetch(
         `${baseAPIURL}/lms/fetch-progress`,
