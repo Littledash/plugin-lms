@@ -83,6 +83,10 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       // Handle 401 (Unauthorized) - user is not logged in, this is expected
       if (response.status === 401) {
         // User is not logged in, silently return without setting error
+          // User not logged in → reset progress to avoid console errors
+          dispatch({ type: 'UPDATE_PROGRESS', payload: [] })
+          dispatch({ type: 'SET_ENROLLED_COURSES', payload: [] })
+          dispatch({ type: 'SET_COMPLETED_COURSES', payload: [] })
         return
       }
       
