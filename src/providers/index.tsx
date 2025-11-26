@@ -1,7 +1,7 @@
 'use client'
 
-import React, { createContext, use, useCallback, useEffect, useReducer } from 'react'
-import type { DefaultDocumentIDType } from 'payload'
+import React, { createContext, use, useCallback, useEffect, useReducer, useState } from 'react'
+import type { DefaultDocumentIDType, TypedUser } from 'payload'
 import * as qs from 'qs-esm'
 import { LMSContextType, LMSProviderProps, CourseProgress } from './types.js'
 import { lmsReducer, initialState, type LMSState } from './reducer.js'
@@ -63,14 +63,64 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
 
   const { apiRoute = '/api', serverURL = '' } = api || {}
   const baseAPIURL = `${serverURL}${apiRoute}`
-
   const [state, dispatch] = useReducer(lmsReducer, initialState)
+
+  const getUser = useCallback(async () => {
+    try {
+      const response = await fetch(`${baseAPIURL}/users/me`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'GET',
+      })
+
+      // Handle 401 (Unauthorized) - user is not logged in, this is expected
+      if (response.status === 401) {
+        return null
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Failed to fetch user: ${errorText}`)
+      }
+
+      const userData = await response.json()
+
+      if (userData.error) {
+        throw new Error(`User fetch error: ${userData.error}`)
+      }
+
+      if (userData.user) {
+        return userData.user as TypedUser
+      }
+
+      return null
+    } catch (error) {
+      // Only throw if it's not a 401 (which we already handled)
+      throw new Error(
+        `Failed to fetch user: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      )
+    }
+  }, [baseAPIURL])
 
   const fetchProgress = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true })
     dispatch({ type: 'SET_ERROR', payload: null })
     
     try {
+      // Check if user is logged in first
+      const currentUser = await getUser()
+      
+      // If no user is logged in, reset progress and return early
+      if (!currentUser) {
+        dispatch({ type: 'UPDATE_PROGRESS', payload: [] })
+        dispatch({ type: 'SET_ENROLLED_COURSES', payload: [] })
+        dispatch({ type: 'SET_COMPLETED_COURSES', payload: [] })
+        return
+      }
+      
+      // User is logged in, fetch progress
       const response = await fetch(
         `${baseAPIURL}/lms/fetch-progress`,
         {
@@ -79,16 +129,6 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
           credentials: 'include',
         }
       )
-      
-      // Handle 401 (Unauthorized) - user is not logged in, this is expected
-      if (response.status === 401) {
-        // User is not logged in, silently return without setting error
-          // User not logged in → reset progress to avoid console errors
-          dispatch({ type: 'UPDATE_PROGRESS', payload: [] })
-          dispatch({ type: 'SET_ENROLLED_COURSES', payload: [] })
-          dispatch({ type: 'SET_COMPLETED_COURSES', payload: [] })
-        return
-      }
       
       if (!response.ok) throw new Error('Failed to fetch user progress')
       const data = await response.json()
@@ -109,7 +149,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false })
     }
-  }, [baseAPIURL])
+  }, [baseAPIURL, getUser])
 
   // Load progress and course status from database on initial render
   useEffect(() => {
@@ -459,8 +499,6 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     },
     [baseAPIURL],
   )
-
-
 
   const value: LMSContextType = {
     users: state.users,
