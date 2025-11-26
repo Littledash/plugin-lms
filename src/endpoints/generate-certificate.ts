@@ -80,10 +80,18 @@ export const generateCertificateHandler: GenerateCertificateHandler = ({ userSlu
       return Response.json({ message: 'Course title is missing.' }, { status: 400 })
     }
 
+    // Format date as "date, month year" (e.g., "26 November 2025")
+    const completionDateObj = new Date()
+    const formattedDate = completionDateObj.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+
     const certificateData = {
       studentName: `${currentUser.firstName} ${currentUser.lastName}`,
       courseTitle: course.title,
-      completionDate: new Date().toLocaleDateString(),
+      completionDate: formattedDate,
       certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
       templateImage: certificate.template?.url || '', // Provide empty string as fallback
       description: certificate.description || 'Certificate of Completion',

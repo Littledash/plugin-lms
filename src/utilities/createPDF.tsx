@@ -117,106 +117,15 @@ export const createPDF = async ({
         // Add a page (A4 size in landscape orientation)
         const page: PDFPage = pdfDoc.addPage([842, 595]) // A4 landscape dimensions
         
-        // Embed fonts - use Google Fonts or fallback to standard fonts
+        // Embed fonts - use sans-serif fonts to match certificate template
+        // Using Helvetica (sans-serif) to match the certificate design
         let primaryFont: PDFFont
         let boldFont: PDFFont
         
-        if (fontFamily && fontFamily.toLowerCase() !== 'poppins') {
-            try {
-                console.log(`Loading Google Font: ${fontFamily}`)
-                
-                // Map font family to Google Fonts URL - Updated with more reliable URLs
-                const getGoogleFontUrl = (fontName: string) => {
-                    const fontMap: { [key: string]: string } = {
-                        'poppins': 'https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2',
-                        'poppins-bold': 'https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff2',
-                        'roboto': 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
-                        'roboto-bold': 'https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc4.woff2',
-                        'opensans': 'https://fonts.gstatic.com/s/opensans/v34/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVIGxA.woff2',
-                        'opensans-bold': 'https://fonts.gstatic.com/s/opensans/v34/memQYaGs126MiZpBA-UFUIcVXSCEkx2cmqvXlWq8tWZ0Pw86hd0Rk8ZkWVAewA.woff2',
-                        'lato': 'https://fonts.gstatic.com/s/lato/v24/S6uyw4BMUTPHjx4wXg.woff2',
-                        'lato-bold': 'https://fonts.gstatic.com/s/lato/v24/S6u9w4BMUTPHh6UVSwiPGQ.woff2',
-                        'montserrat': 'https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXpsog.woff2',
-                        'montserrat-bold': 'https://fonts.gstatic.com/s/montserrat/v25/JTUSjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw0aXpsog.woff2',
-                    }
-                    return fontMap[fontName.toLowerCase()] || null
-                }
-                
-                const fontUrl = getGoogleFontUrl(fontFamily)
-                const boldFontUrl = getGoogleFontUrl(`${fontFamily}-bold`)
-                
-                if (fontUrl) {
-                    // Fetch and embed the Google Font
-                    console.log(`Fetching ${fontFamily} regular font from:`, fontUrl)
-                    const fontResponse = await fetch(fontUrl)
-                    if (!fontResponse.ok) {
-                        throw new Error(`Failed to fetch ${fontFamily} regular font: ${fontResponse.status} ${fontResponse.statusText}`)
-                    }
-                    const fontBytes = await fontResponse.arrayBuffer()
-                    primaryFont = await pdfDoc.embedFont(fontBytes)
-                    console.log(`Successfully loaded Google Font: ${fontFamily}`)
-                } else {
-                    throw new Error(`Font ${fontFamily} not found in Google Fonts mapping`)
-                }
-                
-                if (boldFontUrl) {
-                    // Fetch and embed the bold variant
-                    console.log(`Fetching ${fontFamily} bold font from:`, boldFontUrl)
-                    const boldFontResponse = await fetch(boldFontUrl)
-                    if (!boldFontResponse.ok) {
-                        throw new Error(`Failed to fetch ${fontFamily} bold font: ${boldFontResponse.status} ${boldFontResponse.statusText}`)
-                    }
-                    const boldFontBytes = await boldFontResponse.arrayBuffer()
-                    boldFont = await pdfDoc.embedFont(boldFontBytes)
-                    console.log(`Successfully loaded Google Font bold variant: ${fontFamily}`)
-                } else {
-                    // If no bold variant, use the regular font for bold text
-                    boldFont = primaryFont
-                    console.log(`No bold variant found for ${fontFamily}, using regular font for bold text`)
-                }
-                
-            } catch (fontError) {
-                console.warn(`Failed to load Google Font ${fontFamily}, falling back to Helvetica:`, fontError)
-                primaryFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
-                boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-            }
-        } else {
-            // Default to Poppins Google Font with improved error handling
-            try {
-                console.log('Loading default Google Font: Poppins')
-                const poppinsUrl = 'https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2'
-                const poppinsBoldUrl = 'https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff2'
-                
-                console.log('Fetching Poppins regular font from:', poppinsUrl)
-                const fontResponse = await fetch(poppinsUrl)
-                if (!fontResponse.ok) {
-                    throw new Error(`Failed to fetch Poppins regular font: ${fontResponse.status} ${fontResponse.statusText}`)
-                }
-                const fontBytes = await fontResponse.arrayBuffer()
-                primaryFont = await pdfDoc.embedFont(fontBytes)
-                console.log('Successfully embedded Poppins regular font')
-                
-                console.log('Fetching Poppins bold font from:', poppinsBoldUrl)
-                const boldFontResponse = await fetch(poppinsBoldUrl)
-                if (!boldFontResponse.ok) {
-                    throw new Error(`Failed to fetch Poppins bold font: ${boldFontResponse.status} ${boldFontResponse.statusText}`)
-                }
-                const boldFontBytes = await boldFontResponse.arrayBuffer()
-                boldFont = await pdfDoc.embedFont(boldFontBytes)
-                console.log('Successfully embedded Poppins bold font')
-                
-                console.log('Successfully loaded default Poppins font family')
-            } catch (poppinsError) {
-                console.warn('Failed to load Poppins, falling back to Helvetica:', poppinsError)
-                console.warn('Poppins error details:', {
-                    message: poppinsError instanceof Error ? poppinsError.message : String(poppinsError),
-                    stack: poppinsError instanceof Error ? poppinsError.stack : undefined
-                })
-                primaryFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
-                boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-                console.log('Fallback to Helvetica fonts completed')
-            }
-        }
+        // Use Helvetica sans-serif font to match the certificate design
+        primaryFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
+        boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+        console.log('Using Helvetica sans-serif fonts for certificate')
         
         // Get page dimensions
         const { width, height } = page.getSize()
@@ -275,12 +184,38 @@ export const createPDF = async ({
                 return centerX - (estimatedWidth / 2)
             }
         }
+
+        // Helper function to wrap text to multiple lines
+        const wrapText = (text: string, maxWidth: number, fontSize: number, font: PDFFont): string[] => {
+            const words = text.split(' ')
+            const lines: string[] = []
+            let currentLine = ''
+
+            for (const word of words) {
+                const testLine = currentLine ? `${currentLine} ${word}` : word
+                const testWidth = font.widthOfTextAtSize(testLine, fontSize)
+
+                if (testWidth > maxWidth && currentLine) {
+                    lines.push(currentLine)
+                    currentLine = word
+                } else {
+                    currentLine = testLine
+                }
+            }
+
+            if (currentLine) {
+                lines.push(currentLine)
+            }
+
+            return lines.length > 0 ? lines : [text]
+        }
         
-        // Starting Y position (adjust based on template image)
-        let currentY = height - 200
+        // Starting Y position - "This certifies that" should be just below the "CERTIFICATE OF COMPLETION" heading
+        // Position text higher on the page, just below the heading
+        let currentY = height - 190
         
-        // "This certifies that" - static text, 20pt, above student name
-        const certifiesText = "This certifies that"
+        // "This certifies that" - static text, 20pt, positioned below the certificate heading
+        const certifiesText = "this certifies that"
         page.drawText(certifiesText, {
             x: getCenteredX(certifiesText, 20, primaryFont),
             y: currentY,
@@ -289,10 +224,12 @@ export const createPDF = async ({
             color: rgb(0, 0, 0),
         })
         
-        // Student name - 22pt, pink color
+        // Student name - ensure there's a space between first and last name
+        // Trim and normalize spaces in studentName
+        const normalizedStudentName = studentName.trim().replace(/\s+/g, ' ')
         currentY -= 50
-        page.drawText(studentName, {
-            x: getCenteredX(studentName, 22, boldFont),
+        page.drawText(normalizedStudentName, {
+            x: getCenteredX(normalizedStudentName, 22, boldFont),
             y: currentY,
             size: 22,
             font: boldFont,
@@ -312,15 +249,22 @@ export const createPDF = async ({
             color: rgb(0, 0, 0),
         })
         
-        // Course title - 24pt, dark blue
+        // Course title - wrap text if needed, 24pt, dark blue, bold
         currentY -= 50
-        page.drawText(courseTitle, {
-            x: getCenteredX(courseTitle, 24, primaryFont),
-            y: currentY,
-            size: 24,
-            font: primaryFont,
-            color: rgb(64 / 255, 84 / 255, 165 / 255), // Dark blue color
+        const maxCourseTitleWidth = width * 0.7 // 70% of page width for wrapping
+        const courseTitleLines = wrapText(courseTitle, maxCourseTitleWidth, 24, boldFont)
+        const lineHeight = 30 // Space between lines
+        courseTitleLines.forEach((line, index) => {
+            page.drawText(line, {
+                x: getCenteredX(line, 24, boldFont),
+                y: currentY - (index * lineHeight),
+                size: 24,
+                font: boldFont,
+                color: rgb(64 / 255, 84 / 255, 165 / 255), // Dark blue color
+            })
         })
+        // Adjust currentY based on number of lines
+        currentY -= (courseTitleLines.length - 1) * lineHeight
         
         // "presented by" - 20pt, above author name
         if (authorName) {
@@ -334,8 +278,8 @@ export const createPDF = async ({
                 color: rgb(0, 0, 0),
             })
             
-            // Author name - below "presented by"
-            currentY -= 40
+            // Author name - below "presented by", closer spacing
+            currentY -= 25
             page.drawText(authorName, {
                 x: getCenteredX(authorName, 20, primaryFont),
                 y: currentY,
@@ -345,10 +289,13 @@ export const createPDF = async ({
             })
         }
         
-        // Completion date - positioned at bottom right
+        // Completion date - positioned above "DATE" line in bottom right
+        // The "DATE" label is in the bottom right, date should be above that line, moved left and higher
+        const dateTextWidth = primaryFont.widthOfTextAtSize(completionDate, 12)
+        const dateX = width - 150 - dateTextWidth // Right-aligned, 150px from right edge (moved left)
         page.drawText(completionDate, {
-            x: centerX - 40,
-            y: height - 450,
+            x: dateX,
+            y: 100, // Position higher above the "DATE" label line
             size: 12,
             font: primaryFont,
             color: rgb(0, 0, 0),
