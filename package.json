@@ -155,9 +155,7 @@
     "prepublishOnly": "pnpm clean && pnpm build",
     "test": "jest",
     "format": "prettier --write .",
-    "pre-commit": "lint-staged",
-    "prepare": "pnpm build",
-    "postinstall": "pnpm build"
+    "pre-commit": "lint-staged"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
