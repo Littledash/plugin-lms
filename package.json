@@ -156,7 +156,8 @@
     "test": "jest",
     "format": "prettier --write .",
     "pre-commit": "lint-staged",
-    "prepare": "pnpm build"
+    "prepare": "pnpm build",
+    "postinstall": "pnpm build"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
