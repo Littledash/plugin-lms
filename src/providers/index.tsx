@@ -211,44 +211,15 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   }, [state.progress, state.enrolledCourses, state.completedCourses, syncLocalStorage, localStorageConfig.key])
 
   const enroll = useCallback(
-    async (
-      courseId: DefaultDocumentIDType,
-      options?: {
-        isGroup?: boolean
-        companyName?: string
-        isLeader?: boolean
-        userId?: DefaultDocumentIDType
-      }
-    ) => {
+    async (courseId: DefaultDocumentIDType) => {
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
-        const requestBody: {
-          courseId: DefaultDocumentIDType
-          isGroup?: boolean
-          companyName?: string
-          isLeader?: boolean
-          userId?: DefaultDocumentIDType
-        } = { courseId }
-
-        if (options?.isGroup !== undefined) {
-          requestBody.isGroup = options.isGroup
-        }
-        if (options?.companyName) {
-          requestBody.companyName = options.companyName
-        }
-        if (options?.isLeader !== undefined) {
-          requestBody.isLeader = options.isLeader
-        }
-        if (options?.userId) {
-          requestBody.userId = options.userId
-        }
-
         const response = await fetch(`${baseAPIURL}/lms/enroll`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify({ courseId }),
         })
         if (!response.ok) throw new Error('Failed to enroll in course')
         await fetchProgress() // Refetch progress to ensure state is up-to-date
@@ -262,24 +233,15 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const completeCourse = useCallback(
-    async (courseId: DefaultDocumentIDType, options?: { userId?: DefaultDocumentIDType }) => {
+    async (courseId: DefaultDocumentIDType) => {
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
-        const requestBody: {
-          courseId: DefaultDocumentIDType
-          userId?: DefaultDocumentIDType
-        } = { courseId }
-
-        if (options?.userId) {
-          requestBody.userId = options.userId
-        }
-
         const response = await fetch(`${baseAPIURL}/lms/complete-course`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify({ courseId }),
         })
         if (!response.ok) throw new Error('Failed to complete course')
         await fetchProgress() // Refetch progress to ensure state is up-to-date
@@ -371,7 +333,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const addUserToGroup = useCallback(
-    async (groupId: DefaultDocumentIDType, userId: DefaultDocumentIDType, role: 'leader' | 'student') => {
+    async (groupId: DefaultDocumentIDType, memberId: DefaultDocumentIDType, role: 'leader' | 'student') => {
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
@@ -379,7 +341,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ groupId, userId, role }),
+          body: JSON.stringify({ groupId, memberId, role }),
         })
         if (!response.ok) throw new Error('Failed to add user to group')
       } catch (e: unknown) {

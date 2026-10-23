@@ -74,12 +74,11 @@ export type LMSContextType = {
         quizId: DefaultDocumentIDType | null;
         courseId: DefaultDocumentIDType | null;
     } | null;
-    /** Enrolls the current user in a course. */
-    enroll: (courseId: DefaultDocumentIDType, options?: {
-        isGroup?: boolean;
-        companyName?: string;
-        isLeader?: boolean;
-    }) => Promise<void>;
+    /**
+     * Enrolls the current user in an open or free course. Paid and group enrollments happen
+     * server-side after purchase.
+     */
+    enroll: (courseId: DefaultDocumentIDType) => Promise<void>;
     /** Marks a course as complete for the current user. */
     completeCourse: (courseId: DefaultDocumentIDType) => Promise<void>;
     /** Marks a lesson as complete for the current user. */
@@ -95,7 +94,7 @@ export type LMSContextType = {
     /** Sets a quiz as exited. */
     setQuizExited: (quizId: DefaultDocumentIDType, courseId: DefaultDocumentIDType) => Promise<void>;
     /** Adds a user to a group with a specific role. */
-    addUserToGroup: (groupId: DefaultDocumentIDType, userId: DefaultDocumentIDType, role: 'leader' | 'student') => Promise<void>;
+    addUserToGroup: (groupId: DefaultDocumentIDType, memberId: DefaultDocumentIDType, role: 'leader' | 'student') => Promise<void>;
     /** Gets the progress for a specific course from the local state. */
     getProgress: (courseId: DefaultDocumentIDType) => CourseProgress | undefined;
     /** Fetches the latest progress data from the server. */

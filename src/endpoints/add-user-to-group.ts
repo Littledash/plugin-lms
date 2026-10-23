@@ -1,123 +1,24 @@
-import { addDataAndFileToRequest, CollectionSlug, TypedCollection, type Endpoint } from 'payload'
+import type { Endpoint } from 'payload'
 
-type Args = {
-  userSlug: string
-  groupSlug: string
-}
+import { checkRole } from '../access/checkRole.js'
+import { addUserToGroup } from '../services/addUserToGroup.js'
+import { findDoc, getSlugs, type ID, includesId, LMSError, toIds } from '../services/shared.js'
+import { lmsHandler, requireFields } from './handler.js'
 
-type AddUserToGroupHandler = (args: Args) => Endpoint['handler']
+/**
+ * Lets an admin or a leader of the group add another user to it. The user being added is
+ * `memberId`; the requester is always the logged-in user.
+ */
+export const addUserToGroupHandler = (_args?: Record<string, unknown>): Endpoint['handler'] =>
+  lmsHandler(async ({ data, req, userId }) => {
+    requireFields(data, ['groupId', 'memberId', 'role'])
+    const group = await findDoc(req, getSlugs(req).groups, data.groupId as ID, 'Group')
 
-export const addUserToGroupHandler: AddUserToGroupHandler = ({ 
-  userSlug = 'users', 
-  groupSlug = 'groups',
-}) => async (req) => {
-  await addDataAndFileToRequest(req)
-  const data = req.data
-  const user = req.user
-  const payload = req.payload
-  const groupId = data?.groupId
-  const userId = data?.userId
-  const role = data?.role // 'leader' or 'student'
-
-  if (!user || !userId) {
-    return Response.json(
-      { message: 'You must be logged in to add users to a group.' },
-      { status: 401 },
-    )
-  }
-
-  if (!groupId || !userId || !role) {
-    return Response.json(
-      { message: 'Group ID, User ID, and role are required.' },
-      { status: 400 },
-    )
-  }
-
-  if (!['leader', 'student'].includes(role)) {
-    return Response.json(
-      { message: 'Role must be either "leader" or "student".' },
-      { status: 400 },
-    )
-  }
-
-  try {
-
-    const currentUser = await payload.findByID({
-      collection: userSlug as CollectionSlug,
-      id: userId ? userId : user.id,
-      depth: 1,
-    })
-
-    if (!currentUser) {
-      return Response.json({ message: 'User not found.' }, { status: 404 })
+    if (!checkRole(['admin'], req.user) && !includesId(toIds(group.leaders), userId)) {
+      throw new LMSError('You are not authorized to add users to this group.', 403)
     }
 
-    const group = await payload.findByID({
-      collection: groupSlug as CollectionSlug,
-      id: groupId,
-      depth: 1,
-    })
-
-    if (!group) {
-      return Response.json({ message: 'Group not found.' }, { status: 404 })
-    }
-
-    // Authorization check: only admins or leaders of the group can add users
-    const isLeader = group.leaders?.some((leader: TypedCollection['users']) => {
-      const leaderId = typeof leader === 'object' ? leader.id : leader
-      return leaderId === currentUser.id
-    })
-    const isAdmin = currentUser.roles?.includes('admin')
-
-    if (!isAdmin && !isLeader) {
-      return Response.json(
-        { message: 'You are not authorized to add users to this group.' },
-        { status: 403 },
-      )
-    }
-
-    // Check if user is already in the group
-    const currentLeaders = (group.leaders?.docs || []).map(
-      (leader: string | TypedCollection[typeof userSlug]) => (typeof leader === 'object' ? leader.id : leader),
-    )
-    const currentStudents = (group.users?.docs || []).map(
-      (student: string | TypedCollection[typeof userSlug]) => (typeof student === 'object' ? student.id : student),
-    )
-
-    if (role === 'leader' && currentLeaders.includes(userId)) {
-      return Response.json({ message: 'User is already a leader in this group.' }, { status: 409 })
-    }
-
-    if (role === 'student' && currentStudents.includes(userId)) {
-      return Response.json({ message: 'User is already a student in this group.' }, { status: 409 })
-    }
-
-    // Add user to the appropriate role
-    const updatedData: Record<string, string[]> = {}
-    
-    if (role === 'leader') {
-      updatedData.leaders = [...currentLeaders, currentUser.id]
-    } else {
-      updatedData.students = [...currentStudents, currentUser.id]
-    }
-    
-    await payload.update({
-      collection: groupSlug as CollectionSlug,
-      id: groupId,
-      data: updatedData,
-    })
-
-    
-
-    payload.logger.info(`User ${userId} added to group ${groupId} as ${role}`)
-
-    return Response.json({ 
-      success: true, 
-      message: `Successfully added user to group as ${role}.` 
-    })
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'An unknown error occurred.'
-    payload.logger.error(message)
-    return Response.json({ message }, { status: 500 })
-  }
-}
+    const role = data.role as 'leader' | 'student'
+    await addUserToGroup({ groupId: group.id, req, role, userId: data.memberId as ID })
+    return Response.json({ message: `Successfully added user to group as ${role}.`, success: true })
+  })

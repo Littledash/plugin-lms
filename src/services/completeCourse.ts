@@ -1,0 +1,148 @@
+import type { PayloadRequest } from 'payload'
+
+import {
+  asSlug,
+  type CourseProgressEntry,
+  ensureCourseProgress,
+  findDoc,
+  getCoursesProgress,
+  getSlugs,
+  hasCompletedRequiredLessons,
+  type ID,
+  includesId,
+  isEnrolledInCourse,
+  type LMSDoc,
+  LMSError,
+  sameId,
+  toId,
+  toIds,
+  withTransaction,
+} from './shared.js'
+
+/**
+ * Marks the course complete on the course and in the user's progress and awards the course
+ * certificate if it has one. Returns the user fields to save; the caller saves them so the user
+ * is updated once (consumer hooks on the users collection see progress and certificates together).
+ */
+export const markCourseCompleted = async ({
+  course,
+  coursesProgress,
+  req,
+  user,
+}: {
+  course: LMSDoc
+  coursesProgress: CourseProgressEntry[]
+  req: PayloadRequest
+  user: LMSDoc
+}): Promise<{ certificateAwarded: boolean; userData: Record<string, unknown> }> => {
+  const now = new Date().toISOString()
+  const progress = ensureCourseProgress(coursesProgress, course.id)
+  if (!progress.completed) {
+    progress.completed = true
+    progress.completedAt = now
+  }
+
+  const completedStudents = toIds(course.courseCompletedStudents)
+  if (!includesId(completedStudents, user.id)) {
+    await req.payload.update({
+      id: course.id,
+      collection: asSlug(getSlugs(req).courses),
+      context: { lmsCourseCompletion: true },
+      data: {
+        courseCompletedStudents: [...completedStudents, user.id],
+        enrolledStudents: toIds(course.enrolledStudents).filter((id) => !sameId(id, user.id)),
+      },
+      req,
+    })
+  }
+
+  const userData: Record<string, unknown> = { coursesProgress }
+  let certificateAwarded = false
+
+  const certificateId = toId(course.awards?.certificate)
+  if (certificateId !== undefined) {
+    const certificates = Array.isArray(user.certificates) ? user.certificates : []
+    const hasCertificate = certificates.some(
+      (entry: LMSDoc) => sameId(entry.certificate, certificateId) && sameId(entry.course, course.id),
+    )
+    if (!hasCertificate) {
+      userData.certificates = [
+        ...certificates.map((entry: LMSDoc) => ({
+          ...entry,
+          certificate: toId(entry.certificate),
+          course: toId(entry.course),
+        })),
+        { certificate: certificateId, completedDate: now, course: course.id },
+      ]
+      certificateAwarded = true
+    }
+  }
+
+  return { certificateAwarded, userData }
+}
+
+type CompleteCourseArgs = {
+  courseId: ID
+  req: PayloadRequest
+  /**
+   * Require every non-optional lesson to be completed first. Only disable this for trusted
+   * administrative flows.
+   */
+  requireLessons?: boolean
+  userId: ID
+}
+
+export type CompleteCourseResult = {
+  certificateAwarded: boolean
+  status: 'already-completed' | 'completed'
+}
+
+/**
+ * Completes a course for a user. Safe to call again: an already completed course only has a
+ * missing certificate awarded.
+ */
+export const completeCourse = ({
+  courseId,
+  req,
+  requireLessons = true,
+  userId,
+}: CompleteCourseArgs): Promise<CompleteCourseResult> =>
+  withTransaction(req, async () => {
+    const slugs = getSlugs(req)
+    const user = await findDoc(req, slugs.students, userId, 'User')
+    const course = await findDoc(req, slugs.courses, courseId, 'Course')
+
+    if (!(await isEnrolledInCourse(req, course, user.id))) {
+      throw new LMSError('You are not enrolled in this course.', 403)
+    }
+
+    const coursesProgress = getCoursesProgress(user)
+    const progress = ensureCourseProgress(coursesProgress, course.id)
+    const alreadyCompleted =
+      includesId(toIds(course.courseCompletedStudents), user.id) && Boolean(progress.completed)
+
+    if (!alreadyCompleted && requireLessons && !hasCompletedRequiredLessons(course, progress)) {
+      throw new LMSError('All required lessons must be completed first.', 409)
+    }
+
+    const { certificateAwarded, userData } = await markCourseCompleted({
+      course,
+      coursesProgress,
+      req,
+      user,
+    })
+
+    if (alreadyCompleted && !certificateAwarded) {
+      return { certificateAwarded, status: 'already-completed' }
+    }
+
+    await req.payload.update({
+      id: user.id,
+      collection: asSlug(slugs.students),
+      data: userData,
+      req,
+    })
+
+    req.payload.logger.info(`User ${user.id} completed course ${course.id}`)
+    return { certificateAwarded, status: alreadyCompleted ? 'already-completed' : 'completed' }
+  })

@@ -1,24 +1,24 @@
+export const defaultCollectionSlugMap = {
+    addresses: 'addresses',
+    courses: 'courses',
+    coupons: 'coupons',
+    groups: 'groups',
+    lessons: 'lessons',
+    quizzes: 'quizzes',
+    categories: 'categories',
+    tags: 'tags',
+    certificates: 'certificates',
+    questions: 'questions',
+    topics: 'topics',
+    media: 'media',
+    students: 'users'
+};
 /**
  * Generates a map of collection slugs based on the sanitized plugin configuration.
  * Takes into consideration any collection overrides provided in the plugin.
  */ export const getCollectionSlugMap = ({ sanitizedPluginConfig })=>{
-    const defaultSlugMap = {
-        addresses: 'addresses',
-        courses: 'courses',
-        coupons: 'coupons',
-        groups: 'groups',
-        lessons: 'lessons',
-        quizzes: 'quizzes',
-        categories: 'categories',
-        tags: 'tags',
-        certificates: 'certificates',
-        questions: 'questions',
-        topics: 'topics',
-        media: 'media',
-        students: 'users'
-    };
     const collectionSlugsMap = {
-        ...defaultSlugMap
+        ...defaultCollectionSlugMap
     };
     //   if (typeof sanitizedPluginConfig.students === 'object' && sanitizedPluginConfig.students.studentsCollection?.slug) {
     //     collectionSlugsMap.students = sanitizedPluginConfig.students.studentsCollection.slug

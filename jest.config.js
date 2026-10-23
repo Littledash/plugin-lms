@@ -37,6 +37,8 @@ const customJestConfig = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   testEnvironment: 'node',
+  // The MongoDB driver and memory server keep internal handles open after teardown
+  forceExit: true,
   testTimeout: 90000,
   transform: {
     '^.+\\.(t|j)sx?$': ['@swc/jest'],

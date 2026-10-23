@@ -1,7 +1,7 @@
 import { pricesField } from '../fields/pricesField.js';
 import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
 import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js';
-import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
+import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 /**
  * Creates a courses collection configuration for Payload CMS
  * This collection manages educational courses with various access modes, pricing, and content organization
@@ -141,7 +141,7 @@ import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOr
                                 description: 'The materials that are part of the course'
                             },
                             access: {
-                                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                                read: isAdminOrAuthorOrEnrolledInThisCourseFieldLevel
                             }
                         },
                         {

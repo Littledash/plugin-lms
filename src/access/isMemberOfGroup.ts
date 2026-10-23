@@ -20,7 +20,7 @@ export const isMemberOfGroup: Access = async ({ req, id }) => {
     })
 
     if (group) {
-      const userIds = group.users?.map(( member: TypedCollection['users']) => typeof member === 'object' ? member.id : member) || []
+      const userIds = group.students?.map(( member: TypedCollection['users']) => typeof member === 'object' ? member.id : member) || []
       const leaderIds = group.leaders?.map((leader: TypedCollection['users']) => typeof leader === 'object' ? leader.id : leader) || []
 
       if (userIds.includes(user.id) || leaderIds.includes(user.id)) {
@@ -33,7 +33,7 @@ export const isMemberOfGroup: Access = async ({ req, id }) => {
   const query: Where = {
     or: [
       {
-        users: {
+        students: {
           in: [user.id],
         },
       },

@@ -1,4 +1,4 @@
-import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
+import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 /**
  * Creates a quizzes collection configuration for Payload CMS
  * This collection manages quizzes and assessments
@@ -34,7 +34,7 @@ import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOr
                 description: 'The description of the quiz'
             },
             access: {
-                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                read: isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel
             }
         },
         {
@@ -48,7 +48,7 @@ import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOr
                 description: 'The questions in this quiz'
             },
             access: {
-                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                read: isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel
             }
         },
         {

@@ -1,6 +1,6 @@
 import { CollectionConfig, Field } from 'payload'
 import { FieldsOverride } from '../types.js'
-import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
+import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
 /**
  * Props interface for configuring the quizzes collection
  * @property mediaCollectionSlug - Slug for the media collection (default: 'media')
@@ -50,7 +50,7 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
         description: 'The description of the quiz',
       },
       access: {
-        read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+        read: isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel,
       },
     },
     {
@@ -64,7 +64,7 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
         description: 'The questions in this quiz',
       },
       access: {
-        read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+        read: isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel,
       },
     },
     {

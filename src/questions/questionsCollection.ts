@@ -1,5 +1,11 @@
 import { CollectionConfig, Field } from 'payload'
 import { FieldsOverride, QuestionTypeOption } from '../types.js'
+import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
+
+/**
+ * Answer fields are graded server-side and must never be sent to students.
+ */
+const answerAccess = { read: isAdminOrAuthorFieldLevel }
 
 /**
  * Props interface for configuring the questions collection
@@ -82,7 +88,7 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       },
       fields: [
         { name: 'label', type: 'text', required: true },
-        { name: 'isCorrect', type: 'checkbox' },
+        { name: 'isCorrect', type: 'checkbox', access: answerAccess },
         {
           name: 'order',
           type: 'number',
@@ -92,6 +98,7 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     },
     {
       name: 'correctAnswer',
+      access: answerAccess,
       type: 'select',
       admin: {
         condition: (_, siblingData) => siblingData.questionType === 'trueFalse',
@@ -104,6 +111,7 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     },
     {
       name: 'correctAnswers',
+      access: answerAccess,
       type: 'array',
       admin: {
         condition: (_, siblingData) => siblingData.questionType === 'fillInBlank',
@@ -112,6 +120,7 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     },
     {
       name: 'assessmentCriteria',
+      access: answerAccess,
       type: 'array',
       admin: {
         condition: (_, siblingData) => siblingData.questionType === 'assessment',

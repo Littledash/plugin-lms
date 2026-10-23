@@ -235,68 +235,19 @@ export const lmsPlugin =
       ]
     }
 
-    // Add default endpoints
+    // Default endpoints. They act on the logged-in user only; see `services` for server-side use.
     const defaultEndpoints = [
-      {
-        path: '/lms/enroll',
-        method: 'post' as const,
-        handler: enrollHandler({
-          userSlug: collectionSlugMap.students,
-          courseSlug: collectionSlugMap.courses,
-          groupSlug: collectionSlugMap.groups,
-        }),
-      },
-      {
-        path: '/lms/complete-lesson',
-        method: 'post' as const, 
-        handler: completeLessonHandler({
-          userSlug: collectionSlugMap.students,
-        }),
-      },
-      {
-        path: '/lms/submit-quiz',
-        method: 'post' as const,
-        handler: submitQuizHandler({
-          userSlug: collectionSlugMap.students,
-          quizzesSlug: collectionSlugMap.quizzes,
-        }),
-      },
-      {
-        path: '/lms/complete-course',
-        method: 'post' as const,
-        handler: completeCourseHandler({
-          userSlug: collectionSlugMap.students,
-          courseSlug: collectionSlugMap.courses,
-          certificatesSlug: collectionSlugMap.certificates,
-        }),
-      },
+      { path: '/lms/enroll', method: 'post' as const, handler: enrollHandler() },
+      { path: '/lms/complete-lesson', method: 'post' as const, handler: completeLessonHandler() },
+      { path: '/lms/submit-quiz', method: 'post' as const, handler: submitQuizHandler() },
+      { path: '/lms/complete-course', method: 'post' as const, handler: completeCourseHandler() },
       {
         path: '/lms/generate-certificate',
         method: 'post' as const,
-        handler: generateCertificateHandler({
-          userSlug: collectionSlugMap.students,
-          courseSlug: collectionSlugMap.courses,
-          mediaSlug: collectionSlugMap.media,
-          certificatesSlug: collectionSlugMap.certificates,
-          baseUrl: incomingConfig.serverURL,
-        }),
+        handler: generateCertificateHandler(),
       },
-      {
-        path: '/lms/add-user-to-group',
-        method: 'post' as const,
-        handler: addUserToGroupHandler({
-          userSlug: collectionSlugMap.students,
-          groupSlug: collectionSlugMap.groups,
-        }),
-      },
-      {
-        path: '/lms/fetch-progress',
-        method: 'get' as const,
-        handler: fetchProgressHandler({
-          userSlug: collectionSlugMap.students,
-          courseSlug: collectionSlugMap.courses,
-        }),
-      },
+      { path: '/lms/add-user-to-group', method: 'post' as const, handler: addUserToGroupHandler() },
+      { path: '/lms/fetch-progress', method: 'get' as const, handler: fetchProgressHandler() },
     ]
 
     incomingConfig.endpoints = [
@@ -308,5 +259,10 @@ export const lmsPlugin =
 
     return {
       ...incomingConfig,
+      custom: {
+        ...incomingConfig.custom,
+        // Read by the LMS services so they work without the plugin config
+        lms: { slugs: collectionSlugMap },
+      },
     }
   }

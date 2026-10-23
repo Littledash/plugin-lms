@@ -9,7 +9,8 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
 
 ## Compatibility
 
-- **Payload CMS:** `^3.29.0`
+- **Payload CMS:** `^3.92.0`
+- **Next.js:** `>=16.3.3` (required by Payload 3.92)
 - **Node.js:** `^18.20.2` or `>=20.9.0`
 
 ## Installation
@@ -288,245 +289,52 @@ export function CourseList() {
 }
 ```
 
-### Group Enrollment Example
+### Endpoints and Security
 
-```tsx
-// components/GroupEnrollment.tsx
-import { useLMS } from '@littledash/plugin-lms/providers'
-import { useState } from 'react'
+Every `/api/lms/*` endpoint acts on the **logged-in user only**. A `userId` in the request body
+is rejected with `400`. The endpoints enforce the course rules on the server:
 
-export function GroupEnrollment({ courseId }) {
-  const { enroll, isLoading, error } = useLMS()
-  const [isGroup, setIsGroup] = useState(false)
-  const [companyName, setCompanyName] = useState('')
-  const [isLeader, setIsLeader] = useState(false)
+| Endpoint | Rules |
+| --- | --- |
+| `POST /lms/enroll` | Only `open` or `free` courses. Paid (`buy now`, `recurring`, `closed`) and group enrollments return `403`. |
+| `POST /lms/complete-lesson` | User is enrolled, the lesson is in the course, and every quiz on the lesson is passed. |
+| `POST /lms/submit-quiz` | User is enrolled and the quiz belongs to a lesson in the course. Answers are graded server-side; answer fields are hidden from students. |
+| `POST /lms/complete-course` | Every required lesson is completed. |
+| `POST /lms/generate-certificate` | The user has been awarded that certificate for that course. Returns the media document as `certificate`. |
+| `POST /lms/add-user-to-group` | Requester is an admin or a leader of the group. Send the user being added as `memberId`. |
+| `GET /lms/fetch-progress` | Returns the logged-in user's progress. |
 
-  const handleEnroll = async () => {
-    try {
-      if (isGroup) {
-        // Group enrollment with company name and role
-        await enroll(courseId, {
-          isGroup: true,
-          companyName: companyName,
-          isLeader: isLeader
-        })
-      } else {
-        // Regular individual enrollment
-        await enroll(courseId)
-      }
-    } catch (err) {
-      console.error('Enrollment failed:', err)
-    }
-  }
+Users cannot edit their own `coursesProgress` or `certificates` through the REST API; only admins
+and the server-side services write them.
 
-  return (
-    <div className="enrollment-form">
-      <h3>Enroll in Course</h3>
-      
-      <div className="form-group">
-        <label>
-          <input
-            type="checkbox"
-            checked={isGroup}
-            onChange={(e) => setIsGroup(e.target.checked)}
-          />
-          Enroll as part of a group/company
-        </label>
-      </div>
+### Server-side Enrollment (after a purchase)
 
-      {isGroup && (
-        <>
-          <div className="form-group">
-            <label>
-              Company/Group Name:
-              <input
-                type="text"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="Enter company or group name"
-                required
-              />
-            </label>
-          </div>
+Paid and group enrollments run on the server once the payment is verified, for example in a
+Stripe webhook. Call the services in-process with the Local API instead of calling the HTTP
+endpoints with an API key. Pass `req` so the work joins the current transaction.
 
-          <div className="form-group">
-            <label>
-              <input
-                type="radio"
-                name="role"
-                checked={isLeader}
-                onChange={() => setIsLeader(true)}
-              />
-              Group Leader
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="role"
-                checked={!isLeader}
-                onChange={() => setIsLeader(false)}
-              />
-              Group Member
-            </label>
-          </div>
-        </>
-      )}
+```typescript
+import { enrollUser, completeCourse, generateCertificate } from '@littledash/plugin-lms/services'
 
-      {error && <div className="error">Error: {error.message}</div>}
-      
-      <button 
-        onClick={handleEnroll} 
-        disabled={isLoading || (isGroup && !companyName.trim())}
-      >
-        {isLoading ? 'Enrolling...' : 'Enroll Now'}
-      </button>
-    </div>
-  )
-}
+// userId comes from the verified order, never from the client
+await enrollUser({ req, userId: order.customer, courseId })
+
+// Group purchase: joins the group that bought the course with `couponId`,
+// or the buyer's own group, otherwise creates one named `companyName`
+await enrollUser({
+  req,
+  userId: order.customer,
+  courseId,
+  group: { companyName: 'Acme', isLeader: true, totalSeats: 10, couponId },
+})
+
+// Safe to re-run: awards a missing certificate on an already completed course
+await completeCourse({ req, userId, courseId })
+
+const { media } = await generateCertificate({ req, userId, courseId, certificateId })
 ```
 
-### Advanced Enrollment with Form Validation
-
-```tsx
-// components/AdvancedEnrollment.tsx
-import { useLMS } from '@littledash/plugin-lms/providers'
-import { useState } from 'react'
-
-export function AdvancedEnrollment({ courseId }) {
-  const { enroll, isLoading, error } = useLMS()
-  const [enrollmentType, setEnrollmentType] = useState('individual')
-  const [formData, setFormData] = useState({
-    companyName: '',
-    isLeader: false,
-    department: ''
-  })
-  const [validationErrors, setValidationErrors] = useState({})
-
-  const validateForm = () => {
-    const errors = {}
-    
-    if (enrollmentType === 'group') {
-      if (!formData.companyName.trim()) {
-        errors.companyName = 'Company name is required for group enrollment'
-      }
-      if (formData.companyName.length < 2) {
-        errors.companyName = 'Company name must be at least 2 characters'
-      }
-    }
-    
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    if (!validateForm()) return
-
-    try {
-      const enrollmentOptions = enrollmentType === 'group' ? {
-        isGroup: true,
-        companyName: formData.companyName,
-        isLeader: formData.isLeader
-      } : undefined
-
-      await enroll(courseId, enrollmentOptions)
-      
-      // Reset form on success
-      setFormData({ companyName: '', isLeader: false, department: '' })
-      setEnrollmentType('individual')
-    } catch (err) {
-      console.error('Enrollment failed:', err)
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="enrollment-form">
-      <h3>Course Enrollment</h3>
-      
-      <div className="form-group">
-        <label>Enrollment Type:</label>
-        <select 
-          value={enrollmentType} 
-          onChange={(e) => setEnrollmentType(e.target.value)}
-        >
-          <option value="individual">Individual Enrollment</option>
-          <option value="group">Group/Company Enrollment</option>
-        </select>
-      </div>
-
-      {enrollmentType === 'group' && (
-        <>
-          <div className="form-group">
-            <label>
-              Company/Group Name: *
-              <input
-                type="text"
-                value={formData.companyName}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  companyName: e.target.value 
-                }))}
-                placeholder="Enter your company or group name"
-              />
-              {validationErrors.companyName && (
-                <span className="error-text">{validationErrors.companyName}</span>
-              )}
-            </label>
-          </div>
-
-          <div className="form-group">
-            <label>
-              <input
-                type="radio"
-                name="role"
-                checked={formData.isLeader}
-                onChange={() => setFormData(prev => ({ ...prev, isLeader: true }))}
-              />
-              Group Leader (can manage group members)
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="role"
-                checked={!formData.isLeader}
-                onChange={() => setFormData(prev => ({ ...prev, isLeader: false }))}
-              />
-              Group Member
-            </label>
-          </div>
-
-          <div className="form-group">
-            <label>
-              Department (Optional):
-              <input
-                type="text"
-                value={formData.department}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  department: e.target.value 
-                }))}
-                placeholder="e.g., Engineering, Marketing, Sales"
-              />
-            </label>
-          </div>
-        </>
-      )}
-
-      {error && <div className="error">Error: {error.message}</div>}
-      
-      <button 
-        type="submit"
-        disabled={isLoading}
-        className="enroll-button"
-      >
-        {isLoading ? 'Enrolling...' : 
-         enrollmentType === 'group' ? 'Enroll Group' : 'Enroll Individual'}
-      </button>
-    </form>
-  )
-}
-```
+Services throw `LMSError` (with a `status`) when a rule is not met.
 
 ### Progress Tracking Example
 
@@ -944,102 +752,26 @@ All endpoints require authentication. Include the user's session token in your r
 
 **POST** `/api/lms/enroll`
 
-Enrolls the current user in a specified course. Supports both individual and group enrollment.
+Enrolls the logged-in user in an `open` or `free` course. Paid and group enrollments return `403`;
+use the [server-side services](#server-side-enrollment-after-a-purchase) after the purchase is verified.
 
-**Request Body (Individual Enrollment):**
+**Request Body:**
 ```json
 {
   "courseId": "64f8a1b2c3d4e5f6a7b8c9d0"
 }
 ```
 
-**Request Body (Group Enrollment):**
-```json
-{
-  "courseId": "64f8a1b2c3d4e5f6a7b8c9d0",
-  "isGroup": true,
-  "companyName": "Acme Corporation",
-  "isLeader": false
-}
-```
-
-**Parameters:**
-- `courseId` (required): The ID of the course to enroll in
-- `isGroup` (optional): Whether this is a group enrollment (default: false)
-- `companyName` (optional): Company or group name (required if isGroup is true)
-- `isLeader` (optional): Whether the user is a group leader (default: false)
-
 **Response (200):**
 ```json
 {
   "success": true,
-  "message": "Successfully enrolled in course"
+  "status": "enrolled",
+  "message": "Successfully enrolled in course."
 }
 ```
 
-**Response (409 - Already Enrolled):**
-```json
-{
-  "message": "You are already enrolled in this course."
-}
-```
-
-**Response (400 - Missing Company Name):**
-```json
-{
-  "message": "Company name is required for group enrollment."
-}
-```
-
-**Example Usage:**
-
-```javascript
-// Individual enrollment
-const enrollInCourse = async (courseId) => {
-  const response = await fetch('/api/lms/enroll', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken}`
-    },
-    body: JSON.stringify({ courseId })
-  })
-
-  const result = await response.json()
-  if (!response.ok) {
-    throw new Error(result.message)
-  }
-  return result
-}
-
-// Group enrollment
-const enrollGroupInCourse = async (courseId, companyName, isLeader = false) => {
-  const response = await fetch('/api/lms/enroll', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${userToken}`
-    },
-    body: JSON.stringify({
-      courseId,
-      isGroup: true,
-      companyName,
-      isLeader
-    })
-  })
-
-  const result = await response.json()
-  if (!response.ok) {
-    throw new Error(result.message)
-  }
-  return result
-}
-
-// Usage examples
-await enrollInCourse('64f8a1b2c3d4e5f6a7b8c9d0')
-await enrollGroupInCourse('64f8a1b2c3d4e5f6a7b8c9d0', 'Tech Corp', true) // as leader
-await enrollGroupInCourse('64f8a1b2c3d4e5f6a7b8c9d0', 'Tech Corp', false) // as member
-```
+`status` is `enrolled`, `already-enrolled` or `already-completed`.
 
 ### Complete Lesson
 
@@ -1094,13 +826,13 @@ Submits user's answers for a quiz and calculates score.
 
 **POST** `/api/lms/add-user-to-group`
 
-Adds a user to a group with a specific role.
+Adds a user to a group with a specific role. The requester must be an admin or a leader of the group.
 
 **Request Body:**
 ```json
 {
   "groupId": "64f8a1b2c3d4e5f6a7b8c9d7",
-  "userId": "64f8a1b2c3d4e5f6a7b8c9d8",
+  "memberId": "64f8a1b2c3d4e5f6a7b8c9d8",
   "role": "student"
 }
 ```

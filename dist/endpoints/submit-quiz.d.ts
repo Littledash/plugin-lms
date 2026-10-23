@@ -1,8 +1,2 @@
-import { type Endpoint } from 'payload';
-type Args = {
-    userSlug: string;
-    quizzesSlug: string;
-};
-type SubmitQuizHandler = (args: Args) => Endpoint['handler'];
-export declare const submitQuizHandler: SubmitQuizHandler;
-export {};
+import type { Endpoint } from 'payload';
+export declare const submitQuizHandler: (_args?: Record<string, unknown>) => Endpoint["handler"];

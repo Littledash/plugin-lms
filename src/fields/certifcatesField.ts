@@ -1,5 +1,7 @@
 import type { ArrayField } from 'payload'
 
+import { isAdminFieldLevel } from '../access/isAdmin.js'
+
 /**
  * Props for the certificates field configuration
  */
@@ -22,6 +24,11 @@ export const certificatesField: (props: Props) => ArrayField = ({
   const field: ArrayField = {
     name: 'certificates',
     type: 'array',
+    // Written by the LMS services; users must not be able to edit their own progress
+    access: {
+      create: isAdminFieldLevel,
+      update: isAdminFieldLevel,
+    },
     fields: [
       {
         name: 'certificate',

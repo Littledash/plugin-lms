@@ -4,7 +4,7 @@ import type { CurrenciesConfig } from '../types.js'
 import { pricesField } from '../fields/pricesField.js'
 import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
 import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js'
-import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
+import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
 /**
  * Props interface for configuring the courses collection
  * @property categoriesCollectionSlug - Slug for the categories collection (default: 'categories')
@@ -167,7 +167,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
                 description: 'The materials that are part of the course',
               },
               access: {
-                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+                read: isAdminOrAuthorOrEnrolledInThisCourseFieldLevel,
               },
             },
 

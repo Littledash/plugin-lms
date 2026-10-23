@@ -1,709 +1,588 @@
-/* eslint-disable no-console */
 /**
- * Integration tests for the LMS application.
- * These tests verify the core functionality of the application including:
- * - User authentication and authorization
- * - Course management
- * - Quiz functionality
- * - Certificate generation
+ * Integration tests for the LMS plugin endpoints, services and access control.
  *
- * The tests use a memory database for isolation and speed.
+ * Endpoints are called through the real REST handlers so authentication and access control run
+ * exactly as in production. Tests use an in-memory MongoDB replica set (transactions enabled).
  */
 
 import type { Payload } from 'payload'
-import type { GeneratedTypes } from 'payload'
-import dotenv from 'dotenv'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
-import path from 'path'
 import { getPayload } from 'payload'
-import { fileURLToPath } from 'url'
 
 import { NextRESTClient } from './helpers/NextRESTClient.js'
-import { devUser } from './helpers/credentials.js'
+import {
+  addUserToGroup,
+  completeCourse,
+  enrollUser,
+  generateCertificate,
+  LMSError,
+} from '../src/exports/services.js'
 
-const dirname = path.dirname(fileURLToPath(import.meta.url))
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Doc = { id: string; [key: string]: any }
 
-// Global test variables
 let payload: Payload
-let restClient: NextRESTClient
 let memoryDB: MongoMemoryReplSet | undefined
 
-describe('LMS Integration Tests', () => {
-  // Setup test environment before all tests
-  beforeAll(async () => {
-    // Disable HMR and ensure clean database for tests
-    process.env.DISABLE_PAYLOAD_HMR = 'true'
-    process.env.PAYLOAD_DROP_DATABASE = 'true'
+const PASSWORD = 'test-password'
+let counter = 0
 
-    // Load environment variables
-    dotenv.config({
-      path: path.resolve(dirname, './.env'),
+const createUser = async (roles: string[] = ['student']): Promise<Doc> => {
+  counter++
+  return (await payload.create({
+    collection: 'users',
+    data: {
+      email: `user${counter}@example.com`,
+      password: PASSWORD,
+      firstName: 'Test',
+      lastName: `User${counter}`,
+      roles,
+    },
+  })) as unknown as Doc
+}
+
+const clientFor = async (user: Doc): Promise<NextRESTClient> => {
+  const client = new NextRESTClient(payload.config)
+  const result = await client.login({ slug: 'users', credentials: { email: user.email, password: PASSWORD } })
+  if (!result.token) {
+    throw new Error(`Login failed for ${user.email}: ${JSON.stringify(result)}`)
+  }
+  return client
+}
+
+const anonymous = () => new NextRESTClient(payload.config)
+
+const post = async (client: NextRESTClient, path: string, body: Record<string, unknown>) => {
+  const response = await client.POST(`/lms/${path}` as `/${string}`, { body: JSON.stringify(body) })
+  return { status: response.status, body: await response.json() }
+}
+
+const createLesson = async (quizzes: string[] = []): Promise<Doc> =>
+  (await payload.create({
+    collection: 'lessons',
+    data: { title: `Lesson ${++counter}`, quizzes },
+  })) as unknown as Doc
+
+const createCourse = async ({
+  accessMode = 'open',
+  lessons = [],
+  certificate,
+}: {
+  accessMode?: string
+  lessons?: { lesson: string; isOptional?: boolean }[]
+  certificate?: string
+} = {}): Promise<Doc> =>
+  (await payload.create({
+    collection: 'courses',
+    data: {
+      title: `Course ${++counter}`,
+      enrollment: { accessMode },
+      lessons,
+      ...(certificate ? { awards: { certificate } } : {}),
+    },
+  })) as unknown as Doc
+
+const createQuiz = async (minimumScore = 100): Promise<{ quiz: Doc; correctChoiceId: string; questionId: string }> => {
+  const question = (await payload.create({
+    collection: 'questions',
+    data: {
+      title: 'Question',
+      question: 'Pick the right one',
+      questionType: 'multipleChoice',
+      points: 1,
+      choices: [
+        { label: 'Right', isCorrect: true },
+        { label: 'Wrong', isCorrect: false },
+      ],
+    },
+  })) as unknown as Doc
+  const quiz = (await payload.create({
+    collection: 'quizzes',
+    data: { title: `Quiz ${++counter}`, questions: [question.id], minimumScore },
+  })) as unknown as Doc
+  const correctChoice = question.choices.find((choice: Doc) => choice.isCorrect)
+  return { quiz, correctChoiceId: correctChoice.id, questionId: question.id }
+}
+
+const getDoc = async (collection: 'users' | 'courses' | 'groups', id: string): Promise<Doc> =>
+  (await payload.findByID({ collection, id, depth: 0 })) as unknown as Doc
+
+const ids = (values: unknown): string[] =>
+  (Array.isArray(values) ? values : []).map((value) => String(typeof value === 'object' ? value.id : value))
+
+/** Enrolls a user the way the site does after a verified purchase. */
+const enroll = (user: Doc, course: Doc) =>
+  enrollUser({ req: { payload } as never, userId: user.id, courseId: course.id })
+
+beforeAll(async () => {
+  process.env.DISABLE_PAYLOAD_HMR = 'true'
+  // Always use an in-memory database so tests never touch the dev database from .env
+  if (process.env.TEST_DATABASE_URI) {
+    process.env.DATABASE_URI = process.env.TEST_DATABASE_URI
+  } else {
+    memoryDB = await MongoMemoryReplSet.create({
+      replSet: { count: 1, dbName: 'payloadmemory' },
+      // MongoDB's default 5ms lock wait makes back-to-back writes to one user flaky in tests
+      instanceOpts: [{ args: ['--setParameter', 'maxTransactionLockRequestTimeoutMillis=5000'] }],
+    })
+    process.env.DATABASE_URI = `${memoryDB.getUri()}&retryWrites=true`
+  }
+  process.env.PAYLOAD_SECRET = process.env.PAYLOAD_SECRET || 'test-secret'
+
+  const { default: config } = await import('./payload.config.js')
+  payload = await getPayload({ config })
+  // Payload builds indexes in the background; writes in a transaction fail until they exist
+  await Promise.all(
+    Object.values((payload.db as unknown as { collections: Record<string, { init: () => Promise<unknown> }> }).collections).map(
+      (model) => model.init(),
+    ),
+  )
+})
+
+afterAll(async () => {
+  if (payload?.db?.destroy) {
+    await payload.db.destroy()
+  }
+  await memoryDB?.stop()
+})
+
+describe('every endpoint', () => {
+  const endpoints = [
+    'enroll',
+    'complete-lesson',
+    'submit-quiz',
+    'complete-course',
+    'generate-certificate',
+    'add-user-to-group',
+  ]
+
+  it.each(endpoints)('%s requires a logged-in user', async (path) => {
+    const { status } = await post(anonymous(), path, { courseId: 'x' })
+    expect(status).toBe(401)
+  })
+
+  it.each(endpoints)('%s rejects a client-supplied userId', async (path) => {
+    const victim = await createUser()
+    const attacker = await clientFor(await createUser())
+    const { status } = await post(attacker, path, { courseId: 'x', userId: victim.id })
+    expect(status).toBe(400)
+  })
+
+  it('fetch-progress requires a logged-in user', async () => {
+    const response = await anonymous().GET('/lms/fetch-progress')
+    expect(response.status).toBe(401)
+  })
+})
+
+describe('enroll endpoint', () => {
+  it('lets a user enroll themselves in an open course', async () => {
+    const user = await createUser()
+    const course = await createCourse({ accessMode: 'open' })
+
+    const { status, body } = await post(await clientFor(user), 'enroll', { courseId: course.id })
+
+    expect(status).toBe(200)
+    expect(body.status).toBe('enrolled')
+    expect(ids((await getDoc('courses', course.id)).enrolledStudents)).toContain(user.id)
+    const progress = (await getDoc('users', user.id)).coursesProgress
+    expect(ids(progress.map((entry: Doc) => entry.course))).toContain(course.id)
+  })
+
+  it.each(['buy now', 'recurring', 'closed'])('refuses self-enrollment in a %s course', async (accessMode) => {
+    const user = await createUser()
+    const course = await createCourse({ accessMode })
+
+    const { status } = await post(await clientFor(user), 'enroll', { courseId: course.id })
+
+    expect(status).toBe(403)
+    expect(ids((await getDoc('courses', course.id)).enrolledStudents)).not.toContain(user.id)
+  })
+
+  it('refuses group enrollment over HTTP', async () => {
+    const user = await createUser()
+    const course = await createCourse()
+    const { status } = await post(await clientFor(user), 'enroll', {
+      courseId: course.id,
+      isGroup: true,
+      isLeader: true,
+      companyName: 'Acme',
+    })
+    expect(status).toBe(403)
+  })
+
+  it('does not leak internal error details', async () => {
+    const user = await createUser()
+    const { status, body } = await post(await clientFor(user), 'enroll', { courseId: 'not-an-id' })
+    expect([404, 500]).toContain(status)
+    expect(body.message).not.toMatch(/Cast|ObjectId|mongo/i)
+  })
+})
+
+describe('enrollUser service', () => {
+  it('enrolls the given user, not the caller', async () => {
+    const buyer = await createUser()
+    const course = await createCourse({ accessMode: 'buy now' })
+
+    const result = await enroll(buyer, course)
+
+    expect(result.status).toBe('enrolled')
+    expect(ids((await getDoc('courses', course.id)).enrolledStudents)).toEqual([buyer.id])
+  })
+
+  it('creates a group for a leader and grants the leader role', async () => {
+    const leader = await createUser()
+    const course = await createCourse({ accessMode: 'buy now' })
+
+    const { groupId } = await enrollUser({
+      req: { payload } as never,
+      userId: leader.id,
+      courseId: course.id,
+      group: { companyName: 'Acme', isLeader: true, totalSeats: 5 },
     })
 
-    // Always use an in-memory database so tests never touch the dev database from .env
-    if (process.env.TEST_DATABASE_URI) {
-      process.env.DATABASE_URI = process.env.TEST_DATABASE_URI
-    } else {
-      console.log('Starting memory database')
-      memoryDB = await MongoMemoryReplSet.create({
-        replSet: {
-          count: 3,
-          dbName: 'payloadmemory',
-        },
-      })
-      console.log('Memory database started')
+    const group = await getDoc('groups', String(groupId))
+    expect(ids(group.leaders)).toEqual([leader.id])
+    expect(group.purchasedCourses[0].seatManagement.seatsTotal).toBe(5)
+    expect(ids((await getDoc('courses', course.id)).courseEnrolledGroups)).toContain(String(groupId))
+    expect((await getDoc('users', leader.id)).roles).toContain('leader')
+  })
 
-      process.env.DATABASE_URI = `${memoryDB.getUri()}&retryWrites=true`
+  it('never joins another company group by name alone', async () => {
+    const course = await createCourse({ accessMode: 'buy now' })
+    const owner = await createUser()
+    const { groupId: ownerGroup } = await enrollUser({
+      req: { payload } as never,
+      userId: owner.id,
+      courseId: course.id,
+      group: { companyName: 'Same Name Ltd', isLeader: true },
+    })
+
+    const outsider = await createUser()
+    const { groupId: outsiderGroup } = await enrollUser({
+      req: { payload } as never,
+      userId: outsider.id,
+      courseId: course.id,
+      group: { companyName: 'Same Name Ltd', isLeader: true },
+    })
+
+    expect(String(outsiderGroup)).not.toBe(String(ownerGroup))
+    expect(ids((await getDoc('groups', String(ownerGroup))).leaders)).toEqual([owner.id])
+  })
+
+  it('rolls back every write when a step fails', async () => {
+    const user = await createUser()
+    const course = await createCourse({ accessMode: 'buy now' })
+
+    // No company name and no existing group: the group step throws after nothing is saved
+    await expect(
+      enrollUser({ req: { payload } as never, userId: user.id, courseId: course.id, group: { isLeader: true } }),
+    ).rejects.toBeInstanceOf(LMSError)
+
+    expect(ids((await getDoc('courses', course.id)).enrolledStudents)).not.toContain(user.id)
+  })
+})
+
+describe('complete-lesson endpoint', () => {
+  it('refuses users who are not enrolled', async () => {
+    const lesson = await createLesson()
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    const user = await createUser()
+
+    const { status } = await post(await clientFor(user), 'complete-lesson', {
+      courseId: course.id,
+      lessonId: lesson.id,
+    })
+    expect(status).toBe(403)
+  })
+
+  it('refuses a lesson that is not part of the course', async () => {
+    const course = await createCourse({ lessons: [{ lesson: (await createLesson()).id }] })
+    const otherLesson = await createLesson()
+    const user = await createUser()
+    await enroll(user, course)
+
+    const { status } = await post(await clientFor(user), 'complete-lesson', {
+      courseId: course.id,
+      lessonId: otherLesson.id,
+    })
+    expect(status).toBe(400)
+  })
+
+  it("requires the lesson's quizzes to be passed first", async () => {
+    const { quiz, questionId, correctChoiceId } = await createQuiz()
+    const lesson = await createLesson([quiz.id])
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }, { lesson: (await createLesson()).id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    const client = await clientFor(user)
+
+    const blocked = await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+    expect(blocked.status).toBe(409)
+
+    await post(client, 'submit-quiz', {
+      courseId: course.id,
+      quizId: quiz.id,
+      answers: { [questionId]: correctChoiceId },
+    })
+    const allowed = await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+    expect(allowed.status).toBe(200)
+    expect(allowed.body.courseCompleted).toBe(false)
+  })
+
+  it('completes the course and awards its certificate after the last required lesson', async () => {
+    const certificate = (await payload.create({
+      collection: 'certificates',
+      data: { title: 'Completion' },
+    })) as unknown as Doc
+    const required = await createLesson()
+    const optional = await createLesson()
+    const course = await createCourse({
+      lessons: [{ lesson: required.id }, { lesson: optional.id, isOptional: true }],
+      certificate: certificate.id,
+    })
+    const user = await createUser()
+    await enroll(user, course)
+
+    const { status, body } = await post(await clientFor(user), 'complete-lesson', {
+      courseId: course.id,
+      lessonId: required.id,
+    })
+
+    expect(status).toBe(200)
+    expect(body.courseCompleted).toBe(true)
+    const updatedCourse = await getDoc('courses', course.id)
+    expect(ids(updatedCourse.courseCompletedStudents)).toContain(user.id)
+    expect(ids(updatedCourse.enrolledStudents)).not.toContain(user.id)
+    const updatedUser = await getDoc('users', user.id)
+    expect(ids(updatedUser.certificates.map((entry: Doc) => entry.certificate))).toEqual([certificate.id])
+  })
+})
+
+describe('submit-quiz endpoint', () => {
+  it('refuses a quiz that is not part of the course', async () => {
+    const { quiz } = await createQuiz()
+    const course = await createCourse({ lessons: [{ lesson: (await createLesson()).id }] })
+    const user = await createUser()
+    await enroll(user, course)
+
+    const { status } = await post(await clientFor(user), 'submit-quiz', {
+      courseId: course.id,
+      quizId: quiz.id,
+      answers: {},
+    })
+    expect(status).toBe(400)
+  })
+
+  it('grades answers and keeps the best score', async () => {
+    const { quiz, questionId, correctChoiceId } = await createQuiz()
+    const course = await createCourse({ lessons: [{ lesson: (await createLesson([quiz.id])).id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    const client = await clientFor(user)
+
+    const pass = await post(client, 'submit-quiz', {
+      courseId: course.id,
+      quizId: quiz.id,
+      answers: { [questionId]: correctChoiceId },
+    })
+    expect(pass.body).toMatchObject({ score: 100, passed: true })
+
+    const fail = await post(client, 'submit-quiz', { courseId: course.id, quizId: quiz.id, answers: {} })
+    expect(fail.body).toMatchObject({ score: 0, passed: false })
+
+    const progress = (await getDoc('users', user.id)).coursesProgress[0]
+    expect(progress.completedQuizzes[0].score).toBe(100)
+  })
+})
+
+describe('complete-course endpoint', () => {
+  it('refuses to complete a course with required lessons outstanding', async () => {
+    const course = await createCourse({ lessons: [{ lesson: (await createLesson()).id }] })
+    const user = await createUser()
+    await enroll(user, course)
+
+    const { status } = await post(await clientFor(user), 'complete-course', { courseId: course.id })
+
+    expect(status).toBe(409)
+    expect(ids((await getDoc('courses', course.id)).courseCompletedStudents)).not.toContain(user.id)
+  })
+
+  it('completeCourse service awards a missing certificate on an already completed course', async () => {
+    const lesson = await createLesson()
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+
+    // The course gains a certificate after the user completed it (the legacy data case)
+    const certificate = (await payload.create({
+      collection: 'certificates',
+      data: { title: 'Late certificate' },
+    })) as unknown as Doc
+    await payload.update({ collection: 'courses', id: course.id, data: { awards: { certificate: certificate.id } } })
+
+    const result = await completeCourse({ req: { payload } as never, userId: user.id, courseId: course.id })
+
+    expect(result).toEqual({ status: 'already-completed', certificateAwarded: true })
+    expect((await getDoc('users', user.id)).certificates).toHaveLength(1)
+  })
+})
+
+describe('generate-certificate endpoint', () => {
+  it('refuses a certificate the user has not been awarded', async () => {
+    const certificate = (await payload.create({
+      collection: 'certificates',
+      data: { title: 'Not earned' },
+    })) as unknown as Doc
+    const course = await createCourse({ certificate: certificate.id })
+    const user = await createUser()
+    await enroll(user, course)
+
+    const { status } = await post(await clientFor(user), 'generate-certificate', {
+      courseId: course.id,
+      certificateId: certificate.id,
+    })
+    expect(status).toBe(403)
+  })
+
+  it('creates the PDF once for an awarded certificate', async () => {
+    const certificate = (await payload.create({
+      collection: 'certificates',
+      data: { title: 'Earned' },
+    })) as unknown as Doc
+    const lesson = await createLesson()
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }], certificate: certificate.id })
+    const user = await createUser()
+    await enroll(user, course)
+    const client = await clientFor(user)
+    await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+
+    const first = await post(client, 'generate-certificate', { courseId: course.id, certificateId: certificate.id })
+    expect(first.status).toBe(200)
+    expect(first.body.status).toBe('created')
+    expect(first.body.certificate.mimeType).toBe('application/pdf')
+
+    const second = await generateCertificate({
+      req: { payload } as never,
+      userId: user.id,
+      courseId: course.id,
+      certificateId: certificate.id,
+    })
+    expect(second.status).toBe('existing')
+    expect(String(second.media.id)).toBe(String(first.body.certificate.id))
+  })
+})
+
+describe('add-user-to-group endpoint', () => {
+  const createGroup = async (leader: Doc): Promise<Doc> =>
+    (await payload.create({
+      collection: 'groups',
+      data: { title: `Group ${++counter}`, leaders: [leader.id] },
+    })) as unknown as Doc
+
+  it('refuses requesters who are not a leader of the group', async () => {
+    const group = await createGroup(await createUser())
+    const outsider = await createUser()
+
+    const { status } = await post(await clientFor(outsider), 'add-user-to-group', {
+      groupId: group.id,
+      memberId: outsider.id,
+      role: 'leader',
+    })
+
+    expect(status).toBe(403)
+    expect(ids((await getDoc('groups', group.id)).leaders)).not.toContain(outsider.id)
+  })
+
+  it('lets a group leader add a student', async () => {
+    const leader = await createUser()
+    const group = await createGroup(leader)
+    const member = await createUser()
+
+    const { status } = await post(await clientFor(leader), 'add-user-to-group', {
+      groupId: group.id,
+      memberId: member.id,
+      role: 'student',
+    })
+
+    expect(status).toBe(200)
+    expect(ids((await getDoc('groups', group.id)).students)).toEqual([member.id])
+  })
+
+  it('addUserToGroup service rejects duplicate membership', async () => {
+    const leader = await createUser()
+    const group = await createGroup(leader)
+    await expect(
+      addUserToGroup({ req: { payload } as never, groupId: group.id, userId: leader.id, role: 'leader' }),
+    ).rejects.toMatchObject({ status: 409 })
+  })
+})
+
+describe('fetch-progress endpoint', () => {
+  it("returns only the logged-in user's progress", async () => {
+    const lesson = await createLesson()
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }, { lesson: (await createLesson()).id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    const client = await clientFor(user)
+    await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+
+    const response = await client.GET('/lms/fetch-progress')
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.enrolledCourses.map(String)).toEqual([course.id])
+    expect(body.coursesProgress[0]).toMatchObject({ completionPercentage: 50, courseCompletion: '1/2' })
+  })
+})
+
+describe('field access', () => {
+  it('users cannot edit their own progress or certificates through the REST API', async () => {
+    const user = await createUser()
+    const course = await createCourse()
+    const certificate = (await payload.create({
+      collection: 'certificates',
+      data: { title: 'Forged' },
+    })) as unknown as Doc
+
+    await (await clientFor(user)).PATCH(`/users/${user.id}`, {
+      body: JSON.stringify({
+        coursesProgress: [{ course: course.id, completed: true, completedLessons: [], completedQuizzes: [] }],
+        certificates: [{ certificate: certificate.id, course: course.id, completedDate: new Date().toISOString() }],
+        roles: ['admin'],
+      }),
+    })
+
+    const saved = await getDoc('users', user.id)
+    expect(saved.coursesProgress ?? []).toHaveLength(0)
+    expect(saved.certificates ?? []).toHaveLength(0)
+    expect(saved.roles).not.toContain('admin')
+  })
+
+  it('hides quiz answers from students but not from authors', async () => {
+    const { questionId } = await createQuiz()
+    const read = async (user: Doc) => {
+      const response = await (await clientFor(user)).GET(`/questions/${questionId}`)
+      return response.json()
     }
 
-    // Initialize Payload CMS with test configuration
-    const { default: config } = await import('./payload.config.js')
-    payload = await getPayload({ config })
-    restClient = new NextRESTClient(payload.config)
+    const asStudent = await read(await createUser(['student']))
+    expect(asStudent.choices[0]).not.toHaveProperty('isCorrect')
+
+    const asAuthor = await read(await createUser(['author']))
+    expect(asAuthor.choices.some((choice: Doc) => choice.isCorrect)).toBe(true)
   })
 
-  // Clean up resources after all tests
-  afterAll(async () => {
-    if (payload.db.destroy) {
-      await payload.db.destroy()
-    }
+  it('shows quiz questions only to students enrolled in a course containing the quiz', async () => {
+    const { quiz } = await createQuiz()
+    const course = await createCourse({ lessons: [{ lesson: (await createLesson([quiz.id])).id }] })
+    const enrolled = await createUser()
+    await enroll(enrolled, course)
+    const outsider = await createUser()
 
-    if (memoryDB) {
-      await memoryDB.stop()
-    }
-  })
+    const read = async (user: Doc) => (await (await clientFor(user)).GET(`/quizzes/${quiz.id}`)).json()
 
-  /**
-   * User Management Tests
-   * Tests user creation, authentication, and role-based access
-   */
-  describe('User Management', () => {
-    // Test admin user creation and authentication
-    it('should create and authenticate admin user', async () => {
-      const user = await payload.create({
-        collection: 'users',
-        data: {
-          ...devUser,
-          firstName: 'Admin',
-          lastName: 'User',
-          roles: ['admin'],
-        },
-      })
-
-      expect(user.email).toBe(devUser.email)
-      expect(user.roles).toContain('admin')
-    })
-
-    // Test student user creation and authentication
-    it('should create and authenticate student user', async () => {
-      const user = await payload.create({
-        collection: 'users',
-        data: {
-          email: 'student@example.com',
-          password: 'password123',
-          firstName: 'Student',
-          lastName: 'User',
-          roles: ['student'],
-        },
-      })
-
-      expect(user.email).toBe('student@example.com')
-      expect(user.roles).toContain('student')
-    })
-  })
-
-  /**
-   * Course Management Tests
-   * Tests course creation, lesson management, and role-based access control
-   */
-  describe('Course Management', () => {
-    // Test users with different roles for authorization tests
-    let adminUser: GeneratedTypes['collections']['users']
-    let authorUser: GeneratedTypes['collections']['users']
-    let studentUser: GeneratedTypes['collections']['users']
-
-    // Setup test users before each test
-    beforeEach(async () => {
-      // Create test users with different roles
-      adminUser = await payload.create({
-        collection: 'users',
-        data: {
-          email: 'admin@example.com',
-          password: 'password123',
-          firstName: 'Admin',
-          lastName: 'User',
-          roles: ['admin'],
-        },
-      })
-
-      authorUser = await payload.create({
-        collection: 'users',
-        data: {
-          email: 'author@example.com',
-          password: 'password123',
-          firstName: 'Author',
-          lastName: 'User',
-          roles: ['author'],
-        },
-      })
-
-      studentUser = await payload.create({
-        collection: 'users',
-        data: {
-          email: 'student@example.com',
-          password: 'password123',
-          firstName: 'Student',
-          lastName: 'User',
-          roles: ['student'],
-        },
-      })
-    })
-
-    // Test admin course creation permissions
-    it('should allow admin to create a course', async () => {
-      const course = await payload.create({
-        collection: 'courses',
-        data: {
-          title: 'Admin Created Course',
-          description: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'A course created by admin',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          accessMode: 'free',
-          navigationMode: 'linear',
-        },
-        user: adminUser,
-      })
-
-      expect(course.title).toBe('Admin Created Course')
-      expect(course.accessMode).toBe('free')
-    })
-
-    // Test author course creation permissions
-    it('should allow author to create a course', async () => {
-      const course = await payload.create({
-        collection: 'courses',
-        data: {
-          title: 'Author Created Course',
-          description: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'A course created by author',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          accessMode: 'free',
-          navigationMode: 'linear',
-        },
-        user: authorUser,
-      })
-
-      expect(course.title).toBe('Author Created Course')
-      expect(course.accessMode).toBe('free')
-    })
-
-    // Test student course creation restrictions
-    it('should not allow student to create a course', async () => {
-      await expect(
-        payload.create({
-          collection: 'courses',
-          data: {
-            title: 'Student Created Course',
-            description: {
-              root: {
-                type: 'root',
-                children: [
-                  {
-                    type: 'paragraph',
-                    children: [
-                      {
-                        type: 'text',
-                        text: 'A course created by student',
-                      },
-                    ],
-                    version: 1,
-                  },
-                ],
-                direction: null,
-                format: '',
-                indent: 0,
-                version: 1,
-              },
-            },
-            accessMode: 'free',
-            navigationMode: 'linear',
-          },
-          user: studentUser,
-        }),
-      ).rejects.toThrow()
-    })
-
-    // Test basic course creation functionality
-    it('should create a new course', async () => {
-      const course = await payload.create({
-        collection: 'courses',
-        data: {
-          title: 'Test Course',
-          description: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'A test course for integration testing',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          accessMode: 'free',
-          navigationMode: 'linear',
-        },
-      })
-
-      expect(course.title).toBe('Test Course')
-      expect(course.accessMode).toBe('free')
-    })
-
-    // Test lesson creation within a course
-    it('should create a lesson within a course', async () => {
-      const course = await payload.create({
-        collection: 'courses',
-        data: {
-          title: 'Test Course with Lesson',
-          description: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'Course with a test lesson',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          accessMode: 'free',
-          navigationMode: 'linear',
-        },
-      })
-
-      const lesson = await payload.create({
-        collection: 'lessons',
-        data: {
-          title: 'Test Lesson',
-          content: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'This is a test lesson content',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          course: course.id,
-          progressionControl: 'required',
-          lessonOrder: 1,
-        },
-      })
-
-      expect(lesson.title).toBe('Test Lesson')
-      expect(lesson.course).toBe(course.id)
-    })
-  })
-
-  /**
-   * Quiz Management Tests
-   * Tests quiz creation, question management, and quiz-course relationships
-   */
-  describe('Quiz Management', () => {
-    // Test quiz creation with questions
-    it('should create a quiz with questions', async () => {
-      const quiz = await payload.create({
-        collection: 'quizzes',
-        data: {
-          title: 'Test Quiz',
-          description: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'A test quiz for integration testing',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          questions: [],
-        },
-      })
-
-      const question = await payload.create({
-        collection: 'questions',
-        data: {
-          title: 'Test Question',
-          points: 10,
-          questionType: 'multipleChoice',
-          question: 'What is the capital of France?',
-          choices: [
-            { label: 'Paris', isCorrect: true },
-            { label: 'London', isCorrect: false },
-            { label: 'Berlin', isCorrect: false },
-          ],
-        },
-      })
-
-      await payload.update({
-        collection: 'quizzes',
-        id: quiz.id,
-        data: {
-          questions: [question.id],
-        },
-      })
-
-      const updatedQuiz = await payload.findByID({
-        collection: 'quizzes',
-        id: quiz.id,
-      })
-
-      expect(updatedQuiz.questions).toHaveLength(1)
-    })
-  })
-
-  /**
-   * Certificate Management Tests
-   * Tests certificate template creation and certificate generation
-   */
-  describe('Certificate Management', () => {
-    // Test certificate template creation
-    it('should create a certificate template', async () => {
-      const template = await payload.create({
-        collection: 'media',
-        data: {
-          filename: 'certificate-template.png',
-          mimeType: 'image/png',
-          filesize: 1024,
-          width: 1920,
-          height: 1080,
-        },
-      })
-
-      expect(template.filename).toBe('certificate-template.png')
-      expect(template.mimeType).toBe('image/png')
-    })
-
-    // Test certificate generation for completed course
-    it('should create a certificate for a completed course', async () => {
-      const course = await payload.create({
-        collection: 'courses',
-        data: {
-          title: 'Certificate Test Course',
-          description: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'Course for certificate testing',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          accessMode: 'free',
-          navigationMode: 'linear',
-        },
-      })
-
-      const user = await payload.create({
-        collection: 'users',
-        data: {
-          email: 'certificate@example.com',
-          password: 'password123',
-          firstName: 'Certificate',
-          lastName: 'User',
-          roles: ['student'],
-        },
-      })
-
-      const template = await payload.create({
-        collection: 'media',
-        data: {
-          filename: 'certificate-template.png',
-          mimeType: 'image/png',
-          filesize: 1024,
-          width: 1920,
-          height: 1080,
-        },
-      })
-
-      const certificate = await payload.create({
-        collection: 'certificates',
-        data: {
-          title: 'Test Certificate',
-          description: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'Certificate for completing the test course',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          template: template.id,
-          course: course.id,
-          students: [user.id],
-          issueDate: new Date().toISOString(),
-          certificateNumber: 'TEST-' + Date.now(),
-          status: 'active',
-        },
-      })
-
-      expect(certificate.title).toBe('Test Certificate')
-      expect(certificate.course).toBe(course.id)
-      expect(certificate.students).toContain(user.id)
-    })
-  })
-
-  describe('Topic Management', () => {
-    // Test topic creation within a lesson
-    it('should create a topic within a lesson', async () => {
-      const course = await payload.create({
-        collection: 'courses',
-        data: {
-          title: 'Test Course with Topic',
-          description: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'Course with a test topic',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          accessMode: 'free',
-          navigationMode: 'linear',
-        },
-      })
-
-      const lesson = await payload.create({
-        collection: 'lessons',
-        data: {
-          title: 'Test Lesson with Topic',
-          content: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'This is a test lesson with a topic',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          course: course.id,
-          progressionControl: 'required',
-          lessonOrder: 1,
-        },
-      })
-
-      const topic = await payload.create({
-        collection: 'topics',
-        data: {
-          title: 'Test Topic',
-          content: {
-            root: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: 'This is a test topic content',
-                    },
-                  ],
-                  version: 1,
-                },
-              ],
-              direction: null,
-              format: '',
-              indent: 0,
-              version: 1,
-            },
-          },
-          course: course.id,
-          lesson: lesson.id,
-          topicVideo: {
-            embed: 'https://example.com/video',
-          },
-        },
-      })
-
-      expect(topic.title).toBe('Test Topic')
-      expect(topic.course).toBe(course.id)
-      expect(topic.lesson).toBe(lesson.id)
-      expect(topic.topicVideo.embed).toBe('https://example.com/video')
-    })
-
-    // Test collection overrides functionality
-    it('should support collection overrides', async () => {
-      // This test verifies that the collection overrides are properly applied
-      // by checking that the collections are created with the expected structure
-      
-      // Check that certificates collection has the expected fields
-      const certificatesCollection = payload.collections.certificates
-      expect(certificatesCollection).toBeDefined()
-      expect(certificatesCollection.config.fields).toBeDefined()
-      
-      // Check that courses collection has the expected fields
-      const coursesCollection = payload.collections.courses
-      expect(coursesCollection).toBeDefined()
-      expect(coursesCollection.config.fields).toBeDefined()
-      
-      // Check that lessons collection has the expected fields
-      const lessonsCollection = payload.collections.lessons
-      expect(lessonsCollection).toBeDefined()
-      expect(lessonsCollection.config.fields).toBeDefined()
-      
-      // Check that quizzes collection has the expected fields
-      const quizzesCollection = payload.collections.quizzes
-      expect(quizzesCollection).toBeDefined()
-      expect(quizzesCollection.config.fields).toBeDefined()
-      
-      // Check that topics collection has the expected fields
-      const topicsCollection = payload.collections.topics
-      expect(topicsCollection).toBeDefined()
-      expect(topicsCollection.config.fields).toBeDefined()
-      
-      // Check that categories collection has the expected fields
-      const categoriesCollection = payload.collections.categories
-      expect(categoriesCollection).toBeDefined()
-      expect(categoriesCollection.config.fields).toBeDefined()
-      
-      // Check that tags collection has the expected fields
-      const tagsCollection = payload.collections.tags
-      expect(tagsCollection).toBeDefined()
-      expect(tagsCollection.config.fields).toBeDefined()
-      
-      // Check that questions collection has the expected fields
-      const questionsCollection = payload.collections.questions
-      expect(questionsCollection).toBeDefined()
-      expect(questionsCollection.config.fields).toBeDefined()
-    })
+    expect((await read(enrolled)).questions).toHaveLength(1)
+    expect(await read(outsider)).not.toHaveProperty('questions')
   })
 })

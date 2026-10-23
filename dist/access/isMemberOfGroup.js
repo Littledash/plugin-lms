@@ -16,7 +16,7 @@ export const isMemberOfGroup = async ({ req, id })=>{
             depth: 1
         });
         if (group) {
-            const userIds = group.users?.map((member)=>typeof member === 'object' ? member.id : member) || [];
+            const userIds = group.students?.map((member)=>typeof member === 'object' ? member.id : member) || [];
             const leaderIds = group.leaders?.map((leader)=>typeof leader === 'object' ? leader.id : leader) || [];
             if (userIds.includes(user.id) || leaderIds.includes(user.id)) {
                 return true;
@@ -27,7 +27,7 @@ export const isMemberOfGroup = async ({ req, id })=>{
     const query = {
         or: [
             {
-                users: {
+                students: {
                     in: [
                         user.id
                     ]

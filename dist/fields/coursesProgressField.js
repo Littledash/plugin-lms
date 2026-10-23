@@ -1,3 +1,4 @@
+import { isAdminFieldLevel } from '../access/isAdmin.js';
 /**
  * Creates a field for the courses progress
  * @param props - Configuration overrides for the field
@@ -6,6 +7,11 @@
     const field = {
         name: 'coursesProgress',
         type: 'array',
+        // Written by the LMS services; users must not be able to edit their own progress
+        access: {
+            create: isAdminFieldLevel,
+            update: isAdminFieldLevel
+        },
         fields: [
             {
                 name: 'course',

@@ -3,6 +3,9 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig, Field } from 'payload'
 import { lmsPlugin } from '../src/index.js'
+import { anyone } from '../src/access/anyone.js'
+import { isAdmin, isAdminFieldLevel } from '../src/access/isAdmin.js'
+import { isAdminOrSelf } from '../src/access/isAdminOrSelf.js'
 import type { CollectionOverride } from '../src/types.js'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
@@ -21,6 +24,13 @@ if (!process.env.ROOT_DIR) {
 const studentCollection: CollectionOverride = {
   slug: 'users',
   auth: true,
+  // Mirrors the consuming site so tests exercise the same access rules
+  access: {
+    create: anyone,
+    read: isAdminOrSelf,
+    update: isAdminOrSelf,
+    delete: isAdmin,
+  },
   admin: {
     defaultColumns: ['fullName', 'email', 'roles'],
     useAsTitle: 'email',
@@ -42,11 +52,18 @@ const studentCollection: CollectionOverride = {
       hasMany: true,
       defaultValue: ['public'],
       required: true,
+      access: {
+        create: isAdminFieldLevel,
+        update: isAdminFieldLevel,
+      },
       options: [
         {
           label: 'Administrator',
           value: 'admin',
         },
+        { label: 'Author', value: 'author' },
+        { label: 'Student', value: 'student' },
+        { label: 'Leader', value: 'leader' },
         {
           label: 'Public',
           value: 'public',
@@ -94,7 +111,7 @@ const studentCollection: CollectionOverride = {
 
 export default buildConfig({
   admin: {
-    autoLogin: devUser,
+    autoLogin: process.env.NODE_ENV === 'test' ? false : devUser,
     importMap: {
       baseDir: path.resolve(dirname),
     },

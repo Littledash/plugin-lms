@@ -212,7 +212,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         syncLocalStorage,
         localStorageConfig.key
     ]);
-    const enroll = useCallback(async (courseId, options)=>{
+    const enroll = useCallback(async (courseId)=>{
         dispatch({
             type: 'SET_LOADING',
             payload: true
@@ -222,28 +222,15 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             payload: null
         });
         try {
-            const requestBody = {
-                courseId
-            };
-            if (options?.isGroup !== undefined) {
-                requestBody.isGroup = options.isGroup;
-            }
-            if (options?.companyName) {
-                requestBody.companyName = options.companyName;
-            }
-            if (options?.isLeader !== undefined) {
-                requestBody.isLeader = options.isLeader;
-            }
-            if (options?.userId) {
-                requestBody.userId = options.userId;
-            }
             const response = await fetch(`${baseAPIURL}/lms/enroll`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 credentials: 'include',
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify({
+                    courseId
+                })
             });
             if (!response.ok) throw new Error('Failed to enroll in course');
             await fetchProgress() // Refetch progress to ensure state is up-to-date
@@ -263,7 +250,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         baseAPIURL,
         fetchProgress
     ]);
-    const completeCourse = useCallback(async (courseId, options)=>{
+    const completeCourse = useCallback(async (courseId)=>{
         dispatch({
             type: 'SET_LOADING',
             payload: true
@@ -273,19 +260,15 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             payload: null
         });
         try {
-            const requestBody = {
-                courseId
-            };
-            if (options?.userId) {
-                requestBody.userId = options.userId;
-            }
             const response = await fetch(`${baseAPIURL}/lms/complete-course`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 credentials: 'include',
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify({
+                    courseId
+                })
             });
             if (!response.ok) throw new Error('Failed to complete course');
             await fetchProgress() // Refetch progress to ensure state is up-to-date
@@ -439,7 +422,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
         baseAPIURL,
         fetchProgress
     ]);
-    const addUserToGroup = useCallback(async (groupId, userId, role)=>{
+    const addUserToGroup = useCallback(async (groupId, memberId, role)=>{
         dispatch({
             type: 'SET_LOADING',
             payload: true
@@ -457,7 +440,7 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 credentials: 'include',
                 body: JSON.stringify({
                     groupId,
-                    userId,
+                    memberId,
                     role
                 })
             });

@@ -1,5 +1,21 @@
 import type { CollectionSlugMap, SanitizedLMSPluginConfig } from '../types.js'
 
+export const defaultCollectionSlugMap: CollectionSlugMap = {
+  addresses: 'addresses',
+  courses: 'courses',
+  coupons: 'coupons',
+  groups: 'groups',
+  lessons: 'lessons',
+  quizzes: 'quizzes',
+  categories: 'categories',
+  tags: 'tags',
+  certificates: 'certificates',
+  questions: 'questions',
+  topics: 'topics',
+  media: 'media',
+  students: 'users',
+}
+
 type Props = {
   sanitizedPluginConfig: SanitizedLMSPluginConfig
 }
@@ -8,23 +24,8 @@ type Props = {
  * Takes into consideration any collection overrides provided in the plugin.
  */
 export const getCollectionSlugMap = ({ sanitizedPluginConfig }: Props): CollectionSlugMap => {
-  const defaultSlugMap: CollectionSlugMap = {
-    addresses: 'addresses',
-    courses: 'courses',
-    coupons: 'coupons',
-    groups: 'groups',
-    lessons: 'lessons',
-    quizzes: 'quizzes',
-    categories: 'categories',
-    tags: 'tags',
-    certificates: 'certificates',
-    questions: 'questions',
-    topics: 'topics',
-    media: 'media',
-    students: 'users',
-  }
   const collectionSlugsMap: CollectionSlugMap = {
-    ...defaultSlugMap,
+    ...defaultCollectionSlugMap,
   }
 
   //   if (typeof sanitizedPluginConfig.students === 'object' && sanitizedPluginConfig.students.studentsCollection?.slug) {

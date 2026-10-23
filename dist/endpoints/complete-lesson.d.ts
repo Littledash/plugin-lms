@@ -1,7 +1,2 @@
-import { type Endpoint } from 'payload';
-type Args = {
-    userSlug: string;
-};
-type CompleteLessonHandler = (args: Args) => Endpoint['handler'];
-export declare const completeLessonHandler: CompleteLessonHandler;
-export {};
+import type { Endpoint } from 'payload';
+export declare const completeLessonHandler: (_args?: Record<string, unknown>) => Endpoint["handler"];

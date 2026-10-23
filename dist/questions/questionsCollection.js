@@ -1,3 +1,9 @@
+import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
+/**
+ * Answer fields are graded server-side and must never be sent to students.
+ */ const answerAccess = {
+    read: isAdminOrAuthorFieldLevel
+};
 /**
  * Creates a questions collection configuration for Payload CMS
  * This collection manages questions for quizzes and assessments
@@ -96,7 +102,8 @@
                 },
                 {
                     name: 'isCorrect',
-                    type: 'checkbox'
+                    type: 'checkbox',
+                    access: answerAccess
                 },
                 {
                     name: 'order',
@@ -109,6 +116,7 @@
         },
         {
             name: 'correctAnswer',
+            access: answerAccess,
             type: 'select',
             admin: {
                 condition: (_, siblingData)=>siblingData.questionType === 'trueFalse'
@@ -130,6 +138,7 @@
         },
         {
             name: 'correctAnswers',
+            access: answerAccess,
             type: 'array',
             admin: {
                 condition: (_, siblingData)=>siblingData.questionType === 'fillInBlank'
@@ -144,6 +153,7 @@
         },
         {
             name: 'assessmentCriteria',
+            access: answerAccess,
             type: 'array',
             admin: {
                 condition: (_, siblingData)=>siblingData.questionType === 'assessment'

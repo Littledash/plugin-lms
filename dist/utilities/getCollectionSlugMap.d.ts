@@ -1,4 +1,5 @@
 import type { CollectionSlugMap, SanitizedLMSPluginConfig } from '../types.js';
+export declare const defaultCollectionSlugMap: CollectionSlugMap;
 type Props = {
     sanitizedPluginConfig: SanitizedLMSPluginConfig;
 };
