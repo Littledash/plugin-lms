@@ -20,11 +20,11 @@ the body, and the API-key account is not the user you mean to act on.
 
 | Endpoint | Enforced |
 | --- | --- |
-| all | Logged-in user; body `userId` rejected; IDs must be plain strings or positive integers |
+| all | Logged-in user; at most 60 calls per user per minute (`rateLimit`); body `userId` rejected; IDs must be plain strings or positive integers |
 | `enroll` | Course access mode is `open` or `free` (admins excepted); no group enrollment |
-| `complete-lesson` | Enrolled; lesson in course; all of the lesson's quizzes passed |
-| `submit-quiz` | Enrolled; quiz belongs to a lesson in the course; attempt limit and cooldown; answers capped at 500 primitive values. A pass completes lessons whose quizzes are all passed. |
-| `complete-course` | Enrolled; all required lessons completed |
+| `complete-lesson` | Enrolled; access not expired; lesson released; previous lessons done when navigation is linear; lesson in course; all of the lesson's quizzes passed |
+| `submit-quiz` | Enrolled; access not expired; the lesson is released and unlocked; quiz belongs to a lesson in the course; attempt limit and cooldown; answers capped at 500 primitive values. A pass completes lessons whose quizzes are all passed. |
+| `complete-course` | Enrolled; access not expired; all required lessons completed |
 | `generate-certificate` | The user was awarded that certificate for that course |
 | `add-user-to-group` | Requester is an admin or a leader of the group; a seat is free |
 | `fetch-progress` | Returns only the requester's progress |
@@ -97,10 +97,14 @@ Also check:
 
 ## Known limits
 
-- Lesson ordering (`navigation.navigationMode: 'linear'`), lesson release schedules and
-  `accessExpirationDays` are not enforced on the server yet. Enforce them in your app if they matter.
-- The quiz cooldown slows scripted guessing but cannot stop it; the score a user gets back always
-  reveals how many answers were right. Use `attemptLimit` on assessments that matter.
+- `accessExpirationDays` counts from `coursesProgress.enrolledAt`, which is recorded when `enrollUser`
+  creates the progress row. Enrollments from before that field have no date, so they do not expire
+  and an "enrollment" lesson delay does not hold them. A lesson's delay field is stored as
+  `lessonRelaseDays`.
+- Each user can call the LMS endpoints 60 times a minute (`rateLimit` on the plugin). That slows a
+  script; it does not stop one. A quiz score still reveals how many answers were right. Use
+  `attemptLimit` on assessments that matter. The limit is counted in this server process, so run one
+  Node process or put your own limit in front of several.
 - `correctAnswer` is stored as `true`, `false` or `both`. It is a text field rendered as a select,
   because those words are illegal GraphQL enum names. If you do not use GraphQL, turn it off
   (`graphQL: { disable: true }` in your Payload config), which also removes an attack surface.

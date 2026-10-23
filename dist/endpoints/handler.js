@@ -1,11 +1,13 @@
 import { addDataAndFileToRequest } from 'payload';
 import { LMSError, requireUser } from '../services/shared.js';
+import { assertRateLimit } from './rateLimit.js';
 /**
  * Wraps an LMS endpoint: requires a logged-in user, parses the body, rejects client-supplied
  * user IDs, and turns errors into JSON responses without leaking internal details.
  */ export const lmsHandler = (fn)=>async (req)=>{
         try {
             const userId = requireUser(req);
+            assertRateLimit(req, userId);
             if (req.method !== 'GET') {
                 await addDataAndFileToRequest(req);
             }

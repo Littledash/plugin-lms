@@ -660,6 +660,22 @@ describe('hardening', () => {
     }
   })
 
+  it('limits how many LMS endpoint calls one user can make', async () => {
+    const lms = payload.config.custom.lms as { rateLimitMax: number }
+    const previous = lms.rateLimitMax
+    lms.rateLimitMax = 2
+    try {
+      const client = await clientFor(await createUser())
+      expect((await client.GET('/lms/fetch-progress')).status).toBe(200)
+      expect((await client.GET('/lms/fetch-progress')).status).toBe(200)
+      const blocked = await client.GET('/lms/fetch-progress')
+      expect(blocked.status).toBe(429)
+      expect(await blocked.json()).toMatchObject({ message: 'Too many requests. Please wait and try again.' })
+    } finally {
+      lms.rateLimitMax = previous
+    }
+  })
+
   it('stops a leader adding more members than the group paid for', async () => {
     const leader = await createUser()
     const course = await createCourse({ accessMode: 'buy now' })
@@ -859,6 +875,18 @@ describe('ownership access', () => {
     expect(list.docs.map((doc: Doc) => doc.id)).toEqual([user.id])
   })
 
+  it('a student cannot update or delete another student', async () => {
+    const student = await createUser()
+    const other = await createUser()
+    const client = await clientFor(student)
+
+    expect([403, 404]).toContain(
+      (await client.PATCH(`/users/${other.id}`, { body: JSON.stringify({ firstName: 'Hacked' }) })).status,
+    )
+    expect([403, 404]).toContain((await client.DELETE(`/users/${other.id}`)).status)
+    expect((await getDoc('users', other.id)).firstName).toBe('Test')
+  })
+
   it('group members read their own group only', async () => {
     const member = await createUser()
     const own = (await payload.create({
@@ -1011,6 +1039,150 @@ describe('enrollment collection access', () => {
   })
 })
 
+describe('lesson availability', () => {
+  const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+
+  const setEnrolledAt = async (userId: string, courseId: string, enrolledAt: null | string) => {
+    const saved = await getDoc('users', userId)
+    await payload.update({
+      id: userId,
+      collection: 'users',
+      data: {
+        coursesProgress: (saved.coursesProgress ?? []).map((entry: Doc) => ({
+          ...entry,
+          course: typeof entry.course === 'object' ? entry.course.id : entry.course,
+          enrolledAt:
+            String(typeof entry.course === 'object' ? entry.course.id : entry.course) === courseId
+              ? enrolledAt
+              : entry.enrolledAt,
+        })),
+      },
+    })
+  }
+
+  it('requires the earlier lesson before a later one', async () => {
+    const first = await createLesson()
+    const second = await createLesson()
+    await payload.update({ id: first.id, collection: 'lessons', data: { content: richText('First') } })
+    await payload.update({ id: second.id, collection: 'lessons', data: { content: richText('Second') } })
+    const course = await createCourse({ lessons: [{ lesson: first.id }, { lesson: second.id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    const client = await clientFor(user)
+
+    const blocked = await post(client, 'complete-lesson', { courseId: course.id, lessonId: second.id })
+    expect(blocked.status).toBe(409)
+    expect(blocked.body.message).toMatch(/previous lesson/)
+    expect(await (await client.GET(`/lessons/${second.id}`)).json()).not.toHaveProperty('content')
+
+    expect((await post(client, 'complete-lesson', { courseId: course.id, lessonId: first.id })).status).toBe(200)
+    expect((await post(client, 'complete-lesson', { courseId: course.id, lessonId: second.id })).status).toBe(200)
+    expect((await (await client.GET(`/lessons/${second.id}`)).json()).content).toBeDefined()
+  })
+
+  it('allows any lesson when navigation is free', async () => {
+    const first = await createLesson()
+    const second = await createLesson()
+    const course = await createCourse({ lessons: [{ lesson: first.id }, { lesson: second.id }] })
+    await payload.update({
+      id: course.id,
+      collection: 'courses',
+      data: { navigation: { navigationMode: 'free' } },
+    })
+    const user = await createUser()
+    await enroll(user, course)
+
+    expect(
+      (await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: second.id })).status,
+    ).toBe(200)
+  })
+
+  it('hides a lesson until its enrollment delay has passed', async () => {
+    const lesson = await createLesson()
+    await payload.update({
+      id: lesson.id,
+      collection: 'lessons',
+      data: {
+        accessSettings: { lessonRelaseDays: 2, lessonReleaseSchedule: 'enrollment' },
+        content: richText('Later'),
+      },
+    })
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    const client = await clientFor(user)
+
+    const blocked = await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+    expect(blocked.status).toBe(403)
+    expect(blocked.body.message).toMatch(/not available yet/)
+    expect(await (await client.GET(`/lessons/${lesson.id}`)).json()).not.toHaveProperty('content')
+
+    await setEnrolledAt(user.id, course.id, daysAgo(2))
+    expect((await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })).status).toBe(200)
+    expect((await (await client.GET(`/lessons/${lesson.id}`)).json()).content).toBeDefined()
+  })
+
+  it('hides lesson content and course materials after access expires', async () => {
+    const lesson = await createLesson()
+    await payload.update({ id: lesson.id, collection: 'lessons', data: { content: richText('Secret') } })
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    await payload.update({
+      id: course.id,
+      collection: 'courses',
+      data: { courseSettings: { accessExpirationDays: 1, courseMaterials: richText('Course secret') } },
+    })
+    const user = await createUser()
+    await enroll(user, course)
+    await setEnrolledAt(user.id, course.id, daysAgo(2))
+    const client = await clientFor(user)
+
+    const blocked = await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+    expect(blocked.status).toBe(403)
+    expect(blocked.body.message).toMatch(/expired/)
+    expect(await (await client.GET(`/lessons/${lesson.id}`)).json()).not.toHaveProperty('content')
+    expect((await (await client.GET(`/courses/${course.id}`)).json()).courseSettings ?? {}).not.toHaveProperty(
+      'courseMaterials',
+    )
+  })
+
+  it('does not expire an enrollment that has no date', async () => {
+    const lesson = await createLesson()
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    await payload.update({
+      id: course.id,
+      collection: 'courses',
+      data: { courseSettings: { accessExpirationDays: 1 } },
+    })
+    const user = await createUser()
+    await enroll(user, course)
+    await setEnrolledAt(user.id, course.id, null)
+
+    expect(
+      (await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: lesson.id })).status,
+    ).toBe(200)
+  })
+
+  it('refuses a quiz on a later lesson until the earlier lesson is complete', async () => {
+    const first = await createLesson()
+    const { correctChoiceId, questionId, quiz } = await createQuiz()
+    const second = await createLesson([quiz.id])
+    const course = await createCourse({ lessons: [{ lesson: first.id }, { lesson: second.id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    const client = await clientFor(user)
+    const submit = () =>
+      post(client, 'submit-quiz', {
+        answers: { [questionId]: correctChoiceId },
+        courseId: course.id,
+        quizId: quiz.id,
+      })
+
+    expect((await submit()).status).toBe(409)
+    expect((await post(client, 'complete-lesson', { courseId: course.id, lessonId: first.id })).status).toBe(200)
+    expect((await submit()).body).toMatchObject({ passed: true })
+  })
+})
+
 describe('service edge cases', () => {
   it('admins can enroll themselves in a paid course', async () => {
     const admin = await createUser(['admin'])
@@ -1070,8 +1242,17 @@ describe('service edge cases', () => {
     })
 
     expect(status).toBe('existing')
-    expect(String(media.id)).toBe(String(legacy.id))
-    expect(String((await getDoc('users', user.id)).certificates[0].file)).toBe(String(legacy.id))
+    expect(String(media.id)).not.toBe(String(legacy.id))
+    expect(media.filename).toMatch(/^certificate-[0-9a-f-]{36}\.pdf$/)
+    expect(String((await getDoc('users', user.id)).certificates[0].file)).toBe(String(media.id))
+    expect(
+      (
+        await payload.find({
+          collection: 'media',
+          where: { filename: { equals: legacyName } },
+        })
+      ).docs,
+    ).toHaveLength(0)
   })
 
   it('refuses to generate a certificate for a user without a full name', async () => {
@@ -1086,6 +1267,59 @@ describe('service edge cases', () => {
     await expect(
       generateCertificate({ certificateId: certificate.id, courseId: course.id, req: { payload } as never, userId: user.id }),
     ).rejects.toMatchObject({ status: 400 })
+  })
+
+  it('refuses a certificate when the course title or the certificate is missing', async () => {
+    const certificate = (await payload.create({ collection: 'certificates', data: { title: 'Gone' } })) as unknown as Doc
+    const lesson = await createLesson()
+    const course = await createCourse({ certificate: certificate.id, lessons: [{ lesson: lesson.id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+    await payload.db.updateOne({ id: course.id, collection: 'courses', data: { title: '' } })
+
+    await expect(
+      generateCertificate({ certificateId: certificate.id, courseId: course.id, req: { payload } as never, userId: user.id }),
+    ).rejects.toMatchObject({ message: 'Course title is missing.', status: 400 })
+
+    await payload.db.updateOne({ id: course.id, collection: 'courses', data: { title: 'Restored' } })
+    await payload.delete({ id: certificate.id, collection: 'certificates' })
+    await expect(
+      generateCertificate({ certificateId: certificate.id, courseId: course.id, req: { payload } as never, userId: user.id }),
+    ).rejects.toMatchObject({ message: 'Certificate not found.', status: 404 })
+  })
+
+  it('does not enroll a user who has already completed the course', async () => {
+    const lesson = await createLesson()
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    const client = await clientFor(user)
+    expect((await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })).status).toBe(200)
+
+    const again = await post(client, 'enroll', { courseId: course.id })
+    expect(again.status).toBe(200)
+    expect(again.body).toMatchObject({
+      message: 'You have already completed this course.',
+      status: 'already-completed',
+    })
+    const saved = await getDoc('courses', course.id)
+    expect(ids(saved.enrolledStudents)).toEqual([])
+    expect(ids(saved.courseCompletedStudents)).toEqual([user.id])
+  })
+
+  it('requires a company name to create a group', async () => {
+    const course = await createCourse({ accessMode: 'buy now' })
+    const user = await createUser()
+
+    await expect(
+      enrollUser({
+        courseId: course.id,
+        group: { isLeader: true, totalSeats: 2 },
+        req: { payload } as never,
+        userId: user.id,
+      }),
+    ).rejects.toMatchObject({ message: 'Company name is required to create a new group.', status: 400 })
   })
 })
 
@@ -1187,6 +1421,37 @@ describe('true/false questions', () => {
     })
 
     expect(body).toMatchObject({ passed: true, score: 100 })
+  })
+
+  it('hides lesson quizzes and answer keys over GraphQL', async () => {
+    const { questionId, quiz } = await createQuiz()
+    const lesson = await createLesson([quiz.id])
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    const enrolled = await createUser()
+    await enroll(enrolled, course)
+
+    const query = async (user: Doc, documentQuery: string, id: string) => {
+      const response = await (await clientFor(user)).GRAPHQL_POST({
+        body: JSON.stringify({ query: documentQuery, variables: { id } }),
+      })
+      return { body: await response.json(), status: response.status }
+    }
+    const lessonQuery = 'query ($id: String!) { Lesson(id: $id) { quizzes { id } title } }'
+    const questionQuery = 'query ($id: String!) { Question(id: $id) { choices { isCorrect label } } }'
+
+    const hiddenLesson = await query(await createUser(), lessonQuery, lesson.id)
+    expect(hiddenLesson.status).toBe(200)
+    expect(hiddenLesson.body.data.Lesson.title).toBe(lesson.title)
+    expect(hiddenLesson.body.data.Lesson.quizzes).toEqual([])
+
+    const hiddenQuestion = await query(await createUser(), questionQuery, questionId)
+    expect(JSON.stringify(hiddenQuestion.body)).not.toMatch(/"isCorrect":true/)
+
+    const visibleLesson = await query(enrolled, lessonQuery, lesson.id)
+    expect(visibleLesson.body.data.Lesson.quizzes.map((item: Doc) => item.id)).toEqual([quiz.id])
+
+    const visibleQuestion = await query(await createUser(['author']), questionQuery, questionId)
+    expect(visibleQuestion.body.data.Question.choices.some((choice: Doc) => choice.isCorrect)).toBe(true)
   })
 
   it('builds a GraphQL schema', async () => {

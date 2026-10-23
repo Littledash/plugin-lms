@@ -42,6 +42,8 @@ export type CourseProgress = {
     } | DefaultDocumentIDType;
     /** The completion of the course (e.g. "1/3"). */
     courseCompletion?: string;
+    /** When the student was enrolled. Access expiry and lesson release count from this date. */
+    enrolledAt?: null | string;
 };
 /**
  * An array of CourseProgress objects, representing a user's progress across all their courses.

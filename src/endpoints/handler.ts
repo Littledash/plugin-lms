@@ -1,6 +1,7 @@
 import { addDataAndFileToRequest, type Endpoint, type PayloadRequest } from 'payload'
 
 import { type ID, LMSError, requireUser } from '../services/shared.js'
+import { assertRateLimit } from './rateLimit.js'
 
 type HandlerContext = {
   data: Record<string, unknown>
@@ -18,6 +19,7 @@ export const lmsHandler =
   async (req) => {
     try {
       const userId = requireUser(req)
+      assertRateLimit(req, userId)
       if (req.method !== 'GET') {
         await addDataAndFileToRequest(req)
       }

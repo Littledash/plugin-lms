@@ -312,6 +312,16 @@ export type LMSPluginConfig = {
    */
   quizzes?: boolean | QuizzesConfig
 
+  /**
+   * How many calls to `/api/lms/*` one logged-in user may make in a window. `max: 0` disables it.
+   *
+   * @default { max: 60, windowSeconds: 60 }
+   */
+  rateLimit?: {
+    max?: number
+    windowSeconds?: number
+  }
+
     students?: StudentsConfig
 
     submitQuiz?:( args: {

@@ -26,6 +26,8 @@ export type CourseProgressEntry = {
         score: number;
     }[];
     course: ID;
+    /** When this student was enrolled. Missing on enrollments from before 2.0. */
+    enrolledAt?: null | string;
 };
 /**
  * An error whose message is safe to return to the client.
@@ -51,6 +53,8 @@ export declare const findDoc: (req: PayloadRequest, collection: string, id: ID, 
  * Normalises the user's progress to IDs so it can be compared and saved back.
  */
 export declare const getCoursesProgress: (user: LMSDoc) => CourseProgressEntry[];
+/** The logged-in user's course progress, loaded once per request. */
+export declare const getUserProgress: (req: PayloadRequest) => Promise<CourseProgressEntry[]>;
 /**
  * Returns the progress entry for a course, adding an empty one when missing.
  */

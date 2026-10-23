@@ -13,7 +13,7 @@ export declare const getEnrolledCourseIds: (req: PayloadRequest) => Promise<Set<
 export declare const isAdminOrAuthorOrEnrolledInCourse: Access;
 /**
  * Field access for documents with a `course` relationship (e.g. lessons, topics). Lessons without
- * one are matched through the courses that list them.
+ * one are matched through the courses that list them. Release, order and expiry apply.
  */
 export declare const isAdminOrAuthorOrEnrolledInCourseFieldLevel: FieldAccess;
 /**

@@ -33,6 +33,8 @@ export type CourseProgressEntry = {
     score: number
   }[]
   course: ID
+  /** When this student was enrolled. Missing on enrollments from before 2.0. */
+  enrolledAt?: null | string
 }
 
 /**
@@ -136,6 +138,29 @@ export const getCoursesProgress = (user: LMSDoc): CourseProgressEntry[] =>
     }),
   )
 
+const progressCache = new WeakMap<PayloadRequest, Promise<CourseProgressEntry[]>>()
+
+/** The logged-in user's course progress, loaded once per request. */
+export const getUserProgress = (req: PayloadRequest): Promise<CourseProgressEntry[]> => {
+  let progress = progressCache.get(req)
+  if (!progress) {
+    progress = (async () => {
+      const userId = req.user?.id
+      if (userId === undefined) {return []}
+      const doc = await req.payload.findByID({
+        id: userId,
+        collection: asSlug(getSlugs(req).students),
+        depth: 0,
+        disableErrors: true,
+        req,
+      })
+      return doc ? getCoursesProgress(doc as LMSDoc) : []
+    })()
+    progressCache.set(req, progress)
+  }
+  return progress
+}
+
 /**
  * Returns the progress entry for a course, adding an empty one when missing.
  */
@@ -145,7 +170,13 @@ export const ensureCourseProgress = (
 ): CourseProgressEntry => {
   let progress = coursesProgress.find((entry) => sameId(entry.course, courseId))
   if (!progress) {
-    progress = { completed: false, completedLessons: [], completedQuizzes: [], course: courseId }
+    progress = {
+      completed: false,
+      completedLessons: [],
+      completedQuizzes: [],
+      course: courseId,
+      enrolledAt: new Date().toISOString(),
+    }
     coursesProgress.push(progress)
   }
   return progress

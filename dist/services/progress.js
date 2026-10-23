@@ -1,4 +1,5 @@
 import { markCourseCompleted } from './completeCourse.js';
+import { assertLessonAccessible, lessonBlockReason } from './lessonAccess.js';
 import { asSlug, ensureCourseProgress, findDoc, getCourseLessonIds, getCoursesProgress, getSlugs, hasCompletedRequiredLessons, includesId, isEnrolledInCourse, LMSError, sameId, toId, toIds, withTransaction } from './shared.js';
 const DEFAULT_MINIMUM_SCORE = 100;
 /**
@@ -48,6 +49,12 @@ const addCompletedLesson = (progress, lessonId)=>{
         const lesson = await findDoc(req, slugs.lessons, lessonId, 'Lesson');
         const coursesProgress = getCoursesProgress(user);
         const progress = ensureCourseProgress(coursesProgress, course.id);
+        assertLessonAccessible({
+            course,
+            lesson,
+            lessonId: lesson.id,
+            progress
+        });
         if (!await hasPassedQuizzes(req, toIds(lesson.quizzes), progress)) {
             throw new LMSError("Pass all of this lesson's quizzes first.", 409);
         }
@@ -154,6 +161,21 @@ const isCorrectAnswer = (question, submittedAnswer)=>{
         }
         const coursesProgress = getCoursesProgress(user);
         const progress = ensureCourseProgress(coursesProgress, course.id);
+        const openLessons = quizLessons.filter((lesson)=>lessonBlockReason({
+                course,
+                lesson,
+                lessonId: lesson.id,
+                progress
+            }) === null);
+        if (openLessons.length === 0) {
+            const lesson = quizLessons[0];
+            assertLessonAccessible({
+                course,
+                lesson,
+                lessonId: lesson.id,
+                progress
+            });
+        }
         const attempt = progress.completedQuizzes.find((entry)=>sameId(entry.quiz, quiz.id));
         // Checked before grading so a rejected attempt reveals nothing about the answers
         assertCanAttempt(req, quiz, attempt);
@@ -186,7 +208,7 @@ const isCorrectAnswer = (question, submittedAnswer)=>{
         };
         let courseCompleted = false;
         if (passed) {
-            for (const lesson of quizLessons){
+            for (const lesson of openLessons){
                 if (await hasPassedQuizzes(req, toIds(lesson.quizzes), progress) && addCompletedLesson(progress, lesson.id)) {
                     completedLessonIds.push(lesson.id);
                 }

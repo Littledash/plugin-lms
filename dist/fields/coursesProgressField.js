@@ -25,6 +25,14 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
                 required: true
             },
             {
+                name: 'enrolledAt',
+                type: 'date',
+                admin: {
+                    description: 'When the student was enrolled. Access expiry and lesson release count from this date.',
+                    readOnly: true
+                }
+            },
+            {
                 name: 'completed',
                 type: 'checkbox',
                 defaultValue: false

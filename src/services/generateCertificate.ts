@@ -1,6 +1,8 @@
 import type { PayloadRequest } from 'payload'
 
 import { randomUUID } from 'crypto'
+import { readFile } from 'fs/promises'
+import path from 'path'
 
 import { createPDF } from '../utilities/createPDF.js'
 import {
@@ -34,6 +36,49 @@ export type GenerateCertificateResult = {
  */
 export const getCertificateFileName = ({ certificateId, courseId, userId }: { certificateId: ID; courseId: ID; userId: ID }) =>
   `certificate-${courseId}-${certificateId}-${userId}.pdf`
+
+/**
+ * Copies a 1.x certificate onto a random file name and deletes the old file, so the URL built
+ * from the course, certificate and user ids stops working. If the bytes cannot be read (for
+ * example remote storage), the original file is kept and only linked.
+ */
+const replaceLegacyCertificate = async (req: PayloadRequest, media: LMSDoc): Promise<LMSDoc> => {
+  const slug = asSlug(getSlugs(req).media)
+  const collection = req.payload.config.collections.find((item) => item.slug === slug)
+  const upload = collection?.upload
+  const staticDir = upload && typeof upload === 'object' ? upload.staticDir : undefined
+  const filename = typeof media.filename === 'string' ? media.filename : ''
+  if (!staticDir || filename === '' || path.basename(filename) !== filename) {return media}
+
+  let data: Buffer
+  try {
+    data = await readFile(path.join(staticDir, filename))
+  } catch (error: unknown) {
+    req.payload.logger.error({ err: error }, `Could not read legacy certificate file ${filename}`)
+    return media
+  }
+
+  const created = (await req.payload.create({
+    collection: slug,
+    data: {
+      title: typeof media.title === 'string' && media.title !== '' ? media.title : filename,
+    },
+    file: {
+      name: `certificate-${randomUUID()}.pdf`,
+      data,
+      mimetype: 'application/pdf',
+      size: data.length,
+    },
+    req,
+  })) as LMSDoc
+
+  await req.payload.delete({
+    id: media.id,
+    collection: slug,
+    req,
+  })
+  return created
+}
 
 /**
  * Returns the certificate PDF for a course, creating it on first request. The user must have
@@ -99,8 +144,9 @@ export const generateCertificate = ({
       },
     })
     if (legacy[0]) {
-      await saveFileOnAward(legacy[0].id)
-      return { media: legacy[0] as LMSDoc, status: 'existing' }
+      const media = await replaceLegacyCertificate(req, legacy[0] as LMSDoc)
+      await saveFileOnAward(media.id)
+      return { media, status: 'existing' }
     }
 
     const course = await findDoc(req, slugs.courses, courseId, 'Course')

@@ -149,6 +149,7 @@ export interface User {
   coursesProgress?:
     | {
         course: string | Course
+        enrolledAt?: string | null
         completed?: boolean | null
         completedAt?: string | null
         completedLessons?:
@@ -1376,6 +1377,7 @@ export interface UsersSelect<T extends boolean = true> {
     | T
     | {
         course?: T
+        enrolledAt?: T
         completed?: T
         completedAt?: T
         completedLessons?:

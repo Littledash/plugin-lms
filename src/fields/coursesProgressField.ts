@@ -44,6 +44,14 @@ export const coursesProgressField: (props: Props) => ArrayField = ({
         required: true,
       },
       {
+        name: 'enrolledAt',
+        type: 'date',
+        admin: {
+          description: 'When the student was enrolled. Access expiry and lesson release count from this date.',
+          readOnly: true,
+        },
+      },
+      {
         name: 'completed',
         type: 'checkbox',
         defaultValue: false,

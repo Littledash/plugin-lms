@@ -17,6 +17,7 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - `@littledash/plugin-lms/services`: `enrollUser`, `completeLesson`, `submitQuiz`,
   `completeCourse`, `generateCertificate`, `addUserToGroup`, `getProgress`, `LMSError`.
 - Quiz `attemptLimit` field and `quizzes.attemptCooldownSeconds` option.
+- A per-user rate limit on `/api/lms/*` (`rateLimit`, default 60 calls per 60 seconds).
 - Group seat limits; group leaders cannot edit seats or membership directly.
 - Passing a quiz completes its lessons (and the course) once all of a lesson's quizzes are passed.
 - Secure default access on every plugin collection; overrides merge per operation.
@@ -38,6 +39,12 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - The groups collection ignored its overrides, including `access`.
 - Draft courses could be self-enrolled in.
 - Passing a quiz never completed its lesson (1.x read a `quiz.lesson` field that does not exist).
+- Certificate PDFs from 1.x kept a file name built from the course, certificate and user ids. The
+  first request now copies the file to a random name and deletes the old one.
+- Lesson order, release schedules and `accessExpirationDays` were not enforced, so a student could
+  skip ahead or keep a time-limited course after it should have closed. Completing a lesson, submitting
+  a quiz and reading lesson content now follow those rules. New enrollments store `enrolledAt`.
+  Progress from before that field has no date, so it does not expire.
 - `completedLesson` treated any populated lesson in progress as the lesson being checked, and
   `isPreviousLessonCompleted` treated an id-only lesson list as already finished. Both now compare
   ids as strings, including a lesson that was not populated.

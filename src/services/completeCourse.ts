@@ -1,5 +1,6 @@
 import type { PayloadRequest } from 'payload'
 
+import { isAccessExpired } from './lessonAccess.js'
 import {
   asSlug,
   type CourseProgressEntry,
@@ -120,6 +121,10 @@ export const completeCourse = ({
     const progress = ensureCourseProgress(coursesProgress, course.id)
     const alreadyCompleted =
       includesId(toIds(course.courseCompletedStudents), user.id) && Boolean(progress.completed)
+
+    if (!alreadyCompleted && isAccessExpired(course, progress)) {
+      throw new LMSError('Your access to this course has expired.', 403)
+    }
 
     if (!alreadyCompleted && requireLessons && !hasCompletedRequiredLessons(course, progress)) {
       throw new LMSError('All required lessons must be completed first.', 409)

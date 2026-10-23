@@ -1,6 +1,7 @@
 import type { Access, AccessResult, FieldAccess, PayloadRequest, Where } from 'payload'
 
-import { asSlug, getSlugs, type ID, type LMSDoc, toId, toIds } from '../services/shared.js'
+import { isAccessExpired, lessonBlockReason } from '../services/lessonAccess.js'
+import { asSlug, getSlugs, getUserProgress, type ID, type LMSDoc, sameId, toId, toIds } from '../services/shared.js'
 import { checkRole } from './checkRole.js'
 
 const enrolledCourseIdsCache = new WeakMap<PayloadRequest, Promise<Set<string>>>()
@@ -145,18 +146,83 @@ export const isAdminOrAuthorOrEnrolledInCourse: Access = async ({
   return enrolled.length > 0 ? { course: { in: enrolled } } : false
 }
 
+const lessonAvailableCache = new WeakMap<PayloadRequest, Map<string, Promise<boolean>>>()
+
+const loadLesson = async (req: PayloadRequest, lessonId: ID): Promise<LMSDoc | null> => {
+  const doc = await req.payload.findByID({
+    id: lessonId,
+    collection: asSlug(getSlugs(req).lessons),
+    depth: 0,
+    disableErrors: true,
+    overrideAccess: true,
+    req,
+  })
+  return doc ? (doc as LMSDoc) : null
+}
+
+/**
+ * The lesson is open when the user is enrolled in a course that contains it, that enrollment has
+ * not expired, the lesson's release date has passed, and linear courses have their earlier lessons
+ * done.
+ */
+const lessonIsAvailable = (req: PayloadRequest, lesson: LMSDoc): Promise<boolean> => {
+  let byLesson = lessonAvailableCache.get(req)
+  if (!byLesson) {
+    byLesson = new Map()
+    lessonAvailableCache.set(req, byLesson)
+  }
+  const key = String(lesson.id)
+  let available = byLesson.get(key)
+  if (!available) {
+    available = (async () => {
+      const enrolledCourseIds = [...(await getEnrolledCourseIds(req))]
+      if (enrolledCourseIds.length === 0) {return false}
+      const directCourseId = toId(lesson.course)
+      const { docs } = await req.payload.find({
+        collection: asSlug(getSlugs(req).courses),
+        depth: 0,
+        pagination: false,
+        req,
+        where: {
+          and: [
+            { id: { in: toIds(enrolledCourseIds) } },
+            {
+              or: [
+                { 'lessons.lesson': { in: [lesson.id] } },
+                ...(directCourseId !== undefined ? [{ id: { equals: directCourseId } }] : []),
+              ],
+            },
+          ],
+        },
+      })
+      if (docs.length === 0) {return false}
+      const progress = await getUserProgress(req)
+      return (docs as LMSDoc[]).some(
+        (course) =>
+          lessonBlockReason({
+            course,
+            lesson,
+            lessonId: lesson.id,
+            progress: progress.find((entry) => sameId(entry.course, course.id)),
+          }) === null,
+      )
+    })()
+    byLesson.set(key, available)
+  }
+  return available
+}
+
 /**
  * Field access for documents with a `course` relationship (e.g. lessons, topics). Lessons without
- * one are matched through the courses that list them.
+ * one are matched through the courses that list them. Release, order and expiry apply.
  */
 export const isAdminOrAuthorOrEnrolledInCourseFieldLevel: FieldAccess = async ({ doc, req }) => {
   if (!req.user) {return false}
   if (checkRole(['admin', 'author'], req.user)) {return true}
-  const courseId = toId(doc?.course)
-  if (courseId !== undefined) {return isEnrolledIn(req, courseId)}
-  // Topics point at their lesson; lessons are matched by their own ID
-  const lessonId = toId(doc?.lesson) ?? toId(doc?.id)
-  return lessonId !== undefined && isEnrolledInCourseWithLessons(req, [lessonId])
+  if (!doc) {return false}
+  const linkedLessonId = toId(doc.lesson)
+  const lesson = linkedLessonId !== undefined ? await loadLesson(req, linkedLessonId) : (doc as LMSDoc)
+  return lesson !== null && lessonIsAvailable(req, lesson)
 }
 
 /**
@@ -165,7 +231,10 @@ export const isAdminOrAuthorOrEnrolledInCourseFieldLevel: FieldAccess = async ({
 export const isAdminOrAuthorOrEnrolledInThisCourseFieldLevel: FieldAccess = async ({ doc, req }) => {
   if (!req.user) {return false}
   if (checkRole(['admin', 'author'], req.user)) {return true}
-  return isEnrolledIn(req, toId(doc?.id))
+  const courseId = toId(doc?.id)
+  if (!(await isEnrolledIn(req, courseId))) {return false}
+  const progress = (await getUserProgress(req)).find((entry) => sameId(entry.course, courseId))
+  return !isAccessExpired(doc as LMSDoc, progress)
 }
 
 /**
@@ -183,5 +252,8 @@ export const isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel: FieldAccess = asyn
     req,
     where: { quizzes: { in: [doc.id] } },
   })
-  return isEnrolledInCourseWithLessons(req, lessons.map((lesson) => lesson.id))
+  for (const lesson of lessons) {
+    if (await lessonIsAvailable(req, lesson as LMSDoc)) {return true}
+  }
+  return false
 }

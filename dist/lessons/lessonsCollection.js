@@ -143,6 +143,7 @@ import { videoProgression } from '../fields/videoProgression.js';
                             ]
                         },
                         {
+                            // The name is misspelled. Keep it: renaming would drop the value on existing lessons.
                             name: 'lessonRelaseDays',
                             type: 'number',
                             admin: {

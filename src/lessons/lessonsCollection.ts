@@ -165,6 +165,7 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
               ],
             },
             {
+              // The name is misspelled. Keep it: renaming would drop the value on existing lessons.
               name: 'lessonRelaseDays',
               type: 'number',
               admin: {

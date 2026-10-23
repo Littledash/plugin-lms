@@ -82,6 +82,28 @@ export const findDoc = async (req, collection, id, label)=>{
                 })),
             course: toId(progress.course)
         }));
+const progressCache = new WeakMap();
+/** The logged-in user's course progress, loaded once per request. */ export const getUserProgress = (req)=>{
+    let progress = progressCache.get(req);
+    if (!progress) {
+        progress = (async ()=>{
+            const userId = req.user?.id;
+            if (userId === undefined) {
+                return [];
+            }
+            const doc = await req.payload.findByID({
+                id: userId,
+                collection: asSlug(getSlugs(req).students),
+                depth: 0,
+                disableErrors: true,
+                req
+            });
+            return doc ? getCoursesProgress(doc) : [];
+        })();
+        progressCache.set(req, progress);
+    }
+    return progress;
+};
 /**
  * Returns the progress entry for a course, adding an empty one when missing.
  */ export const ensureCourseProgress = (coursesProgress, courseId)=>{
@@ -91,7 +113,8 @@ export const findDoc = async (req, collection, id, label)=>{
             completed: false,
             completedLessons: [],
             completedQuizzes: [],
-            course: courseId
+            course: courseId,
+            enrolledAt: new Date().toISOString()
         };
         coursesProgress.push(progress);
     }
