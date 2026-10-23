@@ -1,12 +1,50 @@
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - @pdf-lib/fontkit doesn't have proper TypeScript definitions
 import fontkit from '@pdf-lib/fontkit';
-export const createPDF = async ({ studentName, courseTitle, completionDate, certificateNumber, templateImage, fontFamily, authorName })=>{
+/**
+ * Extracts plain text from a Payload rich text field (Lexical editor state)
+ * Recursively traverses the node structure to extract all text content
+ */ const extractPlainTextFromRichText = (richText)=>{
+    // If it's already a string, return it
+    if (typeof richText === 'string') {
+        return richText;
+    }
+    // If it's not a valid rich text object, return empty string
+    if (!richText || typeof richText !== 'object' || !richText.root) {
+        return '';
+    }
+    const extractTextFromNode = (node)=>{
+        let text = '';
+        // If the node has text property, add it
+        if (node.text && typeof node.text === 'string') {
+            text += node.text;
+        }
+        // Recursively process children
+        if (node.children && Array.isArray(node.children)) {
+            for (const child of node.children){
+                text += extractTextFromNode(child);
+            }
+        }
+        return text;
+    };
+    // Extract text from root's children
+    let result = '';
+    if (richText.root.children && Array.isArray(richText.root.children)) {
+        for (const child of richText.root.children){
+            result += extractTextFromNode(child);
+        }
+    }
+    return result.trim();
+};
+export const createPDF = async ({ studentName, courseTitle, completionDate, certificateNumber, templateImage, description, fontFamily, authorName })=>{
     console.log('createPDF called with data:', {
         studentName,
         courseTitle,
         completionDate,
         certificateNumber,
         templateImage,
+        description,
         fontFamily,
         authorName
     });
@@ -26,96 +64,14 @@ export const createPDF = async ({ studentName, courseTitle, completionDate, cert
             595
         ]) // A4 landscape dimensions
         ;
-        // Embed fonts - use Google Fonts or fallback to standard fonts
-        let primaryFont, boldFont;
-        if (fontFamily && fontFamily.toLowerCase() !== 'poppins') {
-            try {
-                console.log(`Loading Google Font: ${fontFamily}`);
-                // Map font family to Google Fonts URL - Updated with more reliable URLs
-                const getGoogleFontUrl = (fontName)=>{
-                    const fontMap = {
-                        'poppins': 'https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2',
-                        'poppins-bold': 'https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff2',
-                        'roboto': 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
-                        'roboto-bold': 'https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc4.woff2',
-                        'opensans': 'https://fonts.gstatic.com/s/opensans/v34/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVIGxA.woff2',
-                        'opensans-bold': 'https://fonts.gstatic.com/s/opensans/v34/memQYaGs126MiZpBA-UFUIcVXSCEkx2cmqvXlWq8tWZ0Pw86hd0Rk8ZkWVAewA.woff2',
-                        'lato': 'https://fonts.gstatic.com/s/lato/v24/S6uyw4BMUTPHjx4wXg.woff2',
-                        'lato-bold': 'https://fonts.gstatic.com/s/lato/v24/S6u9w4BMUTPHh6UVSwiPGQ.woff2',
-                        'montserrat': 'https://fonts.gstatic.com/s/montserrat/v25/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw5aXpsog.woff2',
-                        'montserrat-bold': 'https://fonts.gstatic.com/s/montserrat/v25/JTUSjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Hw0aXpsog.woff2'
-                    };
-                    return fontMap[fontName.toLowerCase()] || null;
-                };
-                const fontUrl = getGoogleFontUrl(fontFamily);
-                const boldFontUrl = getGoogleFontUrl(`${fontFamily}-bold`);
-                if (fontUrl) {
-                    // Fetch and embed the Google Font
-                    console.log(`Fetching ${fontFamily} regular font from:`, fontUrl);
-                    const fontResponse = await fetch(fontUrl);
-                    if (!fontResponse.ok) {
-                        throw new Error(`Failed to fetch ${fontFamily} regular font: ${fontResponse.status} ${fontResponse.statusText}`);
-                    }
-                    const fontBytes = await fontResponse.arrayBuffer();
-                    primaryFont = await pdfDoc.embedFont(fontBytes);
-                    console.log(`Successfully loaded Google Font: ${fontFamily}`);
-                } else {
-                    throw new Error(`Font ${fontFamily} not found in Google Fonts mapping`);
-                }
-                if (boldFontUrl) {
-                    // Fetch and embed the bold variant
-                    console.log(`Fetching ${fontFamily} bold font from:`, boldFontUrl);
-                    const boldFontResponse = await fetch(boldFontUrl);
-                    if (!boldFontResponse.ok) {
-                        throw new Error(`Failed to fetch ${fontFamily} bold font: ${boldFontResponse.status} ${boldFontResponse.statusText}`);
-                    }
-                    const boldFontBytes = await boldFontResponse.arrayBuffer();
-                    boldFont = await pdfDoc.embedFont(boldFontBytes);
-                    console.log(`Successfully loaded Google Font bold variant: ${fontFamily}`);
-                } else {
-                    // If no bold variant, use the regular font for bold text
-                    boldFont = primaryFont;
-                    console.log(`No bold variant found for ${fontFamily}, using regular font for bold text`);
-                }
-            } catch (fontError) {
-                console.warn(`Failed to load Google Font ${fontFamily}, falling back to Helvetica:`, fontError);
-                primaryFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-                boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-            }
-        } else {
-            // Default to Poppins Google Font with improved error handling
-            try {
-                console.log('Loading default Google Font: Poppins');
-                const poppinsUrl = 'https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfecg.woff2';
-                const poppinsBoldUrl = 'https://fonts.gstatic.com/s/poppins/v20/pxiByp8kv8JHgFVrLCz7Z1xlFQ.woff2';
-                console.log('Fetching Poppins regular font from:', poppinsUrl);
-                const fontResponse = await fetch(poppinsUrl);
-                if (!fontResponse.ok) {
-                    throw new Error(`Failed to fetch Poppins regular font: ${fontResponse.status} ${fontResponse.statusText}`);
-                }
-                const fontBytes = await fontResponse.arrayBuffer();
-                primaryFont = await pdfDoc.embedFont(fontBytes);
-                console.log('Successfully embedded Poppins regular font');
-                console.log('Fetching Poppins bold font from:', poppinsBoldUrl);
-                const boldFontResponse = await fetch(poppinsBoldUrl);
-                if (!boldFontResponse.ok) {
-                    throw new Error(`Failed to fetch Poppins bold font: ${boldFontResponse.status} ${boldFontResponse.statusText}`);
-                }
-                const boldFontBytes = await boldFontResponse.arrayBuffer();
-                boldFont = await pdfDoc.embedFont(boldFontBytes);
-                console.log('Successfully embedded Poppins bold font');
-                console.log('Successfully loaded default Poppins font family');
-            } catch (poppinsError) {
-                console.warn('Failed to load Poppins, falling back to Helvetica:', poppinsError);
-                console.warn('Poppins error details:', {
-                    message: poppinsError instanceof Error ? poppinsError.message : String(poppinsError),
-                    stack: poppinsError instanceof Error ? poppinsError.stack : undefined
-                });
-                primaryFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-                boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-                console.log('Fallback to Helvetica fonts completed');
-            }
-        }
+        // Embed fonts - use sans-serif fonts to match certificate template
+        // Using Helvetica (sans-serif) to match the certificate design
+        let primaryFont;
+        let boldFont;
+        // Use Helvetica sans-serif font to match the certificate design
+        primaryFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        console.log('Using Helvetica sans-serif fonts for certificate');
         // Get page dimensions
         const { width, height } = page.getSize();
         // Add background image if provided
@@ -152,61 +108,129 @@ export const createPDF = async ({ studentName, courseTitle, completionDate, cert
                 console.warn('Failed to load template image, continuing without it:', imageError);
             }
         }
-        // Add certificate content - New template only requires first name, last name, and date
+        // Add certificate content - Updated template layout
         const centerX = width / 2;
-        // Certificate title (commented out - now part of template image)
-        // page.drawText('Certificate of Completion', {
-        //     x: centerX - 120,
-        //     y: height - 120,
-        //     size: 24,
-        //     font: boldFont,
-        //     color: rgb(0, 0, 0),
-        // })
-        // Student name - positioned for new template
-        page.drawText(studentName, {
-            x: centerX - studentName.length * 6,
-            y: height - 280,
-            size: 18,
+        // Helper function to center text horizontally
+        const getCenteredX = (text, fontSize, font)=>{
+            try {
+                // pdf-lib fonts have widthOfTextAtSize method
+                const textWidth = font.widthOfTextAtSize(text, fontSize);
+                return centerX - textWidth / 2;
+            } catch  {
+                // Fallback: estimate based on character count (approximate)
+                const estimatedWidth = text.length * (fontSize * 0.6);
+                return centerX - estimatedWidth / 2;
+            }
+        };
+        // Helper function to wrap text to multiple lines
+        const wrapText = (text, maxWidth, fontSize, font)=>{
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = '';
+            for (const word of words){
+                const testLine = currentLine ? `${currentLine} ${word}` : word;
+                const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+                if (testWidth > maxWidth && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            if (currentLine) {
+                lines.push(currentLine);
+            }
+            return lines.length > 0 ? lines : [
+                text
+            ];
+        };
+        // Starting Y position - "This certifies that" should be just below the "CERTIFICATE OF COMPLETION" heading
+        // Position text higher on the page, just below the heading
+        let currentY = height - 190;
+        // "This certifies that" - static text, 20pt, positioned below the certificate heading
+        const certifiesText = "this certifies that";
+        page.drawText(certifiesText, {
+            x: getCenteredX(certifiesText, 20, primaryFont),
+            y: currentY,
+            size: 20,
+            font: primaryFont,
+            color: rgb(0, 0, 0)
+        });
+        // Student name - ensure there's a space between first and last name
+        // Trim and normalize spaces in studentName
+        const normalizedStudentName = studentName.trim().replace(/\s+/g, ' ');
+        currentY -= 50;
+        page.drawText(normalizedStudentName, {
+            x: getCenteredX(normalizedStudentName, 22, boldFont),
+            y: currentY,
+            size: 22,
             font: boldFont,
             color: rgb(0.8, 0.2, 0.4)
         });
-        // Course title (commented out - now part of template image)
-        // page.drawText(courseTitle, {
-        //     x: centerX - (courseTitle.length * 6),
-        //     y: height - 220,
-        //     size: 16,
-        //     font: primaryFont,
-        //     color: rgb(0, 0, 0),
-        // })
-        // Completion date - positioned for new template
+        // Description text - "has completed a 1 hour online Masterclass on the topic of" - 20pt
+        currentY -= 50;
+        const descriptionText = description ? extractPlainTextFromRichText(description) || "has completed a 1 hour online Masterclass on the topic of" : "has completed a 1 hour online Masterclass on the topic of";
+        page.drawText(descriptionText, {
+            x: getCenteredX(descriptionText, 20, primaryFont),
+            y: currentY,
+            size: 20,
+            font: primaryFont,
+            color: rgb(0, 0, 0)
+        });
+        // Course title - wrap text if needed, 24pt, dark blue, bold
+        currentY -= 50;
+        const maxCourseTitleWidth = width * 0.7 // 70% of page width for wrapping
+        ;
+        const courseTitleLines = wrapText(courseTitle, maxCourseTitleWidth, 24, boldFont);
+        const lineHeight = 30 // Space between lines
+        ;
+        courseTitleLines.forEach((line, index)=>{
+            page.drawText(line, {
+                x: getCenteredX(line, 24, boldFont),
+                y: currentY - index * lineHeight,
+                size: 24,
+                font: boldFont,
+                color: rgb(64 / 255, 84 / 255, 165 / 255)
+            });
+        });
+        // Adjust currentY based on number of lines
+        currentY -= (courseTitleLines.length - 1) * lineHeight;
+        // "presented by" - 20pt, above author name
+        if (authorName) {
+            currentY -= 50;
+            const presentedByText = "presented by";
+            page.drawText(presentedByText, {
+                x: getCenteredX(presentedByText, 20, primaryFont),
+                y: currentY,
+                size: 20,
+                font: primaryFont,
+                color: rgb(0, 0, 0)
+            });
+            // Author name - below "presented by", closer spacing
+            currentY -= 25;
+            page.drawText(authorName, {
+                x: getCenteredX(authorName, 20, primaryFont),
+                y: currentY,
+                size: 20,
+                font: primaryFont,
+                color: rgb(0, 0, 0)
+            });
+        }
+        // Completion date - positioned above "DATE" line in bottom right
+        // The "DATE" label is in the bottom right, date should be above that line, moved left and higher
+        const dateTextWidth = primaryFont.widthOfTextAtSize(completionDate, 12);
+        const dateX = width - 150 - dateTextWidth // Right-aligned, 150px from right edge (moved left)
+        ;
         page.drawText(completionDate, {
-            x: centerX - 40,
-            y: height - 450,
+            x: dateX,
+            y: 100,
             size: 12,
             font: primaryFont,
             color: rgb(0, 0, 0)
         });
-        // Certificate number (removed - not needed in new template)
-        // page.drawText(`Certificate Number: ${certificateNumber}`, {
-        //     x: centerX - 100,
-        //     y: height - 300,
-        //     size: 12,
-        //     font: primaryFont,
-        //     color: rgb(0.5, 0.5, 0.5),
-        // })
-        // Author name (removed - not needed in new template)
-        // if (authorName) {
-        //     page.drawText(`Author: ${authorName}`, {
-        //         x: centerX - 60,
-        //         y: height - 340,
-        //         size: 14,
-        //         font: primaryFont,
-        //         color: rgb(0, 0, 0),
-        //     })
-        // }
         // Set document metadata
         pdfDoc.setTitle(`Certificate of Completion - ${studentName}`);
-        pdfDoc.setAuthor('LMS System');
+        pdfDoc.setAuthor(authorName || 'LMS System');
         pdfDoc.setSubject(`Certificate for ${courseTitle}`);
         pdfDoc.setKeywords([
             'certificate',

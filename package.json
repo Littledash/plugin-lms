@@ -153,47 +153,47 @@
     "lint": "eslint",
     "lint:fix": "eslint ./src --fix",
     "prepublishOnly": "pnpm clean && pnpm build",
-    "test": "jest",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "format": "prettier --write .",
     "pre-commit": "lint-staged"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.1",
-    "@payloadcms/db-mongodb": "3.57.0",
-    "@payloadcms/db-postgres": "3.57.0",
-    "@payloadcms/db-sqlite": "3.57.0",
+    "@eslint/eslintrc": "^3.3.7",
+    "@payloadcms/db-mongodb": "3.92.0",
     "@payloadcms/eslint-config": "3.28.0",
-    "@payloadcms/next": "3.57.0",
-    "@payloadcms/richtext-lexical": "3.57.0",
-    "@payloadcms/ui": "3.57.0",
-    "@swc-node/register": "1.11.1",
-    "@swc/cli": "0.7.8",
+    "@payloadcms/next": "3.92.0",
+    "@payloadcms/richtext-lexical": "3.92.0",
+    "@payloadcms/ui": "3.92.0",
+    "@swc-node/register": "1.12.1",
+    "@swc/cli": "0.8.1",
     "@swc/jest": "^0.2.39",
     "@types/jest": "30.0.0",
-    "@types/node": "^24.5.2",
-    "@types/react": "19.1.15",
-    "@types/react-dom": "19.1.9",
+    "@types/node": "^24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "copyfiles": "2.4.1",
-    "cross-env": "^10.0.0",
-    "eslint": "^9.36.0",
-    "eslint-config-next": "15.5.4",
-    "graphql": "^16.11.0",
-    "jest": "30.2.0",
-    "mongodb-memory-server": "^10.2.1",
-    "next": "15.5.4",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.4.2",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.4.2",
+    "graphql": "^16.14.2",
+    "jest": "30.5.2",
+    "lint-staged": "^17.6.0",
+    "mongodb-memory-server": "^11.3.0",
+    "next": "16.4.2",
     "open": "^10.2.0",
-    "payload": "3.57.0",
-    "prettier": "^3.6.2",
+    "payload": "3.92.0",
+    "prettier": "^3.9.10",
     "qs-esm": "7.0.2",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
-    "rimraf": "6.0.1",
-    "sharp": "0.34.4",
-    "sort-package-json": "^3.4.0",
-    "typescript": "5.9.2"
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "rimraf": "6.1.3",
+    "sharp": "0.35.5",
+    "sort-package-json": "^3.7.1",
+    "typescript": "5.9.3"
   },
   "peerDependencies": {
-    "payload": "^3.29.0"
+    "payload": "^3.92.0"
   },
   "engines": {
     "node": "^18.20.2 || >=20.9.0",
@@ -338,16 +338,15 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "@eslint/plugin-kit": "^0.3.4"
+    }
   },
   "registry": "https://registry.npmjs.org/",
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
-    "dotenv": "^17.2.2",
-    "lint-staged": "^16.2.3",
-    "object-assign": "^4.1.1",
-    "pdf-lib": "^1.17.1",
-    "scheduler": "^0.26.0"
+    "pdf-lib": "^1.17.1"
   },
   "lint-staged": {
     "./src/*.{js,ts,tsx}": [

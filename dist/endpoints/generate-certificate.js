@@ -60,11 +60,6 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                 });
             }
             let certificatePDF = null;
-            //
-            //
-            payload.logger.info(`Course:`, JSON.stringify(course, null, 2));
-            payload.logger.info(`Certificate:`, JSON.stringify(certificate, null, 2));
-            payload.logger.info(`Current user:`, JSON.stringify(currentUser, null, 2));
             // Validate required data
             if (!currentUser.firstName || !currentUser.lastName) {
                 return Response.json({
@@ -80,12 +75,20 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     status: 400
                 });
             }
+            // Format date as "date, month year" (e.g., "26 November 2025")
+            const completionDateObj = new Date();
+            const formattedDate = completionDateObj.toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
             const certificateData = {
                 studentName: `${currentUser.firstName} ${currentUser.lastName}`,
                 courseTitle: course.title,
-                completionDate: new Date().toLocaleDateString(),
+                completionDate: formattedDate,
                 certificateNumber: `CERT-${courseId}-${certificate.id}-${currentUser.id}`,
                 templateImage: certificate.template?.url || '',
+                description: certificate.description || 'Certificate of Completion',
                 fontFamily: 'Poppins',
                 authorName: certificate.authors && certificate.authors.length > 0 ? `${certificate.authors[0]?.firstName || ''} ${certificate.authors[0]?.lastName || ''}`.trim() : undefined
             };
@@ -98,34 +101,22 @@ export const generateCertificateHandler = ({ userSlug = 'users', courseSlug = 'c
                     }
                 }
             });
-            payload.logger.info(`Existing certificate:`, JSON.stringify(existingCertificate, null, 2));
             if (existingCertificate.docs.length > 0) {
                 payload.logger.info(`Certificate already exists for user ${currentUser.id} for course ${courseId}`);
                 certificatePDF = existingCertificate;
             } else {
                 payload.logger.info(`Creating new certificate for user ${currentUser.id} for course ${courseId}`);
                 payload.logger.info(`Generating certificate for user ${currentUser.id} for course ${courseId}`);
-                payload.logger.info(`Certificate data:`, JSON.stringify(certificateData, null, 2));
                 payload.logger.info(`Creating PDF for user ${currentUser.id} for course ${courseId}`);
-                payload.logger.info(`About to call createPDF with certificate data:`, JSON.stringify(certificateData, null, 2));
                 let createPDFRes;
                 try {
                     payload.logger.info(`Calling createPDF function...`);
                     createPDFRes = await createPDF(certificateData);
                     payload.logger.info(`PDF created successfully for user ${currentUser.id} for course ${courseId}`);
                 } catch (pdfError) {
-                    payload.logger.error(`Failed to create PDF for user ${currentUser.id} for course ${courseId}`);
-                    payload.logger.error(`PDF Error type:`, typeof pdfError);
-                    payload.logger.error(`PDF Error details:`, pdfError);
-                    payload.logger.error(`PDF Error stack:`, pdfError instanceof Error ? pdfError.stack : 'No stack trace available');
-                    payload.logger.error(`PDF Error message:`, pdfError instanceof Error ? pdfError.message : String(pdfError));
-                    payload.logger.error(`PDF Error name:`, pdfError instanceof Error ? pdfError.name : 'Not an Error object');
-                    // Try to stringify the error for more details
-                    try {
-                        payload.logger.error(`PDF Error JSON:`, JSON.stringify(pdfError, null, 2));
-                    } catch (stringifyError) {
-                        payload.logger.error(`Could not stringify error:`, stringifyError);
-                    }
+                    payload.logger.error({
+                        err: pdfError
+                    }, `Failed to create PDF for user ${currentUser.id} for course ${courseId}`);
                     return Response.json({
                         message: 'Failed to generate certificate PDF.',
                         error: pdfError instanceof Error ? pdfError.message : String(pdfError),

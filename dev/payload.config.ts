@@ -105,6 +105,10 @@ export default buildConfig({
       fields: [],
     },
     {
+      slug: 'coupons',
+      fields: [],
+    },
+    {
       slug: 'media',
       fields: [],
       upload: {

@@ -50,6 +50,38 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
     const { apiRoute = '/api', serverURL = '' } = api || {};
     const baseAPIURL = `${serverURL}${apiRoute}`;
     const [state, dispatch] = useReducer(lmsReducer, initialState);
+    const getUser = useCallback(async ()=>{
+        try {
+            const response = await fetch(`${baseAPIURL}/users/me`, {
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                method: 'GET'
+            });
+            // Handle 401 (Unauthorized) - user is not logged in, this is expected
+            if (response.status === 401) {
+                return null;
+            }
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to fetch user: ${errorText}`);
+            }
+            const userData = await response.json();
+            if (userData.error) {
+                throw new Error(`User fetch error: ${userData.error}`);
+            }
+            if (userData.user) {
+                return userData.user;
+            }
+            return null;
+        } catch (error) {
+            // Only throw if it's not a 401 (which we already handled)
+            throw new Error(`Failed to fetch user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }, [
+        baseAPIURL
+    ]);
     const fetchProgress = useCallback(async ()=>{
         dispatch({
             type: 'SET_LOADING',
@@ -60,6 +92,25 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             payload: null
         });
         try {
+            // Check if user is logged in first
+            const currentUser = await getUser();
+            // If no user is logged in, reset progress and return early
+            if (!currentUser) {
+                dispatch({
+                    type: 'UPDATE_PROGRESS',
+                    payload: []
+                });
+                dispatch({
+                    type: 'SET_ENROLLED_COURSES',
+                    payload: []
+                });
+                dispatch({
+                    type: 'SET_COMPLETED_COURSES',
+                    payload: []
+                });
+                return;
+            }
+            // User is logged in, fetch progress
             const response = await fetch(`${baseAPIURL}/lms/fetch-progress`, {
                 method: 'GET',
                 headers: {
@@ -67,11 +118,6 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
                 },
                 credentials: 'include'
             });
-            // Handle 401 (Unauthorized) - user is not logged in, this is expected
-            if (response.status === 401) {
-                // User is not logged in, silently return without setting error
-                return;
-            }
             if (!response.ok) throw new Error('Failed to fetch user progress');
             const data = await response.json();
             const { coursesProgress, enrolledCourses, completedCourses } = data;
@@ -104,7 +150,8 @@ export const LMSProvider = ({ children, api, syncLocalStorage = true })=>{
             });
         }
     }, [
-        baseAPIURL
+        baseAPIURL,
+        getUser
     ]);
     // Load progress and course status from database on initial render
     useEffect(()=>{

@@ -13,6 +13,7 @@ const esModules = [
   'path-exists',
   'qs-esm',
   'uint8array-extras',
+  'uuid',
   'payload',
   '@payloadcms/next',
   '@payloadcms/ui',

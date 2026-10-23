@@ -40,8 +40,10 @@ describe('LMS Integration Tests', () => {
       path: path.resolve(dirname, './.env'),
     })
 
-    // Set up in-memory database for testing
-    if (!process.env.DATABASE_URI) {
+    // Always use an in-memory database so tests never touch the dev database from .env
+    if (process.env.TEST_DATABASE_URI) {
+      process.env.DATABASE_URI = process.env.TEST_DATABASE_URI
+    } else {
       console.log('Starting memory database')
       memoryDB = await MongoMemoryReplSet.create({
         replSet: {
