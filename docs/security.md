@@ -23,7 +23,7 @@ the body, and the API-key account is not the user you mean to act on.
 | all | Logged-in user; body `userId` rejected; IDs must be plain strings or positive integers |
 | `enroll` | Course access mode is `open` or `free` (admins excepted); no group enrollment |
 | `complete-lesson` | Enrolled; lesson in course; all of the lesson's quizzes passed |
-| `submit-quiz` | Enrolled; quiz belongs to a lesson in the course; attempt limit and cooldown; answers capped at 500 primitive values |
+| `submit-quiz` | Enrolled; quiz belongs to a lesson in the course; attempt limit and cooldown; answers capped at 500 primitive values. A pass completes lessons whose quizzes are all passed. |
 | `complete-course` | Enrolled; all required lessons completed |
 | `generate-certificate` | The user was awarded that certificate for that course |
 | `add-user-to-group` | Requester is an admin or a leader of the group; a seat is free |
@@ -95,3 +95,11 @@ Also check:
   `accessExpirationDays` are not enforced on the server yet. Enforce them in your app if they matter.
 - The quiz cooldown slows scripted guessing but cannot stop it; the score a user gets back always
   reveals how many answers were right. Use `attemptLimit` on assessments that matter.
+- **GraphQL does not work with the questions collection.** The `correctAnswer` select has the
+  values `true` and `false`, which Payload turns into GraphQL enum values, and GraphQL forbids those
+  names, so the whole schema fails to build. If you do not use GraphQL, turn it off
+  (`graphQL: { disable: true }` in your Payload config), which also removes an attack surface.
+- Group leaders can update their group (for example its title), but `purchasedCourses`, `students`
+  and `leaders` are writable only by admins and the LMS services, so leaders cannot grant
+  themselves seats or skip seat limits. Whether leaders can delete their group is up to your
+  `delete` override (the plugin default is admins only).

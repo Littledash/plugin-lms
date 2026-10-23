@@ -17,20 +17,22 @@ Submit answers keyed by question ID. Choice questions take the choice's `id`; tr
 take `'true'` or `'false'`.
 
 ```tsx
-const { submitQuiz, completeLesson } = useLMS()
+const { submitQuiz } = useLMS()
 
 const result = await submitQuiz(courseId, quiz.id, {
   [question1.id]: selectedChoiceId,
   [question2.id]: 'true',
 })
 
-if (result.passed) {
-  await completeLesson(courseId, lessonId)
+if (result.passed && result.courseCompleted) {
+  // Show the course completion screen
 }
 ```
 
-The best score is kept. A lesson cannot be completed until every quiz on it has a score at or above
-its minimum.
+The best score is kept. A pass completes every lesson in the course that contains the quiz once all
+of that lesson's quizzes are passed (listed in `result.completedLessonIds`), and the course if that
+was the last required lesson, so you do not need to call `completeLesson` afterwards. A lesson
+cannot be completed with `completeLesson` until every quiz on it has a passing score.
 
 ## Answers stay on the server
 

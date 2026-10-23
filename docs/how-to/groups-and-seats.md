@@ -63,6 +63,10 @@ The endpoint checks that the requester is an admin or a leader of that group.
 
 ## Seat limits
 
+Leaders can edit their group's title and description, but not `purchasedCourses`, `students` or
+`leaders`. Those change only through purchases (`enrollUser`) and `add-user-to-group`, which enforce
+the limits below.
+
 Adding a member fails with `409 This group has no seats remaining` when `seatsUsed` has reached
 `seatsTotal`:
 

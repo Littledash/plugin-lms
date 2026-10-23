@@ -1,8 +1,16 @@
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
+import { isAdminFieldLevel } from '../access/isAdmin.js';
 import { slugField } from '../fields/slug.js';
 export const groupsCollection = (props)=>{
-    const { overrides, coursesCollectionSlug = 'courses', usersCollectionSlug = 'users', couponsCollectionSlug = 'coupons' } = props || {};
+    const { couponsCollectionSlug = 'coupons', coursesCollectionSlug = 'courses', overrides, usersCollectionSlug = 'users' } = props || {};
     const fieldsOverride = overrides?.fields;
+    /**
+   * Seats and membership change only through the LMS services (purchases, add-user-to-group), so
+   * group leaders editing their group cannot grant themselves seats or skip seat limits.
+   */ const adminOnlyWrite = {
+        create: isAdminFieldLevel,
+        update: isAdminFieldLevel
+    };
     const defaultFields = [
         {
             name: 'title',
@@ -17,73 +25,76 @@ export const groupsCollection = (props)=>{
         {
             name: 'purchasedCourses',
             type: 'array',
+            access: adminOnlyWrite,
             fields: [
                 {
                     name: 'seatManagement',
                     type: 'group',
-                    required: true,
                     fields: [
                         {
                             name: 'seatsTotal',
                             type: 'number',
-                            required: true,
-                            defaultValue: 1,
                             admin: {
                                 description: 'Total seats purchased for this group'
-                            }
+                            },
+                            defaultValue: 1,
+                            required: true
                         },
                         {
                             name: 'seatsUsed',
                             type: 'number',
-                            defaultValue: 0,
                             admin: {
                                 readOnly: true
-                            }
+                            },
+                            defaultValue: 0
                         },
                         {
                             name: 'course',
                             type: 'relationship',
-                            relationTo: coursesCollectionSlug,
-                            hasMany: false,
                             admin: {
                                 description: 'The course that is associated with the group'
-                            }
+                            },
+                            hasMany: false,
+                            relationTo: coursesCollectionSlug
                         },
                         {
                             name: 'coupon',
                             type: 'relationship',
-                            relationTo: couponsCollectionSlug,
                             admin: {
                                 description: 'The coupon that is associated with the group'
-                            }
+                            },
+                            relationTo: couponsCollectionSlug
                         }
-                    ]
+                    ],
+                    required: true
                 }
             ]
         },
         {
             name: 'students',
             type: 'relationship',
-            relationTo: usersCollectionSlug,
-            hasMany: true,
+            access: adminOnlyWrite,
             admin: {
-                position: 'sidebar',
-                description: 'The users that are part of the group',
                 allowCreate: false,
-                allowEdit: false
-            }
+                allowEdit: false,
+                description: 'The users that are part of the group',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: usersCollectionSlug
         },
         {
             name: 'leaders',
             type: 'relationship',
-            relationTo: usersCollectionSlug,
-            hasMany: true,
+            access: adminOnlyWrite,
             admin: {
-                position: 'sidebar',
-                description: 'The leaders of the group',
                 allowCreate: false,
-                allowEdit: false
-            }
+                allowEdit: false,
+                description: 'The leaders of the group',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: usersCollectionSlug
         },
         // {
         //   name: 'accessMode',

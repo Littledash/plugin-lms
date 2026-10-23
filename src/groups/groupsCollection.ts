@@ -1,28 +1,36 @@
-import { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
+
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
+import { isAdminFieldLevel } from '../access/isAdmin.js'
 import { slugField } from '../fields/slug.js'
 // import { isAdminOrGroupLeader } from '../access/isAdminOrGroupLeader.js'
 // import { isMemberOfGroup } from '../access/isMemberOfGroup.js'
-import { FieldsOverride } from '../types.js'
+import type { FieldsOverride } from '../types.js'
 
 type Props = {
-  coursesCollectionSlug?: string
-  usersCollectionSlug?: string
   couponsCollectionSlug?: string
+  coursesCollectionSlug?: string
   // certificatesCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
+  usersCollectionSlug?: string
 }
 
 export const groupsCollection: (props?: Props) => CollectionConfig = (props) => {
   const {
-    overrides,
-    coursesCollectionSlug = 'courses',
-    usersCollectionSlug = 'users',
     couponsCollectionSlug = 'coupons',
+    coursesCollectionSlug = 'courses',
+    overrides,
+    usersCollectionSlug = 'users',
     // certificatesCollectionSlug = 'certificates',
   } = props || {}
 
   const fieldsOverride = overrides?.fields
+
+  /**
+   * Seats and membership change only through the LMS services (purchases, add-user-to-group), so
+   * group leaders editing their group cannot grant themselves seats or skip seat limits.
+   */
+  const adminOnlyWrite = { create: isAdminFieldLevel, update: isAdminFieldLevel }
 
   const defaultFields: CollectionConfig['fields'] = [
     {
@@ -39,66 +47,69 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
     {
       name: 'purchasedCourses',
       type: 'array',
+      access: adminOnlyWrite,
       fields: [
         {
           name: 'seatManagement',
           type: 'group',
-          required: true,
           fields: [
             {
               name: 'seatsTotal',
               type: 'number',
-              required: true,
-              defaultValue: 1,
               admin: { description: 'Total seats purchased for this group' },
+              defaultValue: 1,
+              required: true,
             },
             {
               name: 'seatsUsed',
               type: 'number',
-              defaultValue: 0,
               admin: { readOnly: true },
+              defaultValue: 0,
             },
             {
               name: 'course',
               type: 'relationship',
-              relationTo: coursesCollectionSlug,
-              hasMany: false,
               admin: { description: 'The course that is associated with the group' },
+              hasMany: false,
+              relationTo: coursesCollectionSlug,
             },
             {
               name: 'coupon',
               type: 'relationship',
-              relationTo: couponsCollectionSlug,
               admin: { description: 'The coupon that is associated with the group' },
+              relationTo: couponsCollectionSlug,
             }
           ],
+          required: true,
         },
       ],
     },
     {
       name: 'students',
       type: 'relationship',
-      relationTo: usersCollectionSlug,
-      hasMany: true,
+      access: adminOnlyWrite,
       admin: {
-        position: 'sidebar',
-        description: 'The users that are part of the group',
         allowCreate: false,
         allowEdit: false,
+        description: 'The users that are part of the group',
+        position: 'sidebar',
       },
+      hasMany: true,
+      relationTo: usersCollectionSlug,
     },
  
     {
       name: 'leaders',
       type: 'relationship',
-      relationTo: usersCollectionSlug,
-      hasMany: true,
+      access: adminOnlyWrite,
       admin: {
-        position: 'sidebar',
-        description: 'The leaders of the group',
         allowCreate: false,
         allowEdit: false,
+        description: 'The leaders of the group',
+        position: 'sidebar',
       },
+      hasMany: true,
+      relationTo: usersCollectionSlug,
       // filterOptions: ({ user }) => {
       //   if (user && user.roles.includes('admin')) {
       //     return {}

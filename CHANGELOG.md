@@ -17,7 +17,8 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - `@littledash/plugin-lms/services`: `enrollUser`, `completeLesson`, `submitQuiz`,
   `completeCourse`, `generateCertificate`, `addUserToGroup`, `getProgress`, `LMSError`.
 - Quiz `attemptLimit` field and `quizzes.attemptCooldownSeconds` option.
-- Group seat limits.
+- Group seat limits; group leaders cannot edit seats or membership directly.
+- Passing a quiz completes its lessons (and the course) once all of a lesson's quizzes are passed.
 - Secure default access on every plugin collection; overrides merge per operation.
 - `certificates[].file` links each award to its PDF, stored under a random file name.
 - Integration tests (52) and documentation with how-to guides.
@@ -36,4 +37,10 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - The `./addresses` export pointed at a missing file.
 - The groups collection ignored its overrides, including `access`.
 - Draft courses could be self-enrolled in.
+- Passing a quiz never completed its lesson (1.x read a `quiz.lesson` field that does not exist).
+
+### Known issues
+
+- GraphQL fails to build with the questions collection (`correctAnswer` values `true`/`false` are
+  invalid enum names). Disable GraphQL if you do not use it.
 - Dependencies: 84 audit findings down to 1 (dev-only, no fix available); 0 in production.

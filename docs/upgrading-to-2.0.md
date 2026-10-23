@@ -56,8 +56,11 @@ otherwise creates a new group.
 - Completing the last required lesson completes the course **and awards the course certificate** in
   the same transaction. You no longer need a hook that calls `complete-course` after
   `courseCompletedStudents` changes; remove it.
-- `submit-quiz` only accepts quizzes that belong to a lesson in the course. It no longer marks a
-  lesson complete; call `complete-lesson` after the quiz is passed.
+- `submit-quiz` only accepts quizzes that belong to a lesson in the course. A pass now completes
+  every lesson in the course that contains the quiz once all of that lesson's quizzes are passed,
+  and the course if that was the last required lesson. The response lists them in
+  `completedLessonIds` and `courseCompleted`. (1.x tried to do this through `quiz.lesson`, a field
+  quizzes do not have, so it never happened.)
 
 ### Response and request shape changes
 

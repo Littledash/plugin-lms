@@ -2,6 +2,36 @@ import { markCourseCompleted } from './completeCourse.js';
 import { asSlug, ensureCourseProgress, findDoc, getCourseLessonIds, getCoursesProgress, getSlugs, hasCompletedRequiredLessons, includesId, isEnrolledInCourse, LMSError, sameId, toId, toIds, withTransaction } from './shared.js';
 const DEFAULT_MINIMUM_SCORE = 100;
 /**
+ * Whether the user has a passing score on every one of these quizzes.
+ */ const hasPassedQuizzes = async (req, quizIds, progress)=>{
+    if (quizIds.length === 0) {
+        return true;
+    }
+    const { docs: quizzes } = await req.payload.find({
+        collection: asSlug(getSlugs(req).quizzes),
+        depth: 0,
+        limit: quizIds.length,
+        pagination: false,
+        req,
+        where: {
+            id: {
+                in: quizIds
+            }
+        }
+    });
+    return quizzes.every((quiz)=>progress.completedQuizzes.some((entry)=>sameId(entry.quiz, quiz.id) && entry.score >= (quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE)));
+};
+const addCompletedLesson = (progress, lessonId)=>{
+    if (progress.completedLessons.some((entry)=>sameId(entry.lesson, lessonId))) {
+        return false;
+    }
+    progress.completedLessons.push({
+        completedAt: new Date().toISOString(),
+        lesson: lessonId
+    });
+    return true;
+};
+/**
  * Records a completed lesson. The lesson must belong to the course, the user must be enrolled,
  * and every quiz on the lesson must already be passed. Completing the last required lesson
  * completes the course.
@@ -18,31 +48,10 @@ const DEFAULT_MINIMUM_SCORE = 100;
         const lesson = await findDoc(req, slugs.lessons, lessonId, 'Lesson');
         const coursesProgress = getCoursesProgress(user);
         const progress = ensureCourseProgress(coursesProgress, course.id);
-        const quizIds = toIds(lesson.quizzes);
-        if (quizIds.length > 0) {
-            const { docs: quizzes } = await req.payload.find({
-                collection: asSlug(slugs.quizzes),
-                depth: 0,
-                limit: quizIds.length,
-                pagination: false,
-                req,
-                where: {
-                    id: {
-                        in: quizIds
-                    }
-                }
-            });
-            const unpassed = quizzes.filter((quiz)=>!progress.completedQuizzes.some((entry)=>sameId(entry.quiz, quiz.id) && entry.score >= (quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE)));
-            if (unpassed.length > 0) {
-                throw new LMSError("Pass all of this lesson's quizzes first.", 409);
-            }
+        if (!await hasPassedQuizzes(req, toIds(lesson.quizzes), progress)) {
+            throw new LMSError("Pass all of this lesson's quizzes first.", 409);
         }
-        if (!progress.completedLessons.some((entry)=>sameId(entry.lesson, lesson.id))) {
-            progress.completedLessons.push({
-                completedAt: new Date().toISOString(),
-                lesson: lesson.id
-            });
-        }
+        addCompletedLesson(progress, lesson.id);
         let userData = {
             coursesProgress
         };
@@ -97,7 +106,9 @@ const isCorrectAnswer = (question, submittedAnswer)=>{
 };
 /**
  * Grades a quiz attempt and keeps the user's best score. The quiz must belong to a lesson in the
- * course and the user must be enrolled.
+ * course and the user must be enrolled. A pass completes every lesson in the course that contains
+ * the quiz once all of that lesson's quizzes are passed, and the course if that was the last
+ * required lesson.
  */ export const submitQuiz = ({ answers, courseId, quizId, req, userId })=>withTransaction(req, async ()=>{
         const slugs = getSlugs(req);
         const user = await findDoc(req, slugs.students, userId, 'User');
@@ -105,8 +116,10 @@ const isCorrectAnswer = (question, submittedAnswer)=>{
         if (!await isEnrolledInCourse(req, course, user.id)) {
             throw new LMSError('You are not enrolled in this course.', 403);
         }
-        const { totalDocs } = await req.payload.count({
+        const { docs: quizLessons } = await req.payload.find({
             collection: asSlug(slugs.lessons),
+            depth: 0,
+            pagination: false,
             req,
             where: {
                 and: [
@@ -125,7 +138,7 @@ const isCorrectAnswer = (question, submittedAnswer)=>{
                 ]
             }
         });
-        if (totalDocs === 0) {
+        if (quizLessons.length === 0) {
             throw new LMSError('This quiz is not part of the course.', 400);
         }
         // depth 1 populates the questions, including the answer fields hidden from students
@@ -166,18 +179,41 @@ const isCorrectAnswer = (question, submittedAnswer)=>{
                 attempt.completedAt = now;
             }
         }
+        const passed = score >= minimumScore;
+        const completedLessonIds = [];
+        let userData = {
+            coursesProgress
+        };
+        let courseCompleted = false;
+        if (passed) {
+            for (const lesson of quizLessons){
+                if (await hasPassedQuizzes(req, toIds(lesson.quizzes), progress) && addCompletedLesson(progress, lesson.id)) {
+                    completedLessonIds.push(lesson.id);
+                }
+            }
+            if (!progress.completed && hasCompletedRequiredLessons(course, progress)) {
+                ;
+                ({ userData } = await markCourseCompleted({
+                    course,
+                    coursesProgress,
+                    req,
+                    user
+                }));
+                courseCompleted = true;
+            }
+        }
         await req.payload.update({
             id: user.id,
             collection: asSlug(slugs.students),
-            data: {
-                coursesProgress
-            },
+            data: userData,
             req
         });
         req.payload.logger.info(`User ${user.id} submitted quiz ${quiz.id} in course ${course.id} and scored ${score}`);
         return {
+            completedLessonIds,
+            courseCompleted,
             minimumScore,
-            passed: score >= minimumScore,
+            passed,
             score
         };
     });

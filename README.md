@@ -807,7 +807,8 @@ Marks a lesson as complete for the current user.
 
 **POST** `/api/lms/submit-quiz`
 
-Submits user's answers for a quiz and calculates score.
+Grades the logged-in user's answers. A pass completes every lesson in the course whose quizzes are
+now all passed, and the course if that was the last required lesson.
 
 **Request Body:**
 ```json
@@ -825,8 +826,11 @@ Submits user's answers for a quiz and calculates score.
 ```json
 {
   "success": true,
-  "score": 85,
-  "message": "Quiz submitted successfully"
+  "score": 100,
+  "passed": true,
+  "completedLessonIds": ["64f8a1b2c3d4e5f6a7b8c9d1"],
+  "courseCompleted": false,
+  "message": "Quiz submitted successfully and successfully passed"
 }
 ```
 

@@ -23,6 +23,41 @@ import {
 
 const DEFAULT_MINIMUM_SCORE = 100
 
+/**
+ * Whether the user has a passing score on every one of these quizzes.
+ */
+const hasPassedQuizzes = async (
+  req: PayloadRequest,
+  quizIds: ID[],
+  progress: CourseProgressEntry,
+): Promise<boolean> => {
+  if (quizIds.length === 0) {
+    return true
+  }
+  const { docs: quizzes } = await req.payload.find({
+    collection: asSlug(getSlugs(req).quizzes),
+    depth: 0,
+    limit: quizIds.length,
+    pagination: false,
+    req,
+    where: { id: { in: quizIds } },
+  })
+  return (quizzes as LMSDoc[]).every((quiz) =>
+    progress.completedQuizzes.some(
+      (entry) =>
+        sameId(entry.quiz, quiz.id) && entry.score >= (quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE),
+    ),
+  )
+}
+
+const addCompletedLesson = (progress: CourseProgressEntry, lessonId: ID): boolean => {
+  if (progress.completedLessons.some((entry) => sameId(entry.lesson, lessonId))) {
+    return false
+  }
+  progress.completedLessons.push({ completedAt: new Date().toISOString(), lesson: lessonId })
+  return true
+}
+
 type CompleteLessonArgs = {
   courseId: ID
   lessonId: ID
@@ -61,32 +96,11 @@ export const completeLesson = ({
     const coursesProgress = getCoursesProgress(user)
     const progress = ensureCourseProgress(coursesProgress, course.id)
 
-    const quizIds = toIds(lesson.quizzes)
-    if (quizIds.length > 0) {
-      const { docs: quizzes } = await req.payload.find({
-        collection: asSlug(slugs.quizzes),
-        depth: 0,
-        limit: quizIds.length,
-        pagination: false,
-        req,
-        where: { id: { in: quizIds } },
-      })
-      const unpassed = (quizzes as LMSDoc[]).filter(
-        (quiz) =>
-          !progress.completedQuizzes.some(
-            (entry) =>
-              sameId(entry.quiz, quiz.id) &&
-              entry.score >= (quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE),
-          ),
-      )
-      if (unpassed.length > 0) {
-        throw new LMSError("Pass all of this lesson's quizzes first.", 409)
-      }
+    if (!(await hasPassedQuizzes(req, toIds(lesson.quizzes), progress))) {
+      throw new LMSError("Pass all of this lesson's quizzes first.", 409)
     }
 
-    if (!progress.completedLessons.some((entry) => sameId(entry.lesson, lesson.id))) {
-      progress.completedLessons.push({ completedAt: new Date().toISOString(), lesson: lesson.id })
-    }
+    addCompletedLesson(progress, lesson.id)
 
     let userData: Record<string, unknown> = { coursesProgress }
     let courseCompleted = false
@@ -116,6 +130,10 @@ type SubmitQuizArgs = {
 }
 
 export type SubmitQuizResult = {
+  /** Lessons completed by this pass: lessons in the course whose quizzes are now all passed. */
+  completedLessonIds: ID[]
+  /** The pass completed the last required lesson, so the course is now complete. */
+  courseCompleted: boolean
   minimumScore: number
   passed: boolean
   score: number
@@ -163,7 +181,9 @@ const isCorrectAnswer = (question: LMSDoc, submittedAnswer: unknown): boolean =>
 
 /**
  * Grades a quiz attempt and keeps the user's best score. The quiz must belong to a lesson in the
- * course and the user must be enrolled.
+ * course and the user must be enrolled. A pass completes every lesson in the course that contains
+ * the quiz once all of that lesson's quizzes are passed, and the course if that was the last
+ * required lesson.
  */
 export const submitQuiz = ({
   answers,
@@ -181,14 +201,16 @@ export const submitQuiz = ({
       throw new LMSError('You are not enrolled in this course.', 403)
     }
 
-    const { totalDocs } = await req.payload.count({
+    const { docs: quizLessons } = await req.payload.find({
       collection: asSlug(slugs.lessons),
+      depth: 0,
+      pagination: false,
       req,
       where: {
         and: [{ id: { in: getCourseLessonIds(course) } }, { quizzes: { in: [quizId] } }],
       },
     })
-    if (totalDocs === 0) {
+    if (quizLessons.length === 0) {
       throw new LMSError('This quiz is not part of the course.', 400)
     }
 
@@ -233,17 +255,34 @@ export const submitQuiz = ({
       }
     }
 
+    const passed = score >= minimumScore
+    const completedLessonIds: ID[] = []
+    let userData: Record<string, unknown> = { coursesProgress }
+    let courseCompleted = false
+
+    if (passed) {
+      for (const lesson of quizLessons as LMSDoc[]) {
+        if ((await hasPassedQuizzes(req, toIds(lesson.quizzes), progress)) && addCompletedLesson(progress, lesson.id)) {
+          completedLessonIds.push(lesson.id)
+        }
+      }
+      if (!progress.completed && hasCompletedRequiredLessons(course, progress)) {
+        ;({ userData } = await markCourseCompleted({ course, coursesProgress, req, user }))
+        courseCompleted = true
+      }
+    }
+
     await req.payload.update({
       id: user.id,
       collection: asSlug(slugs.students),
-      data: { coursesProgress },
+      data: userData,
       req,
     })
 
     req.payload.logger.info(
       `User ${user.id} submitted quiz ${quiz.id} in course ${course.id} and scored ${score}`,
     )
-    return { minimumScore, passed: score >= minimumScore, score }
+    return { completedLessonIds, courseCompleted, minimumScore, passed, score }
   })
 
 export type ProgressResult = {

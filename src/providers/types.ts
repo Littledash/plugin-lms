@@ -87,7 +87,14 @@ export type LMSContextType = {
     courseId: DefaultDocumentIDType,
     quizId: DefaultDocumentIDType,
     answers: Record<string, unknown>,
-  ) => Promise<{ passed: boolean, score: number, message: string }>
+  ) => Promise<{
+    passed: boolean
+    score: number
+    message: string
+    /** Lessons this pass completed (their quizzes are now all passed). */
+    completedLessonIds?: DefaultDocumentIDType[]
+    courseCompleted?: boolean
+  }>
   /** Sets a quiz as completed. */
   setQuizCompleted: (quizId: DefaultDocumentIDType, score: number) => Promise<void>
   /** Sets a quiz as exited. */

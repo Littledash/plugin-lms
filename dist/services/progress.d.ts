@@ -23,13 +23,19 @@ type SubmitQuizArgs = {
     userId: ID;
 };
 export type SubmitQuizResult = {
+    /** Lessons completed by this pass: lessons in the course whose quizzes are now all passed. */
+    completedLessonIds: ID[];
+    /** The pass completed the last required lesson, so the course is now complete. */
+    courseCompleted: boolean;
     minimumScore: number;
     passed: boolean;
     score: number;
 };
 /**
  * Grades a quiz attempt and keeps the user's best score. The quiz must belong to a lesson in the
- * course and the user must be enrolled.
+ * course and the user must be enrolled. A pass completes every lesson in the course that contains
+ * the quiz once all of that lesson's quizzes are passed, and the course if that was the last
+ * required lesson.
  */
 export declare const submitQuiz: ({ answers, courseId, quizId, req, userId, }: SubmitQuizArgs) => Promise<SubmitQuizResult>;
 export type ProgressResult = {
