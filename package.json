@@ -160,7 +160,9 @@
     "prepublishOnly": "pnpm clean && pnpm build",
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
     "format": "prettier --write .",
-    "pre-commit": "lint-staged"
+    "pre-commit": "lint-staged",
+    "typecheck": "tsc --noEmit",
+    "hooks:install": "git config core.hooksPath .husky"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
@@ -354,14 +356,11 @@
     "pdf-lib": "^1.17.1"
   },
   "lint-staged": {
-    "./src/*.{js,ts,tsx}": [
-      "prettier --write ."
+    "src/**/*.{js,ts,tsx}": [
+      "prettier --write"
     ],
-    "./src/**/*.{js,ts,tsx}": [
-      "prettier --write ."
-    ],
-    "./src/**/**/*.{js,ts,tsx}": [
-      "prettier --write ."
+    "dev/**/*.{js,ts,tsx}": [
+      "prettier --write"
     ]
   },
   "homepage": "https://www.littledash.com.au"
