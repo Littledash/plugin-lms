@@ -1,25 +1,36 @@
-import { completedLesson } from "./completedLesson.js";
-export const isPreviousLessonCompleted = (progress, course, lessonId)=>{
-    const lessonIndex = course.lessons?.findIndex((l)=>typeof l.lesson === 'object' && l.lesson !== null && l.lesson.id === lessonId);
-    const previousLesson = lessonIndex !== undefined && lessonIndex > 0 ? course.lessons?.[lessonIndex - 1] : undefined;
-    if (!previousLesson) {
-        return true;
-    } // If there is no previous lesson, then the previous lesson is completed
-    // Get the previous lesson object - it could be a full lesson object or just an ID
-    const previousLessonObj = typeof previousLesson.lesson === 'object' && previousLesson.lesson !== null ? previousLesson.lesson : null;
-    // If we have a full lesson object (with id property), use completedLesson to check completion including quizzes
-    if (previousLessonObj && 'id' in previousLessonObj) {
-        const completionStatus = completedLesson(progress, String(course.id), previousLessonObj);
-        return completionStatus.isCompleted;
+import { completedLesson } from './completedLesson.js';
+const relationId = (value)=>{
+    if (value == null) {
+        return undefined;
     }
-    // Fallback: if we only have an ID, check basic lesson completion (without quiz check)
-    // This handles cases where the course wasn't fetched with depth
-    const previousLessonId = typeof previousLesson.lesson === 'object' && previousLesson.lesson !== null ? previousLesson.lesson.id : previousLesson.lesson;
-    const courseProgress = progress.find((p)=>(typeof p.course === 'object' ? p.course.id : p.course) === course.id);
+    const id = typeof value === 'object' ? value.id : value;
+    if (typeof id === 'string' || typeof id === 'number') {
+        return String(id);
+    }
+    return undefined;
+};
+export const isPreviousLessonCompleted = (progress, course, lessonId)=>{
+    const lessons = course.lessons ?? [];
+    const lessonIndex = lessons.findIndex((entry)=>relationId(entry?.lesson) === String(lessonId));
+    // The first lesson, or a lesson that is not in this course, has no previous lesson to finish.
+    if (lessonIndex <= 0) {
+        return true;
+    }
+    const previous = lessons[lessonIndex - 1];
+    const previousId = relationId(previous?.lesson);
+    if (!previousId) {
+        return true;
+    }
+    const previousLesson = typeof previous.lesson === 'object' && previous.lesson !== null ? previous.lesson : null;
+    // A populated lesson includes its quizzes, so completion has to include those too.
+    if (previousLesson && 'quizzes' in previousLesson) {
+        return completedLesson(progress, String(course.id), previousLesson).isCompleted;
+    }
+    const courseProgress = progress.find((entry)=>relationId(entry.course) === String(course.id));
     if (!courseProgress) {
         return false;
     }
-    return courseProgress.completedLessons.find((l)=>(typeof l.lesson === 'object' ? l.lesson.id : l.lesson) === previousLessonId) !== undefined;
+    return courseProgress.completedLessons.some((entry)=>relationId(entry.lesson) === previousId);
 };
 
 //# sourceMappingURL=isPreviousLessonCompleted.js.map

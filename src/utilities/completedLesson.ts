@@ -1,5 +1,13 @@
 import type { CourseProgress, Lesson, Progress, Quiz } from '../providers/types.js'
 
+/** String id for a relationship that may be populated or a bare id. */
+const relationId = (value: { id?: unknown } | null | number | string | undefined): string | undefined => {
+  if (value == null) {return undefined}
+  const id = typeof value === 'object' ? value.id : value
+  if (typeof id === 'string' || typeof id === 'number') {return String(id)}
+  return undefined
+}
+
 /**
  * @fileoverview Utility functions for checking lesson completion status
  * 
@@ -56,12 +64,11 @@ export const allQuizzesCompleted = (courseProgress: CourseProgress, lesson: Less
   }
 
   return lesson.quizzes.every((quiz: Quiz | string) => {
-    const quizId = typeof quiz === 'object' ? quiz.id : quiz
+    const quizId = relationId(quiz)
     const minimumScore = typeof quiz === 'object' ? quiz.minimumScore : undefined
-    
-    // Find the completed quiz entry
-    const completedQuizEntry = courseProgress.completedQuizzes.find((cq) => 
-      typeof cq.quiz === 'object' ? cq.quiz.id === quizId : cq.quiz === quizId
+
+    const completedQuizEntry = courseProgress.completedQuizzes.find(
+      (cq) => relationId(cq.quiz) === quizId,
     )
     
     // Quiz must be completed
@@ -92,9 +99,7 @@ export const completedLesson = (
   courseId: string,
   lesson: Lesson,
 ) => {
-  const courseProgress = progress.find((p: CourseProgress) => 
-    (typeof p.course === 'object' ? p.course.id : p.course) === courseId
-  )
+  const courseProgress = progress.find((p: CourseProgress) => relationId(p.course) === String(courseId))
   
   if (!courseProgress) {
     return {
@@ -105,10 +110,8 @@ export const completedLesson = (
     }
   }
   
-  const lessonCompleted = Boolean(
-    courseProgress.completedLessons.find((l) => 
-      typeof l.lesson === 'object' ? l.lesson.id : l.lesson === lesson.id
-    )
+  const lessonCompleted = courseProgress.completedLessons.some(
+    (entry) => relationId(entry.lesson) === relationId(lesson),
   )
 
 

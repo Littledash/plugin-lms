@@ -1,3 +1,13 @@
+/** String id for a relationship that may be populated or a bare id. */ const relationId = (value)=>{
+    if (value == null) {
+        return undefined;
+    }
+    const id = typeof value === 'object' ? value.id : value;
+    if (typeof id === 'string' || typeof id === 'number') {
+        return String(id);
+    }
+    return undefined;
+};
 /**
  * @fileoverview Utility functions for checking lesson completion status
  * 
@@ -47,10 +57,9 @@
         ;
     }
     return lesson.quizzes.every((quiz)=>{
-        const quizId = typeof quiz === 'object' ? quiz.id : quiz;
+        const quizId = relationId(quiz);
         const minimumScore = typeof quiz === 'object' ? quiz.minimumScore : undefined;
-        // Find the completed quiz entry
-        const completedQuizEntry = courseProgress.completedQuizzes.find((cq)=>typeof cq.quiz === 'object' ? cq.quiz.id === quizId : cq.quiz === quizId);
+        const completedQuizEntry = courseProgress.completedQuizzes.find((cq)=>relationId(cq.quiz) === quizId);
         // Quiz must be completed
         if (!completedQuizEntry) {
             return false;
@@ -71,7 +80,7 @@
  * @param lesson - The lesson object to check
  * @returns object with completion status details
  */ export const completedLesson = (progress, courseId, lesson)=>{
-    const courseProgress = progress.find((p)=>(typeof p.course === 'object' ? p.course.id : p.course) === courseId);
+    const courseProgress = progress.find((p)=>relationId(p.course) === String(courseId));
     if (!courseProgress) {
         return {
             allQuizzesCompleted: false,
@@ -80,7 +89,7 @@
             lessonCompleted: false
         };
     }
-    const lessonCompleted = Boolean(courseProgress.completedLessons.find((l)=>typeof l.lesson === 'object' ? l.lesson.id : l.lesson === lesson.id));
+    const lessonCompleted = courseProgress.completedLessons.some((entry)=>relationId(entry.lesson) === relationId(lesson));
     const hasQuizzes = lessonHasQuizzes(lesson);
     const allQuizzesCompletedForLesson = allQuizzesCompleted(courseProgress, lesson);
     // A lesson is fully completed if:
