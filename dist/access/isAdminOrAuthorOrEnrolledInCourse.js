@@ -106,9 +106,38 @@ const isEnrolledIn = async (req, courseId)=>courseId !== undefined && (await get
     });
     return totalDocs > 0;
 };
+const lessonIdsOnEnrolledCourses = async (req)=>{
+    const enrolledCourseIds = [
+        ...await getEnrolledCourseIds(req)
+    ];
+    if (enrolledCourseIds.length === 0) {
+        return [];
+    }
+    const { docs } = await req.payload.find({
+        collection: asSlug(getSlugs(req).courses),
+        depth: 0,
+        pagination: false,
+        req,
+        where: {
+            id: {
+                in: toIds(enrolledCourseIds)
+            }
+        }
+    });
+    return docs.flatMap((course)=>{
+        const lessons = course.lessons;
+        if (!Array.isArray(lessons)) {
+            return [];
+        }
+        return lessons.map((entry)=>toId(entry.lesson ?? entry)).filter((lessonId)=>lessonId !== undefined);
+    });
+};
 /**
- * Collection access for documents with a `course` relationship (e.g. lessons, topics).
- */ export const isAdminOrAuthorOrEnrolledInCourse = async ({ data, req })=>{
+ * Collection access for lessons, topics and courses.
+ *
+ * A read has no `data.course`. With an id, this loads the stored document. A list is limited to
+ * enrolled courses and the lessons those courses contain.
+ */ export const isAdminOrAuthorOrEnrolledInCourse = async ({ id, collectionConfig, data, req })=>{
     if (!req.user) {
         return false;
     }
@@ -118,7 +147,86 @@ const isEnrolledIn = async (req, courseId)=>courseId !== undefined && (await get
     ], req.user)) {
         return true;
     }
-    return isEnrolledIn(req, toId(data?.course));
+    const slug = collectionConfig?.slug;
+    if (id !== undefined && slug) {
+        const doc = await req.payload.findByID({
+            id,
+            collection: asSlug(slug),
+            depth: 0,
+            disableErrors: true,
+            overrideAccess: true,
+            req
+        });
+        if (!doc) {
+            return false;
+        }
+        const record = doc;
+        const slugs = getSlugs(req);
+        const courseId = toId(record.course);
+        if (courseId !== undefined) {
+            return isEnrolledIn(req, courseId);
+        }
+        if (slug === slugs.courses) {
+            return isEnrolledIn(req, record.id);
+        }
+        if (slug === slugs.lessons) {
+            return isEnrolledInCourseWithLessons(req, [
+                record.id
+            ]);
+        }
+        const lessonId = toId(record.lesson);
+        return lessonId !== undefined && isEnrolledInCourseWithLessons(req, [
+            lessonId
+        ]);
+    }
+    const requestedCourse = toId(data?.course);
+    if (requestedCourse !== undefined) {
+        return isEnrolledIn(req, requestedCourse);
+    }
+    const enrolled = [
+        ...await getEnrolledCourseIds(req)
+    ];
+    const lessonIds = await lessonIdsOnEnrolledCourses(req);
+    if (enrolled.length === 0 && lessonIds.length === 0) {
+        return false;
+    }
+    const slugs = getSlugs(req);
+    if (slug === slugs.courses) {
+        return {
+            id: {
+                in: enrolled
+            }
+        };
+    }
+    if (slug === slugs.lessons || slug === slugs.topics) {
+        const or = [];
+        if (enrolled.length > 0) {
+            or.push({
+                course: {
+                    in: enrolled
+                }
+            });
+        }
+        if (lessonIds.length > 0) {
+            or.push(slug === slugs.lessons ? {
+                id: {
+                    in: lessonIds
+                }
+            } : {
+                lesson: {
+                    in: lessonIds
+                }
+            });
+        }
+        return {
+            or
+        };
+    }
+    return enrolled.length > 0 ? {
+        course: {
+            in: enrolled
+        }
+    } : false;
 };
 /**
  * Field access for documents with a `course` relationship (e.g. lessons, topics). Lessons without

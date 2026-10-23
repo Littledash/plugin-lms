@@ -60,6 +60,11 @@ therefore sets every operation on its collections:
 | addresses | create: logged-in users; update and delete: admins and the owner (`customer`). `customer` is set to the logged-in user; only admins can choose or change it | admins and the owner |
 | students | create: anyone; update: admins and the user; delete: admins | admins and the user |
 
+`isAdminOrAuthorOrEnrolledInCourse` is for a collection you want limited to enrolled students. On a
+single document it reads the stored course (or, for a lesson, the courses that list it). A list is
+constrained to enrolled courses and those lessons. Lesson and topic content stays public at the
+collection and is hidden per field, which is what the plugin collections use.
+
 Your `access` override is merged over these per operation, so setting only `read` keeps the safe
 `create`, `update` and `delete`:
 

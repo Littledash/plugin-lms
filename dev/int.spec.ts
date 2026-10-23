@@ -10,6 +10,7 @@ import type { Payload } from 'payload'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import { getPayload } from 'payload'
 
+import { isAdminOrAuthorOrEnrolledInCourse } from '../src/access/isAdminOrAuthorOrEnrolledInCourse.js'
 import {
   addUserToGroup,
   completeCourse,
@@ -960,6 +961,41 @@ describe('ownership access', () => {
     expect(created.status).toBe(201)
     const assigned = (await created.json()).doc as Doc
     expect((await getDoc('addresses', assigned.id)).customer).toBe(student.id)
+  })
+})
+
+describe('enrollment collection access', () => {
+  it('lets an enrolled student read a lesson that does not store its course', async () => {
+    const lesson = await createLesson()
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    const enrolled = await createUser()
+    await enroll(enrolled, course)
+    const outsider = await createUser()
+    const collectionConfig = { slug: 'lessons' } as never
+    const check = (user?: Doc) =>
+      isAdminOrAuthorOrEnrolledInCourse({
+        id: lesson.id,
+        collectionConfig,
+        req: { payload, user } as never,
+      })
+
+    expect(await check(enrolled)).toBe(true)
+    expect(await check(outsider)).toBe(false)
+    expect(await check()).toBe(false)
+    expect(await check(await createUser(['author']))).toBe(true)
+
+    const where = await isAdminOrAuthorOrEnrolledInCourse({
+      collectionConfig,
+      req: { payload, user: enrolled } as never,
+    })
+    const listed = await payload.find({ collection: 'lessons', depth: 0, pagination: false, where: where as never })
+    expect(listed.docs.map((doc) => String(doc.id))).toContain(lesson.id)
+
+    const hidden = await isAdminOrAuthorOrEnrolledInCourse({
+      collectionConfig,
+      req: { payload, user: outsider } as never,
+    })
+    expect(hidden).toBe(false)
   })
 })
 

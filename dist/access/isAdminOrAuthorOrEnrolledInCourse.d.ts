@@ -5,7 +5,10 @@ import type { Access, FieldAccess, PayloadRequest } from 'payload';
  */
 export declare const getEnrolledCourseIds: (req: PayloadRequest) => Promise<Set<string>>;
 /**
- * Collection access for documents with a `course` relationship (e.g. lessons, topics).
+ * Collection access for lessons, topics and courses.
+ *
+ * A read has no `data.course`. With an id, this loads the stored document. A list is limited to
+ * enrolled courses and the lessons those courses contain.
  */
 export declare const isAdminOrAuthorOrEnrolledInCourse: Access;
 /**

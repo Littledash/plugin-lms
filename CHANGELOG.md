@@ -38,6 +38,9 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - The groups collection ignored its overrides, including `access`.
 - Draft courses could be self-enrolled in.
 - Passing a quiz never completed its lesson (1.x read a `quiz.lesson` field that does not exist).
+- `isAdminOrAuthorOrEnrolledInCourse` read `data.course`, which is empty on a read, so it denied
+  every enrolled student. It now checks the stored document, and a list is limited to enrolled
+  courses and their lessons.
 - Group read and leader update compared ids with `Array.includes` and looked up a hardcoded
   `groups` slug. A missing group threw out of the access check. Ids now match as strings, the
   configured slug is used, and a missing group is denied.
