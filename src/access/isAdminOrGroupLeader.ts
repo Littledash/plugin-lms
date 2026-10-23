@@ -1,6 +1,8 @@
-import type { Access, TypedCollection } from 'payload'
+import type { Access } from 'payload'
 
+import { includesId } from '../services/shared.js'
 import { checkRole } from './checkRole.js'
+import { findGroup } from './findGroup.js'
 
 export const isAdminOrGroupLeader: Access = async ({ id, req }) => {
   const { user } = req
@@ -13,20 +15,9 @@ export const isAdminOrGroupLeader: Access = async ({ id, req }) => {
     return true
   }
 
-  if (id) {
-    const group = await req.payload.findByID({
-      id,
-      collection: 'groups',
-      depth: 1,
-    })
+  if (!id) {return false}
 
-    if (group && group.leaders) {
-      const leaderIds = group.leaders.map((leader: TypedCollection['users']) => typeof leader === 'object' ? leader.id : leader)
-      if (leaderIds.includes(user.id)) {
-        return true
-      }
-    }
-  }
-
-  return false
+  const group = await findGroup(req, id)
+  if (!group) {return false}
+  return includesId(group.leaders || [], user.id)
 }

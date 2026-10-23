@@ -44,8 +44,16 @@ export class LMSError extends APIError {
   }
 }
 
-export const toId = (value: Relation): ID | undefined =>
-  value && typeof value === 'object' ? value.id : (value ?? undefined)
+export const toId = (value: Relation): ID | undefined => {
+  if (value == null) {return undefined}
+  if (typeof value !== 'object') {return value}
+
+  const record = value as { _bsontype?: unknown; id?: Relation }
+  // An ObjectId also has an `id` property, but that is raw bytes, not the document id.
+  if (record._bsontype === 'ObjectId') {return value as unknown as ID}
+  if (record.id != null) {return toId(record.id)}
+  return value as unknown as ID
+}
 
 export const toIds = (values: unknown): ID[] =>
   Array.isArray(values)

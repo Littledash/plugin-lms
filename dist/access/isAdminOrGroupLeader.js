@@ -1,4 +1,6 @@
+import { includesId } from '../services/shared.js';
 import { checkRole } from './checkRole.js';
+import { findGroup } from './findGroup.js';
 export const isAdminOrGroupLeader = async ({ id, req })=>{
     const { user } = req;
     if (!user) {
@@ -9,20 +11,14 @@ export const isAdminOrGroupLeader = async ({ id, req })=>{
     ], user)) {
         return true;
     }
-    if (id) {
-        const group = await req.payload.findByID({
-            id,
-            collection: 'groups',
-            depth: 1
-        });
-        if (group && group.leaders) {
-            const leaderIds = group.leaders.map((leader)=>typeof leader === 'object' ? leader.id : leader);
-            if (leaderIds.includes(user.id)) {
-                return true;
-            }
-        }
+    if (!id) {
+        return false;
     }
-    return false;
+    const group = await findGroup(req, id);
+    if (!group) {
+        return false;
+    }
+    return includesId(group.leaders || [], user.id);
 };
 
 //# sourceMappingURL=isAdminOrGroupLeader.js.map

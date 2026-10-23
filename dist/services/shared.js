@@ -7,7 +7,23 @@ import { defaultCollectionSlugMap } from '../utilities/getCollectionSlugMap.js';
         super(message, status, null, true);
     }
 }
-export const toId = (value)=>value && typeof value === 'object' ? value.id : value ?? undefined;
+export const toId = (value)=>{
+    if (value == null) {
+        return undefined;
+    }
+    if (typeof value !== 'object') {
+        return value;
+    }
+    const record = value;
+    // An ObjectId also has an `id` property, but that is raw bytes, not the document id.
+    if (record._bsontype === 'ObjectId') {
+        return value;
+    }
+    if (record.id != null) {
+        return toId(record.id);
+    }
+    return value;
+};
 export const toIds = (values)=>Array.isArray(values) ? values.map((value)=>toId(value)).filter((id)=>id !== undefined) : [];
 /**
  * Compares IDs as strings so ObjectId instances and string IDs match.

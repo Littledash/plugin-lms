@@ -860,8 +860,19 @@ describe('ownership access', () => {
 
     expect((await client.GET(`/groups/${own.id}`)).status).toBe(200)
     expect([403, 404]).toContain((await client.GET(`/groups/${other.id}`)).status)
+    expect([403, 404]).toContain((await client.GET('/groups/aaaaaaaaaaaaaaaaaaaaaaaa')).status)
     const list = await (await client.GET('/groups')).json()
     expect(list.docs.map((doc: Doc) => doc.id)).toEqual([own.id])
+  })
+
+  it('a leader who is not a student can read their group', async () => {
+    const leader = await createUser()
+    const group = (await payload.create({
+      collection: 'groups',
+      data: { leaders: [leader.id], title: `Led ${++counter}` },
+    })) as unknown as Doc
+
+    expect((await (await clientFor(leader)).GET(`/groups/${group.id}`)).status).toBe(200)
   })
 
   it('a group leader can update their group but a member cannot', async () => {

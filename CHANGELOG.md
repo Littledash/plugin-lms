@@ -38,6 +38,9 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - The groups collection ignored its overrides, including `access`.
 - Draft courses could be self-enrolled in.
 - Passing a quiz never completed its lesson (1.x read a `quiz.lesson` field that does not exist).
+- Group read and leader update compared ids with `Array.includes` and looked up a hardcoded
+  `groups` slug. A missing group threw out of the access check. Ids now match as strings, the
+  configured slug is used, and a missing group is denied.
 - A logged-in user could save an address with `customer` set to someone else. The owner is now
   the logged-in user, and only admins can set or change `customer`.
 - GraphQL schema failed to build. `correctAnswer` is still stored as `true`, `false` or `both`, and

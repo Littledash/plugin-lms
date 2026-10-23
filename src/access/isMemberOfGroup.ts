@@ -1,6 +1,12 @@
-import type { Access, TypedCollection, Where } from 'payload'
+import type { Access, Where } from 'payload'
 
+import { type ID, includesId } from '../services/shared.js'
 import { checkRole } from './checkRole.js'
+import { findGroup } from './findGroup.js'
+
+const memberQuery = (userId: ID): Where => ({
+  or: [{ students: { in: [userId] } }, { leaders: { in: [userId] } }],
+})
 
 export const isMemberOfGroup: Access = async ({ id, req }) => {
   const { user } = req
@@ -14,37 +20,10 @@ export const isMemberOfGroup: Access = async ({ id, req }) => {
   }
 
   if (id) {
-    const group = await req.payload.findByID({
-      id,
-      collection: 'groups',
-      depth: 1,
-    })
-
-    if (group) {
-      const userIds = group.students?.map(( member: TypedCollection['users']) => typeof member === 'object' ? member.id : member) || []
-      const leaderIds = group.leaders?.map((leader: TypedCollection['users']) => typeof leader === 'object' ? leader.id : leader) || []
-
-      if (userIds.includes(user.id) || leaderIds.includes(user.id)) {
-        return true
-      }
-    }
+    const group = await findGroup(req, id)
+    if (!group) {return false}
+    return includesId(group.students || [], user.id) || includesId(group.leaders || [], user.id)
   }
 
-  // A query to find groups a user is in
-  const query: Where = {
-    or: [
-      {
-        students: {
-          in: [user.id],
-        },
-      },
-      {
-        leaders: {
-          in: [user.id],
-        },
-      }
-    ]
-  }
-  return query
-  
+  return memberQuery(user.id)
 }
