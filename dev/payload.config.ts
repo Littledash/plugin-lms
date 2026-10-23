@@ -170,6 +170,8 @@ export default buildConfig({
   secret: process.env.PAYLOAD_SECRET || 'test-secret_key',
   sharp,
   typescript: {
+    // Each test boot would otherwise spawn a detached `payload generate:types` that outlives Jest
+    autoGenerate: process.env.NODE_ENV !== 'test',
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
 })
