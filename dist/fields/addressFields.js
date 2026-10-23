@@ -4,7 +4,9 @@ export const address = ({ overrides = {} } = {})=>{
     const generatedAddress = {
         name: 'address',
         type: 'group',
-        interfaceName: 'Address',
+        admin: {
+            hideGutter: true
+        },
         fields: [
             {
                 type: 'row',
@@ -12,82 +14,80 @@ export const address = ({ overrides = {} } = {})=>{
                     {
                         name: 'firstName',
                         type: 'text',
-                        label: 'First Name',
                         admin: {
                             width: '50%'
-                        }
+                        },
+                        label: 'First Name'
                     },
                     {
                         name: 'lastName',
                         type: 'text',
-                        label: 'Last Name',
                         admin: {
                             width: '50%'
-                        }
+                        },
+                        label: 'Last Name'
                     },
                     {
                         name: 'company',
                         type: 'text',
-                        label: 'Company',
                         admin: {
                             width: '100%'
-                        }
+                        },
+                        label: 'Company'
                     },
                     {
                         name: 'addressLineOne',
                         type: 'text',
-                        label: 'Address Line 1',
                         admin: {
                             width: '100%'
-                        }
+                        },
+                        label: 'Address Line 1'
                     },
                     {
                         name: 'addressLineTwo',
                         type: 'text',
-                        label: 'Address Line 2',
                         admin: {
                             width: '100%'
-                        }
+                        },
+                        label: 'Address Line 2'
                     },
                     {
                         name: 'city',
                         type: 'text',
-                        label: 'City',
                         admin: {
                             width: '33.33%'
-                        }
+                        },
+                        label: 'City'
                     },
                     {
                         name: 'state',
                         type: 'text',
-                        label: 'State',
                         admin: {
                             width: '33.33%'
-                        }
+                        },
+                        label: 'State'
                     },
                     {
                         name: 'postcode',
                         type: 'text',
-                        label: 'Postcode',
                         admin: {
                             width: '33.33%'
-                        }
+                        },
+                        label: 'Postcode'
                     },
                     {
                         name: 'country',
                         type: 'select',
-                        options: countryOptions,
-                        defaultValue: 'AU',
                         admin: {
                             width: '33.33%'
-                        }
+                        },
+                        defaultValue: 'AU',
+                        options: countryOptions
                     }
                 ]
             }
         ],
-        admin: {
-            hideGutter: true
-        }
+        interfaceName: 'Address'
     };
     return deepMerge(generatedAddress, overrides);
 };

@@ -1,5 +1,5 @@
-import { CollectionConfig } from 'payload';
-import { FieldsOverride } from '../types.js';
+import type { CollectionConfig } from 'payload';
+import type { FieldsOverride } from '../types.js';
 type Props = {
     overrides?: {
         fields?: FieldsOverride;

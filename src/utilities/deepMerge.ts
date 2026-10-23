@@ -2,6 +2,7 @@
 // @ts-nocheck
 
 import type { Field } from 'payload'
+
 import { findFieldByNameAndType } from './findFieldByNameAndType.js'
 
 /**
@@ -128,29 +129,29 @@ const mergeFieldConfigurations = (existingField: Field, newField: Field): Field 
       ...existingField.hooks,
       ...newField.hooks,
       // For arrays like beforeChange, afterRead, etc., concatenate them
-      beforeChange: [
-        ...(existingField.hooks.beforeChange || []),
-        ...(newField.hooks.beforeChange || [])
-      ],
       afterChange: [
         ...(existingField.hooks.afterChange || []),
         ...(newField.hooks.afterChange || [])
-      ],
-      beforeRead: [
-        ...(existingField.hooks.beforeRead || []),
-        ...(newField.hooks.beforeRead || [])
       ],
       afterRead: [
         ...(existingField.hooks.afterRead || []),
         ...(newField.hooks.afterRead || [])
       ],
-      beforeValidate: [
-        ...(existingField.hooks.beforeValidate || []),
-        ...(newField.hooks.beforeValidate || [])
-      ],
       afterValidate: [
         ...(existingField.hooks.afterValidate || []),
         ...(newField.hooks.afterValidate || [])
+      ],
+      beforeChange: [
+        ...(existingField.hooks.beforeChange || []),
+        ...(newField.hooks.beforeChange || [])
+      ],
+      beforeRead: [
+        ...(existingField.hooks.beforeRead || []),
+        ...(newField.hooks.beforeRead || [])
+      ],
+      beforeValidate: [
+        ...(existingField.hooks.beforeValidate || []),
+        ...(newField.hooks.beforeValidate || [])
       ]
     }
   }

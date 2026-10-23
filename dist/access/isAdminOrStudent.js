@@ -11,12 +11,16 @@ import { checkRole } from './checkRole.js';
     }
     return false;
 };
-export const isAdminOrStudentFieldLevel = ({ req: { user }, doc })=>{
-    if (!user) return false;
+export const isAdminOrStudentFieldLevel = ({ doc, req: { user } })=>{
+    if (!user) {
+        return false;
+    }
     if (checkRole([
         'admin',
         'student'
-    ], user)) return true;
+    ], user)) {
+        return true;
+    }
     return doc?.students?.includes(String(user.id)) ?? false;
 };
 

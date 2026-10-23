@@ -9,7 +9,9 @@
             return user?.roles?.some((individualRole)=>{
                 return individualRole === role;
             });
-        })) return true;
+        })) {
+            return true;
+        }
     }
     return false;
 };

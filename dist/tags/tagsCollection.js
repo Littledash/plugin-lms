@@ -7,10 +7,10 @@ export const tagsCollection = (props)=>{
         {
             name: 'title',
             type: 'text',
-            required: true,
             admin: {
                 description: 'The title of the tag'
-            }
+            },
+            required: true
         },
         ...slugField()
     ];
@@ -23,8 +23,8 @@ export const tagsCollection = (props)=>{
         ...overrides,
         access: withDefaultAccess(defaultAccess.tags, overrides?.access),
         admin: {
-            useAsTitle: 'title',
             group: 'Taxonomy',
+            useAsTitle: 'title',
             ...overrides?.admin
         },
         fields

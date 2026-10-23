@@ -1,6 +1,5 @@
-import { CollectionConfig } from 'payload';
-import { FieldsOverride } from '../types.js';
-import type { CurrenciesConfig } from '../types.js';
+import type { CollectionConfig } from 'payload';
+import type { CurrenciesConfig, FieldsOverride } from '../types.js';
 /**
  * Props interface for configuring the courses collection
  * @property categoriesCollectionSlug - Slug for the categories collection (default: 'categories')
@@ -18,11 +17,11 @@ type Props = {
     currenciesConfig?: CurrenciesConfig;
     lessonsCollectionSlug?: string;
     mediaCollectionSlug?: string;
-    studentsCollectionSlug?: string;
-    tagsCollectionSlug?: string;
     overrides?: {
         fields?: FieldsOverride;
     } & Partial<Omit<CollectionConfig, 'fields'>>;
+    studentsCollectionSlug?: string;
+    tagsCollectionSlug?: string;
 };
 /**
  * Creates a courses collection configuration for Payload CMS

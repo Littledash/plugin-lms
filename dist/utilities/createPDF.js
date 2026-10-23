@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - @pdf-lib/fontkit doesn't have proper TypeScript definitions
 import fontkit from '@pdf-lib/fontkit';
@@ -37,16 +37,16 @@ import fontkit from '@pdf-lib/fontkit';
     }
     return result.trim();
 };
-export const createPDF = async ({ studentName, courseTitle, completionDate, certificateNumber, templateImage, description, fontFamily, authorName })=>{
+export const createPDF = async ({ authorName, certificateNumber, completionDate, courseTitle, description, fontFamily, studentName, templateImage })=>{
     console.log('createPDF called with data:', {
-        studentName,
-        courseTitle,
-        completionDate,
+        authorName,
         certificateNumber,
-        templateImage,
+        completionDate,
+        courseTitle,
         description,
         fontFamily,
-        authorName
+        studentName,
+        templateImage
     });
     // Validate inputs
     if (!studentName || !courseTitle) {
@@ -64,16 +64,12 @@ export const createPDF = async ({ studentName, courseTitle, completionDate, cert
             595
         ]) // A4 landscape dimensions
         ;
-        // Embed fonts - use sans-serif fonts to match certificate template
-        // Using Helvetica (sans-serif) to match the certificate design
-        let primaryFont;
-        let boldFont;
-        // Use Helvetica sans-serif font to match the certificate design
-        primaryFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+        // Helvetica matches the sans-serif certificate template
+        const primaryFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
         console.log('Using Helvetica sans-serif fonts for certificate');
         // Get page dimensions
-        const { width, height } = page.getSize();
+        const { height, width } = page.getSize();
         // Add background image if provided
         if (templateImage) {
             try {
@@ -98,10 +94,10 @@ export const createPDF = async ({ studentName, courseTitle, completionDate, cert
                 const imageDims = image.scaleToFit(width, height);
                 // Center the image on the page
                 page.drawImage(image, {
-                    x: (width - imageDims.width) / 2,
-                    y: (height - imageDims.height) / 2,
+                    height: imageDims.height,
                     width: imageDims.width,
-                    height: imageDims.height
+                    x: (width - imageDims.width) / 2,
+                    y: (height - imageDims.height) / 2
                 });
                 console.log('Template image added successfully');
             } catch (imageError) {
@@ -150,32 +146,32 @@ export const createPDF = async ({ studentName, courseTitle, completionDate, cert
         // "This certifies that" - static text, 20pt, positioned below the certificate heading
         const certifiesText = "this certifies that";
         page.drawText(certifiesText, {
-            x: getCenteredX(certifiesText, 20, primaryFont),
-            y: currentY,
-            size: 20,
+            color: rgb(0, 0, 0),
             font: primaryFont,
-            color: rgb(0, 0, 0)
+            size: 20,
+            x: getCenteredX(certifiesText, 20, primaryFont),
+            y: currentY
         });
         // Student name - ensure there's a space between first and last name
         // Trim and normalize spaces in studentName
         const normalizedStudentName = studentName.trim().replace(/\s+/g, ' ');
         currentY -= 50;
         page.drawText(normalizedStudentName, {
-            x: getCenteredX(normalizedStudentName, 22, boldFont),
-            y: currentY,
-            size: 22,
+            color: rgb(0.8, 0.2, 0.4),
             font: boldFont,
-            color: rgb(0.8, 0.2, 0.4)
+            size: 22,
+            x: getCenteredX(normalizedStudentName, 22, boldFont),
+            y: currentY
         });
         // Description text - "has completed a 1 hour online Masterclass on the topic of" - 20pt
         currentY -= 50;
         const descriptionText = description ? extractPlainTextFromRichText(description) || "has completed a 1 hour online Masterclass on the topic of" : "has completed a 1 hour online Masterclass on the topic of";
         page.drawText(descriptionText, {
-            x: getCenteredX(descriptionText, 20, primaryFont),
-            y: currentY,
-            size: 20,
+            color: rgb(0, 0, 0),
             font: primaryFont,
-            color: rgb(0, 0, 0)
+            size: 20,
+            x: getCenteredX(descriptionText, 20, primaryFont),
+            y: currentY
         });
         // Course title - wrap text if needed, 24pt, dark blue, bold
         currentY -= 50;
@@ -186,11 +182,11 @@ export const createPDF = async ({ studentName, courseTitle, completionDate, cert
         ;
         courseTitleLines.forEach((line, index)=>{
             page.drawText(line, {
-                x: getCenteredX(line, 24, boldFont),
-                y: currentY - index * lineHeight,
-                size: 24,
+                color: rgb(64 / 255, 84 / 255, 165 / 255),
                 font: boldFont,
-                color: rgb(64 / 255, 84 / 255, 165 / 255)
+                size: 24,
+                x: getCenteredX(line, 24, boldFont),
+                y: currentY - index * lineHeight
             });
         });
         // Adjust currentY based on number of lines
@@ -200,20 +196,20 @@ export const createPDF = async ({ studentName, courseTitle, completionDate, cert
             currentY -= 50;
             const presentedByText = "presented by";
             page.drawText(presentedByText, {
-                x: getCenteredX(presentedByText, 20, primaryFont),
-                y: currentY,
-                size: 20,
+                color: rgb(0, 0, 0),
                 font: primaryFont,
-                color: rgb(0, 0, 0)
+                size: 20,
+                x: getCenteredX(presentedByText, 20, primaryFont),
+                y: currentY
             });
             // Author name - below "presented by", closer spacing
             currentY -= 25;
             page.drawText(authorName, {
-                x: getCenteredX(authorName, 20, primaryFont),
-                y: currentY,
-                size: 20,
+                color: rgb(0, 0, 0),
                 font: primaryFont,
-                color: rgb(0, 0, 0)
+                size: 20,
+                x: getCenteredX(authorName, 20, primaryFont),
+                y: currentY
             });
         }
         // Completion date - positioned above "DATE" line in bottom right
@@ -222,11 +218,11 @@ export const createPDF = async ({ studentName, courseTitle, completionDate, cert
         const dateX = width - 150 - dateTextWidth // Right-aligned, 150px from right edge (moved left)
         ;
         page.drawText(completionDate, {
-            x: dateX,
-            y: 100,
-            size: 12,
+            color: rgb(0, 0, 0),
             font: primaryFont,
-            color: rgb(0, 0, 0)
+            size: 12,
+            x: dateX,
+            y: 100
         });
         // Set document metadata
         pdfDoc.setTitle(`Certificate of Completion - ${studentName}`);

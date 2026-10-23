@@ -21,12 +21,16 @@ import { checkRole } from './checkRole.js';
     // Reject everyone else
     return false;
 };
-export const isAdminOrSelfFieldLevel = ({ req: { user }, id })=>{
+export const isAdminOrSelfFieldLevel = ({ id, req: { user } })=>{
     // Return true or false based on if the user has an admin role
     if (checkRole([
         'admin'
-    ], user)) return true;
-    if (user?.id === id) return true;
+    ], user)) {
+        return true;
+    }
+    if (user?.id === id) {
+        return true;
+    }
     return false;
 };
 

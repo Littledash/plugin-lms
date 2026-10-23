@@ -1,45 +1,47 @@
-import { PDFDocument, StandardFonts, rgb, PDFFont, PDFImage, PDFPage } from 'pdf-lib'
+import type { PDFFont, PDFImage, PDFPage } from 'pdf-lib';
+
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - @pdf-lib/fontkit doesn't have proper TypeScript definitions
 import fontkit from '@pdf-lib/fontkit'
 
 // Type for Payload rich text field (Lexical editor state)
 type RichTextNode = {
+    [k: string]: unknown
+    children?: RichTextNode[]
+    text?: string
     type: string
     version: number
-    text?: string
-    children?: RichTextNode[]
-    [k: string]: unknown
 }
 
 type RichText = {
+    [k: string]: unknown
     root: {
-        type: string
         children: RichTextNode[]
         direction: ('ltr' | 'rtl') | null
-        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | ''
+        format: '' | 'center' | 'end' | 'justify' | 'left' | 'right' | 'start'
         indent: number
+        type: string
         version: number
     }
-    [k: string]: unknown
 }
 
 type createPDFProps = {
-    studentName: string;
-    courseTitle: string;
-    completionDate: string;
-    certificateNumber: string;
-    templateImage: string;
-    description: string | RichText;
-    fontFamily: string;
     authorName?: string;
+    certificateNumber: string;
+    completionDate: string;
+    courseTitle: string;
+    description: RichText | string;
+    fontFamily: string;
+    studentName: string;
+    templateImage: string;
 }
 
 /**
  * Extracts plain text from a Payload rich text field (Lexical editor state)
  * Recursively traverses the node structure to extract all text content
  */
-const extractPlainTextFromRichText = (richText: string | RichText): string => {
+const extractPlainTextFromRichText = (richText: RichText | string): string => {
     // If it's already a string, return it
     if (typeof richText === 'string') {
         return richText
@@ -80,24 +82,24 @@ const extractPlainTextFromRichText = (richText: string | RichText): string => {
 }
 
 export const createPDF = async ({
-    studentName,
-    courseTitle,
-    completionDate,
+    authorName,
     certificateNumber,
-    templateImage,
+    completionDate,
+    courseTitle,
     description,
     fontFamily,
-    authorName,
+    studentName,
+    templateImage,
 }: createPDFProps): Promise<Uint8Array> => {
     console.log('createPDF called with data:', {
-        studentName,
-        courseTitle,
-        completionDate,
+        authorName,
         certificateNumber,
-        templateImage,
+        completionDate,
+        courseTitle,
         description,
         fontFamily,
-        authorName
+        studentName,
+        templateImage
     })
 
     // Validate inputs
@@ -117,18 +119,13 @@ export const createPDF = async ({
         // Add a page (A4 size in landscape orientation)
         const page: PDFPage = pdfDoc.addPage([842, 595]) // A4 landscape dimensions
         
-        // Embed fonts - use sans-serif fonts to match certificate template
-        // Using Helvetica (sans-serif) to match the certificate design
-        let primaryFont: PDFFont
-        let boldFont: PDFFont
-        
-        // Use Helvetica sans-serif font to match the certificate design
-        primaryFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
-        boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+        // Helvetica matches the sans-serif certificate template
+        const primaryFont: PDFFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
+        const boldFont: PDFFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
         console.log('Using Helvetica sans-serif fonts for certificate')
         
         // Get page dimensions
-        const { width, height } = page.getSize()
+        const { height, width } = page.getSize()
         
         // Add background image if provided
         if (templateImage) {
@@ -157,10 +154,10 @@ export const createPDF = async ({
                 
                 // Center the image on the page
                 page.drawImage(image, {
+                    height: imageDims.height,
+                    width: imageDims.width,
                     x: (width - imageDims.width) / 2,
                     y: (height - imageDims.height) / 2,
-                    width: imageDims.width,
-                    height: imageDims.height,
                 })
                 
                 console.log('Template image added successfully')
@@ -217,11 +214,11 @@ export const createPDF = async ({
         // "This certifies that" - static text, 20pt, positioned below the certificate heading
         const certifiesText = "this certifies that"
         page.drawText(certifiesText, {
+            color: rgb(0, 0, 0),
+            font: primaryFont,
+            size: 20,
             x: getCenteredX(certifiesText, 20, primaryFont),
             y: currentY,
-            size: 20,
-            font: primaryFont,
-            color: rgb(0, 0, 0),
         })
         
         // Student name - ensure there's a space between first and last name
@@ -229,11 +226,11 @@ export const createPDF = async ({
         const normalizedStudentName = studentName.trim().replace(/\s+/g, ' ')
         currentY -= 50
         page.drawText(normalizedStudentName, {
+            color: rgb(0.8, 0.2, 0.4), // Pink color to match template
+            font: boldFont,
+            size: 22,
             x: getCenteredX(normalizedStudentName, 22, boldFont),
             y: currentY,
-            size: 22,
-            font: boldFont,
-            color: rgb(0.8, 0.2, 0.4), // Pink color to match template
         })
         
         // Description text - "has completed a 1 hour online Masterclass on the topic of" - 20pt
@@ -242,11 +239,11 @@ export const createPDF = async ({
             ? extractPlainTextFromRichText(description) || "has completed a 1 hour online Masterclass on the topic of"
             : "has completed a 1 hour online Masterclass on the topic of"
         page.drawText(descriptionText, {
+            color: rgb(0, 0, 0),
+            font: primaryFont,
+            size: 20,
             x: getCenteredX(descriptionText, 20, primaryFont),
             y: currentY,
-            size: 20,
-            font: primaryFont,
-            color: rgb(0, 0, 0),
         })
         
         // Course title - wrap text if needed, 24pt, dark blue, bold
@@ -256,11 +253,11 @@ export const createPDF = async ({
         const lineHeight = 30 // Space between lines
         courseTitleLines.forEach((line, index) => {
             page.drawText(line, {
+                color: rgb(64 / 255, 84 / 255, 165 / 255), // Dark blue color
+                font: boldFont,
+                size: 24,
                 x: getCenteredX(line, 24, boldFont),
                 y: currentY - (index * lineHeight),
-                size: 24,
-                font: boldFont,
-                color: rgb(64 / 255, 84 / 255, 165 / 255), // Dark blue color
             })
         })
         // Adjust currentY based on number of lines
@@ -271,21 +268,21 @@ export const createPDF = async ({
             currentY -= 50
             const presentedByText = "presented by"
             page.drawText(presentedByText, {
+                color: rgb(0, 0, 0),
+                font: primaryFont,
+                size: 20,
                 x: getCenteredX(presentedByText, 20, primaryFont),
                 y: currentY,
-                size: 20,
-                font: primaryFont,
-                color: rgb(0, 0, 0),
             })
             
             // Author name - below "presented by", closer spacing
             currentY -= 25
             page.drawText(authorName, {
+                color: rgb(0, 0, 0),
+                font: primaryFont,
+                size: 20,
                 x: getCenteredX(authorName, 20, primaryFont),
                 y: currentY,
-                size: 20,
-                font: primaryFont,
-                color: rgb(0, 0, 0),
             })
         }
         
@@ -294,11 +291,11 @@ export const createPDF = async ({
         const dateTextWidth = primaryFont.widthOfTextAtSize(completionDate, 12)
         const dateX = width - 150 - dateTextWidth // Right-aligned, 150px from right edge (moved left)
         page.drawText(completionDate, {
+            color: rgb(0, 0, 0),
+            font: primaryFont,
+            size: 12,
             x: dateX,
             y: 100, // Position higher above the "DATE" label line
-            size: 12,
-            font: primaryFont,
-            color: rgb(0, 0, 0),
         })
         
         // Set document metadata

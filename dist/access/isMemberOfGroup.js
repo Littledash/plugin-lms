@@ -1,5 +1,5 @@
 import { checkRole } from './checkRole.js';
-export const isMemberOfGroup = async ({ req, id })=>{
+export const isMemberOfGroup = async ({ id, req })=>{
     const { user } = req;
     if (!user) {
         return false;
@@ -11,8 +11,8 @@ export const isMemberOfGroup = async ({ req, id })=>{
     }
     if (id) {
         const group = await req.payload.findByID({
-            collection: 'groups',
             id,
+            collection: 'groups',
             depth: 1
         });
         if (group) {

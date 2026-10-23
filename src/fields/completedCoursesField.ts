@@ -5,8 +5,8 @@ import type { JoinField, RelationshipField } from 'payload'
  */
 type Props = {
   coursesCollectionSlug?: string
-  studentsCollectionSlug?: string
   overrides?: Partial<JoinField>
+  studentsCollectionSlug?: string
 }
 
 /**
@@ -15,8 +15,8 @@ type Props = {
  * @returns A configured relationship field for completed courses
  */
 export const completedCoursesField: (props: Props) => JoinField = ({
-  overrides,
   coursesCollectionSlug,
+  overrides,
   studentsCollectionSlug,
 }) => {
   const field: JoinField = {

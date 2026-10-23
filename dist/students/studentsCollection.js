@@ -7,7 +7,7 @@ import { mergeFields } from '../utilities/deepMerge.js';
  * @param props - Configuration properties for the courses collection
  * @returns CollectionConfig object for courses
  */ export const studentsCollection = (props)=>{
-    const { overrides, studentsFields = [], studentsCollectionSlug = 'users' } = props || {};
+    const { overrides, studentsCollectionSlug = 'users', studentsFields = [] } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the courses collection

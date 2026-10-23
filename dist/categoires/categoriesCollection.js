@@ -16,10 +16,10 @@ import { slugField } from '../fields/slug.js';
         {
             name: 'title',
             type: 'text',
-            required: true,
             admin: {
                 description: 'The title of the category'
-            }
+            },
+            required: true
         },
         ...slugField()
     ];
@@ -36,8 +36,8 @@ import { slugField } from '../fields/slug.js';
         ...overrides,
         access: withDefaultAccess(defaultAccess.categories, overrides?.access),
         admin: {
-            useAsTitle: 'title',
             group: 'Taxonomy',
+            useAsTitle: 'title',
             ...overrides?.admin
         },
         fields

@@ -1,4 +1,4 @@
-import { Field } from "payload"
+import type { Field } from "payload"
 
 export const findFieldByNameAndType = (
     fields: Field[],
@@ -11,7 +11,7 @@ export const findFieldByNameAndType = (
           const found = tab.fields?.find(
             (f) => 'name' in f && f.name === fieldName && f.type === fieldType,
           )
-          if (found) return found
+          if (found) {return found}
         }
       } else if ('name' in field && field.name === fieldName && field.type === fieldType) {
         return field

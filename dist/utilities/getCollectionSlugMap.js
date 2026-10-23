@@ -1,17 +1,17 @@
 export const defaultCollectionSlugMap = {
     addresses: 'addresses',
-    courses: 'courses',
+    categories: 'categories',
+    certificates: 'certificates',
     coupons: 'coupons',
+    courses: 'courses',
     groups: 'groups',
     lessons: 'lessons',
-    quizzes: 'quizzes',
-    categories: 'categories',
-    tags: 'tags',
-    certificates: 'certificates',
-    questions: 'questions',
-    topics: 'topics',
     media: 'media',
-    students: 'users'
+    questions: 'questions',
+    quizzes: 'quizzes',
+    students: 'users',
+    tags: 'tags',
+    topics: 'topics'
 };
 /**
  * Generates a map of collection slugs based on the sanitized plugin configuration.

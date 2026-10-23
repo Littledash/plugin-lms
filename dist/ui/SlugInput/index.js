@@ -1,13 +1,13 @@
 'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Button, FieldLabel, TextInput, useField, useForm, useFormFields } from '@payloadcms/ui';
 import React, { useCallback, useEffect } from 'react';
-import { useField, Button, TextInput, FieldLabel, useFormFields, useForm } from '@payloadcms/ui';
 import { formatSlug } from './formatSlug.js';
 import './index.scss';
-export const SlugInput = ({ field, fieldToUse, checkboxFieldPath: checkboxFieldPathFromProps, path, readOnly: readOnlyFromProps })=>{
+export const SlugInput = ({ checkboxFieldPath: checkboxFieldPathFromProps, field, fieldToUse, path, readOnly: readOnlyFromProps })=>{
     const { label } = field;
     const checkboxFieldPath = path?.includes('.') ? `${path}.${checkboxFieldPathFromProps}` : checkboxFieldPathFromProps;
-    const { value, setValue } = useField({
+    const { setValue, value } = useField({
         path: path || field.name
     });
     const { dispatchFields } = useForm();
@@ -24,9 +24,13 @@ export const SlugInput = ({ field, fieldToUse, checkboxFieldPath: checkboxFieldP
         if (checkboxValue) {
             if (targetFieldValue) {
                 const formattedSlug = formatSlug(targetFieldValue);
-                if (value !== formattedSlug) setValue(formattedSlug);
+                if (value !== formattedSlug) {
+                    setValue(formattedSlug);
+                }
             } else {
-                if (value !== '') setValue('');
+                if (value !== '') {
+                    setValue('');
+                }
             }
         }
     }, [
@@ -59,18 +63,18 @@ export const SlugInput = ({ field, fieldToUse, checkboxFieldPath: checkboxFieldP
                         label: label
                     }),
                     /*#__PURE__*/ _jsx(Button, {
-                        className: "lock-button",
                         buttonStyle: "none",
+                        className: "lock-button",
                         onClick: handleLock,
                         children: checkboxValue ? 'Unlock' : 'Lock'
                     })
                 ]
             }),
             /*#__PURE__*/ _jsx(TextInput, {
-                value: value,
                 onChange: setValue,
                 path: path || field.name,
-                readOnly: Boolean(readOnly)
+                readOnly: Boolean(readOnly),
+                value: value
             })
         ]
     });

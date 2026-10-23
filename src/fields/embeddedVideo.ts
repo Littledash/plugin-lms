@@ -15,13 +15,11 @@ type Props = {
  * @returns A configured group field for video embedding
  */
 export const embeddedVideo: (props?: Props) => GroupField = (props) => {
-  const { overrides = {}, mediaCollectionSlug = 'media' } = props || {}
+  const { mediaCollectionSlug = 'media', overrides = {} } = props || {}
 
   const field: GroupField = {
     name: 'embeddedVideo',
-    label: 'Embedded Video',
     type: 'group',
-    interfaceName: 'EmbeddedVideo',
     admin: {
       hideGutter: true,
     },
@@ -35,18 +33,21 @@ export const embeddedVideo: (props?: Props) => GroupField = (props) => {
       },
       {
         name: 'poster',
-        label: 'Poster Image',
         type: 'upload',
-        relationTo: mediaCollectionSlug,
         admin: {
           condition: (data, { embed }) => Boolean(embed),
           description: 'Maximum upload file size: 4MB. Recommended file size for images is <500KB.',
         },
+        label: 'Poster Image',
         localized: true,
+        relationTo: mediaCollectionSlug,
       },
       {
         name: 'platform',
         type: 'select',
+        admin: {
+          condition: (data, { embed }) => Boolean(embed),
+        },
         defaultValue: 'vimeo',
         options: [
           {
@@ -62,22 +63,21 @@ export const embeddedVideo: (props?: Props) => GroupField = (props) => {
             value: 'youtube',
           },
         ],
-        admin: {
-          condition: (data, { embed }) => Boolean(embed),
-        },
       },
       {
         name: 'videoURL',
-        label: 'Video URL',
         type: 'text',
-        required: true,
         admin: {
           condition: (data, { embed, platform }) =>
             Boolean(embed) && Boolean(platform !== 'internal'),
         },
+        label: 'Video URL',
         localized: true,
+        required: true,
       },
     ],
+    interfaceName: 'EmbeddedVideo',
+    label: 'Embedded Video',
     ...overrides,
   }
 

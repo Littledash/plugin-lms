@@ -26,7 +26,7 @@ export const PriceRowLabel = (props)=>{
         if (data.amount) {
             return convertFromBaseValue({
                 baseValue: data.amount,
-                currency: currency
+                currency
             });
         }
         return '0';

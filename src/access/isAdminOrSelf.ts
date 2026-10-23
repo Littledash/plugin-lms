@@ -1,5 +1,5 @@
-import type { Access, FieldAccess } from 'payload'
-import type { User } from 'payload'
+import type { Access, FieldAccess, User  } from 'payload'
+
 import { checkRole } from './checkRole.js'
 
 /**
@@ -27,11 +27,11 @@ export const isAdminOrSelf: Access = ({ req: { user } }) => {
 }
 
 export const isAdminOrSelfFieldLevel: FieldAccess<{ id: string }, User> = ({
-  req: { user },
   id,
+  req: { user },
 }) => {
   // Return true or false based on if the user has an admin role
-  if (checkRole(['admin'], user)) return true
-  if (user?.id === id) return true
+  if (checkRole(['admin'], user)) {return true}
+  if (user?.id === id) {return true}
   return false
 }

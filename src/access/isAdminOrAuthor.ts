@@ -1,4 +1,5 @@
 import type { Access, FieldAccess } from 'payload'
+
 import { checkRole } from './checkRole.js'
 
 /**

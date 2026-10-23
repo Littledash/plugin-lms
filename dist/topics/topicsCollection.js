@@ -1,6 +1,6 @@
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
-import { embeddedVideo } from '../fields/embeddedVideo.js';
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
+import { embeddedVideo } from '../fields/embeddedVideo.js';
 import { videoProgression } from '../fields/videoProgression.js';
 /**
  * Creates a topics collection configuration for Payload CMS
@@ -9,7 +9,7 @@ import { videoProgression } from '../fields/videoProgression.js';
  * @param props - Configuration properties for the topics collection
  * @returns CollectionConfig object for topics
  */ export const topicsCollection = (props)=>{
-    const { overrides, mediaCollectionSlug = 'media', coursesCollectionSlug = 'courses', quizzesCollectionSlug = 'quizzes', lessonsCollectionSlug = 'lessons' } = props || {};
+    const { coursesCollectionSlug = 'courses', lessonsCollectionSlug = 'lessons', mediaCollectionSlug = 'media', overrides, quizzesCollectionSlug = 'quizzes' } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the topics collection
@@ -18,10 +18,10 @@ import { videoProgression } from '../fields/videoProgression.js';
         {
             name: 'title',
             type: 'text',
-            required: true,
             admin: {
                 description: 'The title of the topic'
-            }
+            },
+            required: true
         },
         {
             name: 'excerpt',
@@ -33,22 +33,22 @@ import { videoProgression } from '../fields/videoProgression.js';
         {
             name: 'content',
             type: 'richText',
-            label: 'Topic Content',
+            access: {
+                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+            },
             admin: {
                 description: 'The content of the topic'
             },
-            access: {
-                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
-            }
+            label: 'Topic Content'
         },
         {
             name: 'featuredImage',
             type: 'upload',
-            relationTo: mediaCollectionSlug,
             admin: {
-                position: 'sidebar',
-                description: 'The featured image of the topic'
-            }
+                description: 'The featured image of the topic',
+                position: 'sidebar'
+            },
+            relationTo: mediaCollectionSlug
         },
         embeddedVideo({
             mediaCollectionSlug,
@@ -64,44 +64,44 @@ import { videoProgression } from '../fields/videoProgression.js';
         }),
         videoProgression({
             overrides: {
-                admin: {
-                    condition: (data, { topicVideo })=>Boolean(topicVideo.embed)
-                },
                 access: {
                     read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                },
+                admin: {
+                    condition: (data, { topicVideo })=>Boolean(topicVideo.embed)
                 }
             }
         }),
         {
             name: 'topicMaterials',
             type: 'richText',
-            label: 'Topic Materials',
+            access: {
+                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+            },
             admin: {
                 description: 'Additional materials and resources for the topic'
             },
-            access: {
-                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
-            }
+            label: 'Topic Materials'
         },
         {
             name: 'course',
             type: 'relationship',
-            relationTo: coursesCollectionSlug,
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
-                description: 'The course that the topic is associated with'
-            }
+                description: 'The course that the topic is associated with',
+                position: 'sidebar'
+            },
+            relationTo: coursesCollectionSlug
         },
         {
             name: 'lesson',
             type: 'relationship',
-            relationTo: lessonsCollectionSlug,
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
-                description: 'The lesson that the topic is associated with'
-            }
+                description: 'The lesson that the topic is associated with',
+                position: 'sidebar'
+            },
+            relationTo: lessonsCollectionSlug
         }
     ];
     // Apply field overrides if provided

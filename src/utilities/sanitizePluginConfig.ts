@@ -1,7 +1,9 @@
-import { defaultAddressFields } from '../fields/defaultAddressFields.js'
-import type { LMSPluginConfig, SanitizedLMSPluginConfig } from '../types.js'
 import type { Field } from 'payload'
+
+import type { LMSPluginConfig, SanitizedLMSPluginConfig } from '../types.js'
+
 import { AUD } from '../currencies/index.js'
+import { defaultAddressFields } from '../fields/defaultAddressFields.js'
 import { defaultStudentFields } from '../fields/defaultStudentFields.js'
 
 type Props = {

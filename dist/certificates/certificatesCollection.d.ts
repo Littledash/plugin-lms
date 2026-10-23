@@ -1,5 +1,5 @@
-import { CollectionConfig } from 'payload';
-import { FieldsOverride } from '../types.js';
+import type { CollectionConfig } from 'payload';
+import type { FieldsOverride } from '../types.js';
 /**
  * Props interface for configuring the certificates collection
  * @property coursesCollectionSlug - Slug for the courses collection (default: 'courses')
@@ -9,11 +9,11 @@ import { FieldsOverride } from '../types.js';
  */
 type Props = {
     coursesCollectionSlug?: string;
-    studentsCollectionSlug?: string;
     mediaCollectionSlug?: string;
     overrides?: {
         fields?: FieldsOverride;
     } & Partial<Omit<CollectionConfig, 'fields'>>;
+    studentsCollectionSlug?: string;
 };
 /**
  * Creates a certificates collection configuration for Payload CMS

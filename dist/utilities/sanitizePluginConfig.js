@@ -1,5 +1,5 @@
-import { defaultAddressFields } from '../fields/defaultAddressFields.js';
 import { AUD } from '../currencies/index.js';
+import { defaultAddressFields } from '../fields/defaultAddressFields.js';
 import { defaultStudentFields } from '../fields/defaultStudentFields.js';
 export const sanitizePluginConfig = ({ pluginConfig })=>{
     const config = {

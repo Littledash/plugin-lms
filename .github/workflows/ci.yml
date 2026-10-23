@@ -24,6 +24,8 @@ jobs:
 
       - run: pnpm typecheck
 
+      - run: pnpm lint
+
       # Consumers install this package from git, so the committed dist must match the source
       - name: Build and check dist is committed
         run: |

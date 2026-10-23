@@ -1,6 +1,6 @@
 export type {
   CollectionOverride,
   CurrenciesConfig,
-  LMSPluginConfig,
   FieldsOverride,
+  LMSPluginConfig,
 } from '../types.js'

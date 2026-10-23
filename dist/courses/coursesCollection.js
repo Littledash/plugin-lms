@@ -1,8 +1,8 @@
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
-import { pricesField } from '../fields/pricesField.js';
 import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
-import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js';
 import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
+import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js';
+import { pricesField } from '../fields/pricesField.js';
 /**
  * Creates a courses collection configuration for Payload CMS
  * This collection manages educational courses with various access modes, pricing, and content organization
@@ -10,7 +10,7 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
  * @param props - Configuration properties for the courses collection
  * @returns CollectionConfig object for courses
  */ export const coursesCollection = (props)=>{
-    const { overrides, mediaCollectionSlug = 'media', lessonsCollectionSlug = 'lessons', categoriesCollectionSlug = 'categories', tagsCollectionSlug = 'tags', currenciesConfig, studentsCollectionSlug = 'users', certificatesCollectionSlug = 'certificates' } = props || {};
+    const { categoriesCollectionSlug = 'categories', certificatesCollectionSlug = 'certificates', currenciesConfig, lessonsCollectionSlug = 'lessons', mediaCollectionSlug = 'media', overrides, studentsCollectionSlug = 'users', tagsCollectionSlug = 'tags' } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the courses collection
@@ -19,10 +19,10 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
         {
             name: 'title',
             type: 'text',
-            required: true,
             admin: {
                 description: 'The title of the course'
-            }
+            },
+            required: true
         },
         {
             name: 'excerpt',
@@ -41,7 +41,9 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
         {
             name: 'lessons',
             type: 'array',
-            label: 'Course Lessons',
+            access: {
+                read: isAdminOrAuthorOrStudentFieldLevel
+            },
             admin: {
                 description: 'The lessons that are part of the course in specific order'
             },
@@ -56,26 +58,26 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
                     name: 'isOptional',
                     type: 'checkbox',
                     admin: {
-                        width: '50%',
-                        description: 'Check if this lesson is optional'
+                        description: 'Check if this lesson is optional',
+                        width: '50%'
                     }
                 }
             ],
-            access: {
-                read: isAdminOrAuthorOrStudentFieldLevel
-            }
+            label: 'Course Lessons'
         },
         {
             type: 'tabs',
             tabs: [
                 {
-                    label: 'Enrollment',
                     name: 'enrollment',
                     description: 'Controls how students gain access to the course',
                     fields: [
                         {
                             name: 'accessMode',
                             type: 'select',
+                            admin: {
+                                description: 'Controls how students gain access to the course'
+                            },
                             defaultValue: 'open',
                             options: [
                                 {
@@ -99,10 +101,7 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
                                     value: 'closed'
                                 }
                             ],
-                            required: true,
-                            admin: {
-                                description: 'Controls how students gain access to the course'
-                            }
+                            required: true
                         },
                         ...currenciesConfig ? [
                             pricesField({
@@ -112,8 +111,8 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
                                         condition: (_, siblingData)=>{
                                             return [
                                                 'buy now',
-                                                'recurring',
-                                                'closed'
+                                                'closed',
+                                                'recurring'
                                             ].includes(siblingData?.accessMode);
                                         }
                                     }
@@ -124,25 +123,25 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
                             name: 'enrollmentUrl',
                             type: 'text',
                             admin: {
-                                description: 'The URL for the enrollment page',
-                                condition: (_, siblingData)=>siblingData?.accessMode === 'closed'
+                                condition: (_, siblingData)=>siblingData?.accessMode === 'closed',
+                                description: 'The URL for the enrollment page'
                             }
                         }
-                    ]
+                    ],
+                    label: 'Enrollment'
                 },
                 {
-                    label: 'Course Settings',
                     name: 'courseSettings',
                     description: 'Controls the look and feel of the course and optional content settings',
                     fields: [
                         {
                             name: 'courseMaterials',
                             type: 'richText',
-                            admin: {
-                                description: 'The materials that are part of the course'
-                            },
                             access: {
                                 read: isAdminOrAuthorOrEnrolledInThisCourseFieldLevel
+                            },
+                            admin: {
+                                description: 'The materials that are part of the course'
                             }
                         },
                         {
@@ -155,6 +154,9 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
                         {
                             name: 'duration',
                             type: 'group',
+                            admin: {
+                                description: 'The duration of the course'
+                            },
                             fields: [
                                 {
                                     type: 'row',
@@ -162,32 +164,29 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
                                         {
                                             name: 'hours',
                                             type: 'number',
-                                            label: 'hour(s)',
                                             admin: {
                                                 description: 'The number of hours in the course',
                                                 width: '50%'
-                                            }
+                                            },
+                                            label: 'hour(s)'
                                         },
                                         {
                                             name: 'minutes',
                                             type: 'number',
-                                            label: 'minute(s)',
                                             admin: {
-                                                width: '50%',
-                                                description: 'The number of minutes in the course'
-                                            }
+                                                description: 'The number of minutes in the course',
+                                                width: '50%'
+                                            },
+                                            label: 'minute(s)'
                                         }
                                     ]
                                 }
-                            ],
-                            admin: {
-                                description: 'The duration of the course'
-                            }
+                            ]
                         }
-                    ]
+                    ],
+                    label: 'Course Settings'
                 },
                 {
-                    label: 'Access Settings',
                     name: 'accessSettings',
                     description: 'Controls additional requirements and restrictions that enrollees need to meet to access the course',
                     fields: [
@@ -207,6 +206,10 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
                                 {
                                     name: 'completionRequirement',
                                     type: 'select',
+                                    admin: {
+                                        description: 'What is required to satisfy this prerequisite',
+                                        width: '50%'
+                                    },
                                     defaultValue: 'complete',
                                     options: [
                                         {
@@ -225,42 +228,38 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
                                             label: 'Complete Specific Lessons',
                                             value: 'specificLessons'
                                         }
-                                    ],
-                                    admin: {
-                                        width: '50%',
-                                        description: 'What is required to satisfy this prerequisite'
-                                    }
+                                    ]
                                 },
                                 {
                                     name: 'minimumScore',
                                     type: 'number',
-                                    min: 0,
-                                    max: 100,
                                     admin: {
-                                        width: '50%',
+                                        condition: (_, siblingData)=>siblingData?.completionRequirement === 'minimumScore',
                                         description: 'Minimum score required (0-100)',
-                                        condition: (_, siblingData)=>siblingData?.completionRequirement === 'minimumScore'
-                                    }
+                                        width: '50%'
+                                    },
+                                    max: 100,
+                                    min: 0
                                 },
                                 {
                                     name: 'requiredLessons',
                                     type: 'relationship',
-                                    relationTo: lessonsCollectionSlug,
-                                    hasMany: true,
                                     admin: {
-                                        width: '50%',
+                                        condition: (_, siblingData)=>siblingData?.completionRequirement === 'specificLessons',
                                         description: 'Specific lessons that must be completed',
-                                        condition: (_, siblingData)=>siblingData?.completionRequirement === 'specificLessons'
-                                    }
+                                        width: '50%'
+                                    },
+                                    hasMany: true,
+                                    relationTo: lessonsCollectionSlug
                                 },
                                 {
                                     name: 'isOptional',
                                     type: 'checkbox',
-                                    defaultValue: false,
                                     admin: {
-                                        width: '50%',
-                                        description: 'Whether this prerequisite is optional'
-                                    }
+                                        description: 'Whether this prerequisite is optional',
+                                        width: '50%'
+                                    },
+                                    defaultValue: false
                                 }
                             ]
                         },
@@ -278,44 +277,46 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
                                 description: 'The number of students that can enroll in the course'
                             }
                         }
-                    ]
+                    ],
+                    label: 'Access Settings'
                 },
                 {
-                    label: 'Awards',
                     name: 'awards',
                     description: 'Controls the awards settings of the course',
                     fields: [
                         {
                             name: 'certificate',
                             type: 'relationship',
-                            relationTo: certificatesCollectionSlug,
-                            hasMany: false,
                             admin: {
                                 allowCreate: false,
                                 description: 'The certificate that is awarded to the students who complete the course'
-                            }
+                            },
+                            hasMany: false,
+                            relationTo: certificatesCollectionSlug
                         },
                         {
                             name: 'coursePoints',
                             type: 'number',
-                            label: 'Course completion points',
                             admin: {
                                 description: 'The points that are awarded to the students who complete the course'
-                            }
+                            },
+                            label: 'Course completion points'
                         }
-                    ]
+                    ],
+                    label: 'Awards'
                 },
                 {
-                    label: 'Navigation',
                     name: 'navigation',
                     description: 'Controls the navigation settings of the course',
                     fields: [
                         {
                             name: 'navigationMode',
                             type: 'select',
-                            label: 'Course Navigation Mode',
+                            admin: {
+                                description: 'Controls how students interact with the content and their navigational experience'
+                            },
                             defaultValue: 'linear',
-                            required: true,
+                            label: 'Course Navigation Mode',
                             options: [
                                 {
                                     label: 'Linear',
@@ -326,96 +327,95 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
                                     value: 'free'
                                 }
                             ],
-                            admin: {
-                                description: 'Controls how students interact with the content and their navigational experience'
-                            }
+                            required: true
                         }
-                    ]
+                    ],
+                    label: 'Navigation'
                 }
             ]
         },
         {
             name: 'enrolledStudents',
             type: 'relationship',
-            relationTo: studentsCollectionSlug,
-            hasMany: true,
-            admin: {
-                position: 'sidebar',
-                allowCreate: false,
-                description: 'Controls the students enrolled in the course'
-            },
             access: {
                 read: isAdminOrAuthorFieldLevel
-            }
+            },
+            admin: {
+                allowCreate: false,
+                description: 'Controls the students enrolled in the course',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: studentsCollectionSlug
         },
         {
             name: 'courseCompletedStudents',
             type: 'relationship',
-            relationTo: studentsCollectionSlug,
-            hasMany: true,
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
-                description: 'The students completed the course'
-            }
+                description: 'The students completed the course',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: studentsCollectionSlug
         },
         {
             name: 'courseEnrolledGroups',
             type: 'relationship',
-            relationTo: 'groups',
-            hasMany: true,
-            label: 'Course Enrolled Groups',
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
                 allowEdit: false,
-                description: 'Controls the groups enrolled in the course'
-            }
+                description: 'Controls the groups enrolled in the course',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            label: 'Course Enrolled Groups',
+            relationTo: 'groups'
         },
         {
             name: 'authors',
             type: 'relationship',
-            relationTo: studentsCollectionSlug,
-            hasMany: true,
-            admin: {
-                position: 'sidebar',
-                allowCreate: false,
-                description: 'The authors of the course'
-            },
             access: {
                 read: isAdminOrAuthorFieldLevel
-            }
+            },
+            admin: {
+                allowCreate: false,
+                description: 'The authors of the course',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: studentsCollectionSlug
         },
         {
             name: 'categories',
             type: 'relationship',
-            relationTo: categoriesCollectionSlug,
-            hasMany: true,
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
-                description: 'The categories that are part of the course'
-            }
+                description: 'The categories that are part of the course',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: categoriesCollectionSlug
         },
         {
             name: 'tags',
             type: 'relationship',
-            relationTo: tagsCollectionSlug,
-            hasMany: true,
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
-                description: 'The tags that are part of the course'
-            }
+                description: 'The tags that are part of the course',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: tagsCollectionSlug
         },
         {
             name: 'featuredImage',
             type: 'upload',
-            relationTo: mediaCollectionSlug,
             admin: {
-                position: 'sidebar',
-                description: 'The featured image of the course'
-            }
+                description: 'The featured image of the course',
+                position: 'sidebar'
+            },
+            relationTo: mediaCollectionSlug
         }
     ];
     // Apply field overrides if provided

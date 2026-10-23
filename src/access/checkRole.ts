@@ -6,7 +6,7 @@ import type { User } from 'payload'
  * @param user - The user to check roles for (can be null)
  * @returns True if the user has any of the specified roles, false otherwise
  */
-export const checkRole = (allRoles: User['roles'] = [], user: User | null): boolean => {
+export const checkRole = (allRoles: User['roles'] = [], user: null | User): boolean => {
   if (user) {
     if (
       allRoles.some((role: string) => {
@@ -15,7 +15,7 @@ export const checkRole = (allRoles: User['roles'] = [], user: User | null): bool
         })
       })
     )
-      return true
+      {return true}
   }
 
   return false

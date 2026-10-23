@@ -1,5 +1,4 @@
-import type { AccessArgs, FieldAccess } from 'payload';
-import type { User } from 'payload';
+import type { AccessArgs, FieldAccess, User } from 'payload';
 type isAdminType = (args: AccessArgs<User>) => boolean;
 /**
  * Access control that only allows users with admin role

@@ -1,8 +1,8 @@
 import type { CollectionConfig, Field } from 'payload'
-import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 
 import type { CountryType, FieldsOverride } from '../types.js'
 
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 import { defaultCountries } from './defaultCountries.js'
 
 type Props = {
@@ -10,16 +10,16 @@ type Props = {
    * Array of fields used for capturing the address data. Use this over overrides to customise the fields here as it's reused across the plugin.
    */
   addressFields: Field[]
+  overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
   /**
    * Slug of the students collection, defaults to 'users'.
    */
   studentsCollectionSlug?: string
-  overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
   supportedCountries?: CountryType[]
 }
 
 export const addressesCollection: (props: Props) => CollectionConfig = (props) => {
-  const { addressFields, studentsCollectionSlug = 'users', overrides } = props || {}
+  const { addressFields, overrides, studentsCollectionSlug = 'users' } = props || {}
   const fieldsOverride = overrides?.fields
 
   const { supportedCountries: supportedCountriesFromProps } = props || {}

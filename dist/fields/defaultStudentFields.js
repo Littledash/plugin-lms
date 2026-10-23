@@ -1,7 +1,7 @@
-import { enrolledCoursesField } from './enrolledCoursesField.js';
-import { completedCoursesField } from './completedCoursesField.js';
 import { certificatesField } from './certifcatesField.js';
+import { completedCoursesField } from './completedCoursesField.js';
 import { coursesProgressField } from './coursesProgressField.js';
+import { enrolledCoursesField } from './enrolledCoursesField.js';
 export const defaultStudentFields = ()=>{
     return [
         enrolledCoursesField({}),

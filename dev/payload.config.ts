@@ -2,14 +2,15 @@ import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig, Field } from 'payload'
-import { lmsPlugin } from '../src/index.js'
-import { anyone } from '../src/access/anyone.js'
-import { isAdmin, isAdminFieldLevel } from '../src/access/isAdmin.js'
-import { isAdminOrSelf } from '../src/access/isAdminOrSelf.js'
-import type { CollectionOverride } from '../src/types.js'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import type { CollectionOverride } from '../src/types.js'
+
+import { anyone } from '../src/access/anyone.js'
+import { isAdmin, isAdminFieldLevel } from '../src/access/isAdmin.js'
+import { isAdminOrSelf } from '../src/access/isAdminOrSelf.js'
+import { lmsPlugin } from '../src/index.js'
 import { devUser } from './helpers/credentials.js'
 import { testEmailAdapter } from './helpers/testEmailAdapter.js'
 import { seed } from './seed.js'
@@ -27,9 +28,9 @@ const studentCollection: CollectionOverride = {
   // Mirrors the consuming site so tests exercise the same access rules
   access: {
     create: anyone,
+    delete: isAdmin,
     read: isAdminOrSelf,
     update: isAdminOrSelf,
-    delete: isAdmin,
   },
   admin: {
     defaultColumns: ['fullName', 'email', 'roles'],
@@ -49,13 +50,12 @@ const studentCollection: CollectionOverride = {
     {
       name: 'roles',
       type: 'select',
-      hasMany: true,
-      defaultValue: ['public'],
-      required: true,
       access: {
         create: isAdminFieldLevel,
         update: isAdminFieldLevel,
       },
+      defaultValue: ['public'],
+      hasMany: true,
       options: [
         {
           label: 'Administrator',
@@ -69,6 +69,7 @@ const studentCollection: CollectionOverride = {
           value: 'public',
         },
       ],
+      required: true,
     },
     {
       type: 'row',
@@ -90,15 +91,15 @@ const studentCollection: CollectionOverride = {
             hidden: true, // hides the field from the admin panel
           },
           hooks: {
+            afterRead: [
+              ({ data }) => {
+                return `${data?.firstName} ${data?.lastName}`
+              },
+            ],
             beforeChange: [
               ({ siblingData }) => {
                 // ensures data is not stored in DB
                 delete siblingData['fullName']
-              },
-            ],
-            afterRead: [
-              ({ data }) => {
-                return `${data?.firstName} ${data?.lastName}`
               },
             ],
           },
@@ -143,19 +144,16 @@ export default buildConfig({
   // },
   plugins: [
     lmsPlugin({
+      groups: true,
       students: {
         slug: 'users',
         studentsCollection: studentCollection,
       },
-      groups: true,
       // Drafts on, as in the consuming site
       courses: { coursesCollection: { versions: { drafts: true } } },
       lessons: true,
       // Tests retry quizzes back-to-back; the cooldown test raises this at runtime
-      quizzes: { attemptCooldownSeconds: 0 },
       categories: true,
-      topics: true,
-      tags: true,
       certificates: true,
       questions: {
         questionTypes: [
@@ -165,6 +163,9 @@ export default buildConfig({
           { label: 'Fill in the Blank', value: 'fillInBlank' },
         ],
       },
+      quizzes: { attemptCooldownSeconds: 0 },
+      tags: true,
+      topics: true,
     }),
   ],
   secret: process.env.PAYLOAD_SECRET || 'test-secret_key',

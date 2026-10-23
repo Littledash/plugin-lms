@@ -34,7 +34,7 @@ export const PriceRowLabel: React.FC<Props> = (props) => {
 
   const amount = useMemo(() => {
     if (data.amount) {
-      return convertFromBaseValue({ baseValue: data.amount, currency: currency! })
+      return convertFromBaseValue({ baseValue: data.amount, currency })
     }
 
     return '0'

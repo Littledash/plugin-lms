@@ -1,4 +1,4 @@
-import { CourseProgress, Progress, Lesson } from '../providers/types.js';
+import type { CourseProgress, Lesson, Progress } from '../providers/types.js';
 /**
  * @fileoverview Utility functions for checking lesson completion status
  *
@@ -42,8 +42,8 @@ export declare const allQuizzesCompleted: (courseProgress: CourseProgress, lesso
  * @returns object with completion status details
  */
 export declare const completedLesson: (progress: Progress, courseId: string, lesson: Lesson) => {
-    isCompleted: boolean;
-    hasQuizzes: boolean;
     allQuizzesCompleted: boolean;
+    hasQuizzes: boolean;
+    isCompleted: boolean;
     lessonCompleted: boolean;
 };

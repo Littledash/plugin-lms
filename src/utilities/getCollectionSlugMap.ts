@@ -2,18 +2,18 @@ import type { CollectionSlugMap, SanitizedLMSPluginConfig } from '../types.js'
 
 export const defaultCollectionSlugMap: CollectionSlugMap = {
   addresses: 'addresses',
-  courses: 'courses',
+  categories: 'categories',
+  certificates: 'certificates',
   coupons: 'coupons',
+  courses: 'courses',
   groups: 'groups',
   lessons: 'lessons',
-  quizzes: 'quizzes',
-  categories: 'categories',
-  tags: 'tags',
-  certificates: 'certificates',
-  questions: 'questions',
-  topics: 'topics',
   media: 'media',
+  questions: 'questions',
+  quizzes: 'quizzes',
   students: 'users',
+  tags: 'tags',
+  topics: 'topics',
 }
 
 type Props = {

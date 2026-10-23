@@ -1,21 +1,21 @@
 'use client'
-import React, { useCallback, useEffect } from 'react'
-import { TextFieldClientProps } from 'payload'
+import type { TextFieldClientProps } from 'payload'
 
-import { useField, Button, TextInput, FieldLabel, useFormFields, useForm } from '@payloadcms/ui'
+import { Button, FieldLabel, TextInput, useField, useForm, useFormFields } from '@payloadcms/ui'
+import React, { useCallback, useEffect } from 'react'
 
 import { formatSlug } from './formatSlug.js'
 import './index.scss'
 
 type SlugComponentProps = {
-  fieldToUse: string
   checkboxFieldPath: string
+  fieldToUse: string
 } & TextFieldClientProps
 
 export const SlugInput: React.FC<SlugComponentProps> = ({
+  checkboxFieldPath: checkboxFieldPathFromProps,
   field,
   fieldToUse,
-  checkboxFieldPath: checkboxFieldPathFromProps,
   path,
   readOnly: readOnlyFromProps,
 }) => {
@@ -25,7 +25,7 @@ export const SlugInput: React.FC<SlugComponentProps> = ({
     ? `${path}.${checkboxFieldPathFromProps}`
     : checkboxFieldPathFromProps
 
-  const { value, setValue } = useField<string>({ path: path || field.name })
+  const { setValue, value } = useField<string>({ path: path || field.name })
 
   const { dispatchFields } = useForm()
 
@@ -45,9 +45,9 @@ export const SlugInput: React.FC<SlugComponentProps> = ({
       if (targetFieldValue) {
         const formattedSlug = formatSlug(targetFieldValue)
 
-        if (value !== formattedSlug) setValue(formattedSlug)
+        if (value !== formattedSlug) {setValue(formattedSlug)}
       } else {
-        if (value !== '') setValue('')
+        if (value !== '') {setValue('')}
       }
     }
   }, [targetFieldValue, checkboxValue, setValue, value])
@@ -72,16 +72,16 @@ export const SlugInput: React.FC<SlugComponentProps> = ({
       <div className="label-wrapper">
         <FieldLabel htmlFor={`field-${path}`} label={label} />
 
-        <Button className="lock-button" buttonStyle="none" onClick={handleLock}>
+        <Button buttonStyle="none" className="lock-button" onClick={handleLock}>
           {checkboxValue ? 'Unlock' : 'Lock'}
         </Button>
       </div>
 
       <TextInput
-        value={value}
         onChange={setValue}
         path={path || field.name}
         readOnly={Boolean(readOnly)}
+        value={value}
       />
     </div>
   )

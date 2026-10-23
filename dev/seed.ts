@@ -1,4 +1,5 @@
 import type { Payload } from 'payload'
+
 import { devUser } from './helpers/credentials.js'
 
 /**
@@ -33,10 +34,10 @@ export const seed = async (payload: Payload) => {
       collection: 'media',
       data: {
         filename: 'certificate-template.png',
-        mimeType: 'image/png',
         filesize: 1024,
-        width: 1920,
         height: 1080,
+        mimeType: 'image/png',
+        width: 1920,
       },
     })
 
@@ -44,16 +45,16 @@ export const seed = async (payload: Payload) => {
     const programmingCategory = await payload.create({
       collection: 'categories',
       data: {
-        title: 'Programming',
         slug: 'programming',
+        title: 'Programming',
       },
     })
 
     const designCategory = await payload.create({
       collection: 'categories',
       data: {
-        title: 'Design',
         slug: 'design',
+        title: 'Design',
       },
     })
 
@@ -61,16 +62,16 @@ export const seed = async (payload: Payload) => {
     const javascriptTag = await payload.create({
       collection: 'tags',
       data: {
-        title: 'JavaScript',
         slug: 'javascript',
+        title: 'JavaScript',
       },
     })
 
     const reactTag = await payload.create({
       collection: 'tags',
       data: {
-        title: 'React',
         slug: 'react',
+        title: 'React',
       },
     })
 
@@ -78,7 +79,8 @@ export const seed = async (payload: Payload) => {
     const course = await payload.create({
       collection: 'courses',
       data: {
-        title: 'Introduction to Web Development',
+        accessMode: 'free',
+        categories: [programmingCategory.id],
         description: {
           root: {
             type: 'root',
@@ -101,11 +103,10 @@ export const seed = async (payload: Payload) => {
           },
         },
         excerpt: 'A comprehensive introduction to web development',
-        accessMode: 'free',
         navigationMode: 'linear',
-        categories: [programmingCategory.id],
-        tags: [javascriptTag.id, reactTag.id],
         students: [user.id],
+        tags: [javascriptTag.id, reactTag.id],
+        title: 'Introduction to Web Development',
       },
     })
 
@@ -113,7 +114,6 @@ export const seed = async (payload: Payload) => {
     const htmlLesson = await payload.create({
       collection: 'lessons',
       data: {
-        title: 'HTML Basics',
         content: {
           root: {
             type: 'root',
@@ -135,10 +135,11 @@ export const seed = async (payload: Payload) => {
             version: 1,
           },
         },
-        excerpt: 'Introduction to HTML structure and elements',
         course: course.id,
-        progressionControl: 'required',
+        excerpt: 'Introduction to HTML structure and elements',
         lessonOrder: 1,
+        progressionControl: 'required',
+        title: 'HTML Basics',
       },
     })
 
@@ -146,7 +147,6 @@ export const seed = async (payload: Payload) => {
     const cssLesson = await payload.create({
       collection: 'lessons',
       data: {
-        title: 'CSS Fundamentals',
         content: {
           root: {
             type: 'root',
@@ -168,10 +168,11 @@ export const seed = async (payload: Payload) => {
             version: 1,
           },
         },
-        excerpt: 'Introduction to CSS styling and layout',
         course: course.id,
-        progressionControl: 'required',
+        excerpt: 'Introduction to CSS styling and layout',
         lessonOrder: 2,
+        progressionControl: 'required',
+        title: 'CSS Fundamentals',
       },
     })
 
@@ -179,7 +180,6 @@ export const seed = async (payload: Payload) => {
     const htmlStructureTopic = await payload.create({
       collection: 'topics',
       data: {
-        title: 'HTML Document Structure',
         content: {
           root: {
             type: 'root',
@@ -201,9 +201,10 @@ export const seed = async (payload: Payload) => {
             version: 1,
           },
         },
-        excerpt: 'Learn about HTML document structure and essential elements',
         course: course.id,
+        excerpt: 'Learn about HTML document structure and essential elements',
         lesson: htmlLesson.id,
+        title: 'HTML Document Structure',
         topicVideo: {
           embed: 'https://example.com/video/html-structure',
         },
@@ -213,7 +214,6 @@ export const seed = async (payload: Payload) => {
     const htmlElementsTopic = await payload.create({
       collection: 'topics',
       data: {
-        title: 'HTML Elements and Tags',
         content: {
           root: {
             type: 'root',
@@ -235,9 +235,10 @@ export const seed = async (payload: Payload) => {
             version: 1,
           },
         },
-        excerpt: 'Learn about different HTML elements and how to use them',
         course: course.id,
+        excerpt: 'Learn about different HTML elements and how to use them',
         lesson: htmlLesson.id,
+        title: 'HTML Elements and Tags',
         topicVideo: {
           embed: 'https://example.com/video/html-elements',
         },
@@ -247,7 +248,6 @@ export const seed = async (payload: Payload) => {
     const htmlFormsTopic = await payload.create({
       collection: 'topics',
       data: {
-        title: 'HTML Forms and Input',
         content: {
           root: {
             type: 'root',
@@ -269,9 +269,10 @@ export const seed = async (payload: Payload) => {
             version: 1,
           },
         },
-        excerpt: 'Learn how to create and style HTML forms',
         course: course.id,
+        excerpt: 'Learn how to create and style HTML forms',
         lesson: htmlLesson.id,
+        title: 'HTML Forms and Input',
         topicVideo: {
           embed: 'https://example.com/video/html-forms',
         },
@@ -282,7 +283,6 @@ export const seed = async (payload: Payload) => {
     const cssSelectorsTopic = await payload.create({
       collection: 'topics',
       data: {
-        title: 'CSS Selectors and Properties',
         content: {
           root: {
             type: 'root',
@@ -304,9 +304,10 @@ export const seed = async (payload: Payload) => {
             version: 1,
           },
         },
-        excerpt: 'Learn about CSS selectors and how to style elements',
         course: course.id,
+        excerpt: 'Learn about CSS selectors and how to style elements',
         lesson: cssLesson.id,
+        title: 'CSS Selectors and Properties',
         topicVideo: {
           embed: 'https://example.com/video/css-selectors',
         },
@@ -316,7 +317,6 @@ export const seed = async (payload: Payload) => {
     const cssBoxModelTopic = await payload.create({
       collection: 'topics',
       data: {
-        title: 'CSS Box Model',
         content: {
           root: {
             type: 'root',
@@ -338,9 +338,10 @@ export const seed = async (payload: Payload) => {
             version: 1,
           },
         },
-        excerpt: 'Learn about the CSS box model and how it affects layout',
         course: course.id,
+        excerpt: 'Learn about the CSS box model and how it affects layout',
         lesson: cssLesson.id,
+        title: 'CSS Box Model',
         topicVideo: {
           embed: 'https://example.com/video/css-box-model',
         },
@@ -350,7 +351,6 @@ export const seed = async (payload: Payload) => {
     const cssFlexboxTopic = await payload.create({
       collection: 'topics',
       data: {
-        title: 'CSS Flexbox Layout',
         content: {
           root: {
             type: 'root',
@@ -372,9 +372,10 @@ export const seed = async (payload: Payload) => {
             version: 1,
           },
         },
-        excerpt: 'Learn how to create responsive layouts with Flexbox',
         course: course.id,
+        excerpt: 'Learn how to create responsive layouts with Flexbox',
         lesson: cssLesson.id,
+        title: 'CSS Flexbox Layout',
         topicVideo: {
           embed: 'https://example.com/video/css-flexbox',
         },
@@ -385,7 +386,6 @@ export const seed = async (payload: Payload) => {
     const quiz = await payload.create({
       collection: 'quizzes',
       data: {
-        title: 'HTML Quiz',
         description: {
           root: {
             type: 'root',
@@ -408,6 +408,7 @@ export const seed = async (payload: Payload) => {
           },
         },
         questions: [],
+        title: 'HTML Quiz',
       },
     })
 
@@ -415,37 +416,37 @@ export const seed = async (payload: Payload) => {
     const question1 = await payload.create({
       collection: 'questions',
       data: {
-        title: 'What does HTML stand for?',
-        points: 10,
-        questionType: 'multipleChoice',
-        question: 'What does HTML stand for?',
         choices: [
-          { label: 'Hyper Text Markup Language', isCorrect: true },
-          { label: 'High Tech Modern Language', isCorrect: false },
-          { label: 'Hyper Transfer Markup Language', isCorrect: false },
+          { isCorrect: true, label: 'Hyper Text Markup Language' },
+          { isCorrect: false, label: 'High Tech Modern Language' },
+          { isCorrect: false, label: 'Hyper Transfer Markup Language' },
         ],
+        points: 10,
+        question: 'What does HTML stand for?',
+        questionType: 'multipleChoice',
+        title: 'What does HTML stand for?',
       },
     })
 
     const question2 = await payload.create({
       collection: 'questions',
       data: {
-        title: 'Which tag is used for the largest heading?',
-        points: 10,
-        questionType: 'singleChoice',
-        question: 'Which tag is used for the largest heading?',
         choices: [
-          { label: '<h1>', isCorrect: true },
-          { label: '<h6>', isCorrect: false },
-          { label: '<head>', isCorrect: false },
+          { isCorrect: true, label: '<h1>' },
+          { isCorrect: false, label: '<h6>' },
+          { isCorrect: false, label: '<head>' },
         ],
+        points: 10,
+        question: 'Which tag is used for the largest heading?',
+        questionType: 'singleChoice',
+        title: 'Which tag is used for the largest heading?',
       },
     })
 
     // Update quiz with questions
     await payload.update({
-      collection: 'quizzes',
       id: quiz.id,
+      collection: 'quizzes',
       data: {
         questions: [question1.id, question2.id],
       },
@@ -455,7 +456,8 @@ export const seed = async (payload: Payload) => {
     await payload.create({
       collection: 'certificates',
       data: {
-        title: 'Web Development Certificate',
+        certificateNumber: 'WD-' + Date.now(),
+        course: course.id,
         description: {
           root: {
             type: 'root',
@@ -477,12 +479,11 @@ export const seed = async (payload: Payload) => {
             version: 1,
           },
         },
-        template: template.id,
-        course: course.id,
-        students: [user.id],
         issueDate: new Date().toISOString(),
-        certificateNumber: 'WD-' + Date.now(),
         status: 'active',
+        students: [user.id],
+        template: template.id,
+        title: 'Web Development Certificate',
       },
     })
   }

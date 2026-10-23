@@ -1,4 +1,5 @@
 import type { NumberField } from 'payload'
+
 import type { CurrenciesConfig } from '../types.js'
 
 /**

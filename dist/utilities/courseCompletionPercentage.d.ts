@@ -1,2 +1,2 @@
-import { Progress } from '../providers/types.js';
+import type { Progress } from '../providers/types.js';
 export declare const courseCompletionPercentage: (progress: Progress, courseId: string) => number;

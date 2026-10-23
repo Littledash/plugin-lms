@@ -1,45 +1,47 @@
 'use client'
 
-import React, { createContext, use, useCallback, useEffect, useReducer, useState } from 'react'
 import type { DefaultDocumentIDType, TypedUser } from 'payload'
+
 import * as qs from 'qs-esm'
-import { LMSContextType, LMSProviderProps, CourseProgress } from './types.js'
-import { lmsReducer, initialState, type LMSState } from './reducer.js'
+import React, { createContext, use, useCallback, useEffect, useReducer, useState } from 'react'
+
+import type { CourseProgress, LMSContextType, LMSProviderProps } from './types.js'
+
+import { initialState, lmsReducer, type LMSState } from './reducer.js'
 
 const defaultContext: LMSContextType = {
-  users: [],
+  addUserToGroup: async () => {},
+  certificates: [],
+  completeCourse: async () => {},
+  completedCourses: [],
+  completeLesson: async () => {},
   courses: [],
-  topics: [],
+  enroll: async () => {},
+  enrolledCourses: [],
+  error: null,
+  fetchCourses: async () => {},
+  fetchLessons: async () => {},
+  fetchProgress: async () => {},
+  fetchQuizzes: async () => {},
+  fetchTopics: async () => {},
+  fetchUsers: async () => {},
+  getProgress: () => undefined,
+  isLoading: false,
   lessons: [],
   progress: [],
-  quizzes: [],
-  certificates: [],
-  enrolledCourses: [],
-  completedCourses: [],
   quizStarted: null,
-  enroll: async () => {},
-  completeCourse: async () => {},
-  completeLesson: async () => {},
-  startQuiz: async () => {},
+  quizzes: [],
   setQuizCompleted: async () => {},
   setQuizExited: async () => {},
-  submitQuiz: async () => {
-    return {
+  startQuiz: async () => {},
+  submitQuiz: () =>
+    Promise.resolve({
+      message: 'An unknown error occurred submitting quiz. Please try again.',
       passed: false,
       score: 0,
-      message: 'An unknown error occurred submitting quiz. Please try again.',
-    }
-  },
-  addUserToGroup: async () => {},
-  getProgress: () => undefined,
-  fetchProgress: async () => {},
-  fetchUsers: async () => {},
-  fetchCourses: async () => {},
-  fetchTopics: async () => {},
-  fetchLessons: async () => {},
-  fetchQuizzes: async () => {},
-  isLoading: false,
-  error: null,
+    }),
+  topics: [],
+  users: [],
 }
 
 const LMSContext = createContext<LMSContextType>(defaultContext)
@@ -49,8 +51,8 @@ const defaultLocalStorage = {
 }
 
 export const LMSProvider: React.FC<LMSProviderProps> = ({
-  children,
   api,
+  children,
   syncLocalStorage = true,
 }) => {
   const localStorageConfig =
@@ -124,15 +126,15 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       const response = await fetch(
         `${baseAPIURL}/lms/fetch-progress`,
         {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          method: 'GET',
         }
       )
       
-      if (!response.ok) throw new Error('Failed to fetch user progress')
+      if (!response.ok) {throw new Error('Failed to fetch user progress')}
       const data = await response.json()
-      const { coursesProgress, enrolledCourses, completedCourses } = data
+      const { completedCourses, coursesProgress, enrolledCourses } = data
       
       // Update all progress-related state
       dispatch({ type: 'UPDATE_PROGRESS', payload: coursesProgress || [] })
@@ -162,39 +164,39 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         // Normalize progress data to use IDs only for backward compatibility
         const normalizedProgress = (parsed.progress || []).map((progress: CourseProgress) => ({
           ...progress,
-          course: typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course,
           completedLessons: progress.completedLessons?.map((lesson) => ({
             ...lesson,
             lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson,
           })) || [],
-          completionPercentage: progress.completionPercentage || 0,
-          courseCompletion: progress.courseCompletion || '',
           completedQuizzes: progress.completedQuizzes?.map((quiz) => ({
             ...quiz,
             quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz,
           })) || [],
+          completionPercentage: progress.completionPercentage || 0,
+          course: typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course,
+          courseCompletion: progress.courseCompletion || '',
         }))
         
         // Normalize enrolled and completed courses to use IDs only
-        const normalizedEnrolledCourses = (parsed.enrolledCourses || []).map((course: DefaultDocumentIDType | { id: DefaultDocumentIDType }) => 
+        const normalizedEnrolledCourses = (parsed.enrolledCourses || []).map((course: { id: DefaultDocumentIDType } | DefaultDocumentIDType) => 
           typeof course === 'object' && course !== null ? course.id : course
         )
-        const normalizedCompletedCourses = (parsed.completedCourses || []).map((course: DefaultDocumentIDType | { id: DefaultDocumentIDType }) => 
+        const normalizedCompletedCourses = (parsed.completedCourses || []).map((course: { id: DefaultDocumentIDType } | DefaultDocumentIDType) => 
           typeof course === 'object' && course !== null ? course.id : course
         )
         
         dispatch({
           type: 'LOAD_FROM_STORAGE',
           payload: {
-            progress: normalizedProgress,
-            enrolledCourses: normalizedEnrolledCourses,
             completedCourses: normalizedCompletedCourses,
+            enrolledCourses: normalizedEnrolledCourses,
+            progress: normalizedProgress,
           },
         })
       }
       
-      // Then fetch fresh data from database
-      fetchProgress()
+      // Then fetch fresh data from database. The effect must not wait on it.
+      void fetchProgress()
     }
   }, [syncLocalStorage, localStorageConfig.key, fetchProgress])
 
@@ -202,9 +204,9 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   useEffect(() => {
     if (syncLocalStorage) {
       const serializedState = JSON.stringify({
-        progress: state.progress,
-        enrolledCourses: state.enrolledCourses,
         completedCourses: state.completedCourses,
+        enrolledCourses: state.enrolledCourses,
+        progress: state.progress,
       })
       localStorage.setItem(localStorageConfig.key, serializedState)
     }
@@ -216,12 +218,12 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
         const response = await fetch(`${baseAPIURL}/lms/enroll`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
           body: JSON.stringify({ courseId }),
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
         })
-        if (!response.ok) throw new Error('Failed to enroll in course')
+        if (!response.ok) {throw new Error('Failed to enroll in course')}
         await fetchProgress() // Refetch progress to ensure state is up-to-date
       } catch (e: unknown) {
         dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
@@ -238,12 +240,12 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
         const response = await fetch(`${baseAPIURL}/lms/complete-course`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
           body: JSON.stringify({ courseId }),
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
         })
-        if (!response.ok) throw new Error('Failed to complete course')
+        if (!response.ok) {throw new Error('Failed to complete course')}
         await fetchProgress() // Refetch progress to ensure state is up-to-date
       } catch (e: unknown) {
         dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
@@ -260,10 +262,10 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
         await fetch(`${baseAPIURL}/lms/complete-lesson`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
           body: JSON.stringify({ courseId, lessonId }),
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
         })
         await fetchProgress() // Refetch progress to ensure state is up-to-date
       } catch (e: unknown) {
@@ -276,25 +278,27 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const startQuiz = useCallback(
-    async (quizId: DefaultDocumentIDType, courseId: DefaultDocumentIDType) => {
+    (quizId: DefaultDocumentIDType, courseId: DefaultDocumentIDType) => {
       dispatch({ type: 'SET_LOADING', payload: true })
       dispatch({ type: 'SET_ERROR', payload: null })
-      dispatch({ type: 'SET_QUIZ_STARTED', payload: { quizId, courseId, startedAt: new Date().toISOString() } })
-      
+      dispatch({ type: 'SET_QUIZ_STARTED', payload: { courseId, quizId, startedAt: new Date().toISOString() } })
+      return Promise.resolve()
     },
     [],
   )
 
   const setQuizCompleted = useCallback(
-    async (quizId: DefaultDocumentIDType, score: number) => {
-      dispatch({ type: 'SET_QUIZ_COMPLETED', payload: { quizId, completedAt: new Date().toISOString(), score } })
+    (quizId: DefaultDocumentIDType, score: number) => {
+      dispatch({ type: 'SET_QUIZ_COMPLETED', payload: { completedAt: new Date().toISOString(), quizId, score } })
+      return Promise.resolve()
     },
     [],
   )
 
   const setQuizExited = useCallback(
-    async (quizId: DefaultDocumentIDType, courseId: DefaultDocumentIDType) => {
-      dispatch({ type: 'SET_QUIZ_EXITED', payload: { quizId, courseId, exitedAt: new Date().toISOString() } })
+    (quizId: DefaultDocumentIDType, courseId: DefaultDocumentIDType) => {
+      dispatch({ type: 'SET_QUIZ_EXITED', payload: { courseId, exitedAt: new Date().toISOString(), quizId } })
+      return Promise.resolve()
     },
     [],
   )
@@ -305,15 +309,15 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
         const response = await fetch(`${baseAPIURL}/lms/submit-quiz`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers, courseId, quizId }),
           credentials: 'include',
-          body: JSON.stringify({ courseId, quizId, answers }),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
         })
-        if (!response.ok) throw new Error('Failed to submit quiz')
+        if (!response.ok) {throw new Error('Failed to submit quiz')}
         const data = await response.json()
         if (data.passed) {
-          dispatch({ type: 'SET_QUIZ_COMPLETED', payload: { quizId, completedAt: new Date().toISOString(), score: data.score } })
+          dispatch({ type: 'SET_QUIZ_COMPLETED', payload: { completedAt: new Date().toISOString(), quizId, score: data.score } })
           
         }
         await fetchProgress() // Refetch progress to ensure state is up-to-date
@@ -321,9 +325,9 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       } catch (e: unknown) {
         dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
         return {
+          message: 'An unknown error occurred submitting quiz. Please try again.',
           passed: false,
           score: 0,
-          message: 'An unknown error occurred submitting quiz. Please try again.',
         }
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false })
@@ -338,12 +342,12 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       dispatch({ type: 'SET_ERROR', payload: null })
       try {
         const response = await fetch(`${baseAPIURL}/lms/add-user-to-group`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
           body: JSON.stringify({ groupId, memberId, role }),
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
         })
-        if (!response.ok) throw new Error('Failed to add user to group')
+        if (!response.ok) {throw new Error('Failed to add user to group')}
       } catch (e: unknown) {
         dispatch({ type: 'SET_ERROR', payload: e instanceof Error ? e : new Error('An unknown error occurred') })
       } finally {
@@ -356,8 +360,8 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   const getProgress = useCallback(
     (courseId: DefaultDocumentIDType, refreshFromDB = false) => {
       if (refreshFromDB) {
-        // Fetch fresh progress from database
-        fetchProgress()
+        // Fetch fresh progress from database. The caller still gets the progress already in state.
+        void fetchProgress()
       }
       return state.progress.find((cp) => {
         // Handle both full course objects and course IDs for backward compatibility
@@ -375,7 +379,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     dispatch({ type: 'SET_ERROR', payload: null })
     try {
       const response = await fetch(`${baseAPIURL}/users`)
-      if (!response.ok) throw new Error('Failed to fetch users')
+      if (!response.ok) {throw new Error('Failed to fetch users')}
       const data = await response.json()
       dispatch({ type: 'SET_USERS', payload: data.docs })
     } catch (e: unknown) {
@@ -391,7 +395,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     dispatch({ type: 'SET_ERROR', payload: null })
     try {
       const response = await fetch(`${baseAPIURL}/courses`)
-      if (!response.ok) throw new Error('Failed to fetch courses')
+      if (!response.ok) {throw new Error('Failed to fetch courses')}
       const data = await response.json()
       dispatch({ type: 'SET_COURSES', payload: data.docs })
     } catch (e: unknown) {
@@ -409,7 +413,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       const query = qs.stringify({ where: { course: { equals: courseId } } })
       try {
         const response = await fetch(`${baseAPIURL}/topics?${query}`)
-        if (!response.ok) throw new Error('Failed to fetch topics')
+        if (!response.ok) {throw new Error('Failed to fetch topics')}
         const data = await response.json()
         dispatch({ type: 'SET_TOPICS', payload: data.docs })
       } catch (e: unknown) {
@@ -429,7 +433,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       const query = qs.stringify({ where: { topic: { equals: topicId } } })
       try {
         const response = await fetch(`${baseAPIURL}/lessons?${query}`)
-        if (!response.ok) throw new Error('Failed to fetch lessons')
+        if (!response.ok) {throw new Error('Failed to fetch lessons')}
         const data = await response.json()
         dispatch({ type: 'SET_LESSONS', payload: data.docs })
       } catch (e: unknown) {
@@ -449,7 +453,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       const query = qs.stringify({ where: { lesson: { equals: lessonId } } })
       try {
         const response = await fetch(`${baseAPIURL}/quizzes?${query}`)
-        if (!response.ok) throw new Error('Failed to fetch quizzes')
+        if (!response.ok) {throw new Error('Failed to fetch quizzes')}
         const data = await response.json()
         dispatch({ type: 'SET_QUIZZES', payload: data.docs })
       } catch (e: unknown) {
@@ -463,36 +467,36 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const value: LMSContextType = {
-    users: state.users,
+    addUserToGroup,
+    certificates: state.certificates,
+    completeCourse,
+    completedCourses: state.completedCourses,
+    completeLesson,
     courses: state.courses,
-    topics: state.topics,
+    enroll,
+    enrolledCourses: state.enrolledCourses,
+    error: state.error,
+    fetchCourses,
+    fetchLessons,
+    fetchProgress,
+    fetchQuizzes,
+    fetchTopics,
+    fetchUsers,
+    getProgress,
+    isLoading: state.isLoading,
     lessons: state.lessons,
     progress: state.progress,
-    quizzes: state.quizzes,
-    certificates: state.certificates,
-    enrolledCourses: state.enrolledCourses,
-    completedCourses: state.completedCourses,
     quizStarted: state.quizStarted,
-    enroll,
-    completeCourse,
-    completeLesson,
-    startQuiz,
+    quizzes: state.quizzes,
     setQuizCompleted,
     setQuizExited,
+    startQuiz,
     submitQuiz,
-    addUserToGroup,
-    getProgress,
-    fetchProgress,
-    fetchUsers,
-    fetchCourses,
-    fetchTopics,
-    fetchLessons,
-    fetchQuizzes,
-    isLoading: state.isLoading,
-    error: state.error,
+    topics: state.topics,
+    users: state.users,
   }
 
-  return <LMSContext.Provider value={value}>{children}</LMSContext.Provider>
+  return <LMSContext value={value}>{children}</LMSContext>
 }
 
 export const useLMS = (): LMSContextType => {

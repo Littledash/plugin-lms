@@ -1,12 +1,13 @@
-import type { TextField, CheckboxField } from 'payload'
+import type { CheckboxField, TextField } from 'payload'
+
 import { formatSlugHook } from '../ui/SlugInput/formatSlug.js'
 
 /**
  * Overrides for slug and checkbox fields
  */
 type Overrides = {
-  slugOverrides?: Partial<TextField>
   checkboxOverrides?: Partial<CheckboxField>
+  slugOverrides?: Partial<TextField>
 }
 
 /**
@@ -21,16 +22,16 @@ type Slug = (fieldToUse?: string, overrides?: Overrides) => [TextField, Checkbox
  * @returns A tuple containing the slug field and its associated checkbox field
  */
 export const slugField: Slug = (fieldToUse = 'title', overrides = {}) => {
-  const { slugOverrides, checkboxOverrides } = overrides
+  const { checkboxOverrides, slugOverrides } = overrides
 
   const checkBoxField: CheckboxField = {
     name: 'slugLock',
     type: 'checkbox',
-    defaultValue: true,
     admin: {
       hidden: true,
       position: 'sidebar',
     },
+    defaultValue: true,
     ...checkboxOverrides,
   }
 
@@ -41,22 +42,22 @@ export const slugField: Slug = (fieldToUse = 'title', overrides = {}) => {
     index: true,
     label: 'Slug',
     ...(slugOverrides || {}),
-    hooks: {
-      // Kept this in for hook or API based updates
-      beforeValidate: [formatSlugHook(fieldToUse)],
-    },
     admin: {
       position: 'sidebar',
       ...(slugOverrides?.admin || {}),
       components: {
         Field: {
-          path: '@littledash/plugin-lms/ui/SlugInput#SlugInput',
           clientProps: {
-            fieldToUse,
             checkboxFieldPath: checkBoxField.name,
+            fieldToUse,
           },
+          path: '@littledash/plugin-lms/ui/SlugInput#SlugInput',
         },
       },
+    },
+    hooks: {
+      // Kept this in for hook or API based updates
+      beforeValidate: [formatSlugHook(fieldToUse)],
     },
   }
 

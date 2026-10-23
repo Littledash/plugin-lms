@@ -82,28 +82,28 @@
     const courseProgress = progress.find((p)=>(typeof p.course === 'object' ? p.course.id : p.course) === courseId);
     if (!courseProgress) {
         return {
+            completedAt: null,
             isCompleted: false,
             passed: null,
-            score: null,
-            completedAt: null
+            score: null
         };
     }
     const completedQuizEntry = findCompletedQuiz(courseProgress, quiz);
     if (!completedQuizEntry) {
         return {
+            completedAt: null,
             isCompleted: false,
             passed: null,
-            score: null,
-            completedAt: null
+            score: null
         };
     }
     // Check if passed if we have the quiz object with minimumScore
     const passed = typeof quiz === 'object' && quiz.minimumScore !== undefined ? isScorePassing(completedQuizEntry.score, quiz.minimumScore) : null;
     return {
+        completedAt: completedQuizEntry.completedAt,
         isCompleted: true,
         passed,
-        score: completedQuizEntry.score,
-        completedAt: completedQuizEntry.completedAt
+        score: completedQuizEntry.score
     };
 };
 

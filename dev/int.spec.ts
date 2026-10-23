@@ -6,10 +6,10 @@
  */
 
 import type { Payload } from 'payload'
+
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import { getPayload } from 'payload'
 
-import { NextRESTClient } from './helpers/NextRESTClient.js'
 import {
   addUserToGroup,
   completeCourse,
@@ -18,9 +18,10 @@ import {
   getCertificateFileName,
   LMSError,
 } from '../src/exports/services.js'
+import { NextRESTClient } from './helpers/NextRESTClient.js'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Doc = { id: string; [key: string]: any }
+type Doc = { [key: string]: any; id: string }
 
 let payload: Payload
 let memoryDB: MongoMemoryReplSet | undefined
@@ -34,9 +35,9 @@ const createUser = async (roles: string[] = ['student']): Promise<Doc> => {
     collection: 'users',
     data: {
       email: `user${counter}@example.com`,
-      password: PASSWORD,
       firstName: 'Test',
       lastName: `User${counter}`,
+      password: PASSWORD,
       roles,
     },
   })) as unknown as Doc
@@ -55,69 +56,71 @@ const anonymous = () => new NextRESTClient(payload.config)
 
 const post = async (client: NextRESTClient, path: string, body: Record<string, unknown>) => {
   const response = await client.POST(`/lms/${path}` as `/${string}`, { body: JSON.stringify(body) })
-  return { status: response.status, body: await response.json() }
+  return { body: await response.json(), status: response.status }
 }
 
 const createLesson = async (quizzes: string[] = []): Promise<Doc> =>
   (await payload.create({
     collection: 'lessons',
-    data: { title: `Lesson ${++counter}`, quizzes },
+    data: { quizzes, title: `Lesson ${++counter}` },
   })) as unknown as Doc
 
 const createCourse = async ({
   accessMode = 'open',
-  lessons = [],
   certificate,
+  lessons = [],
   status = 'published',
 }: {
   accessMode?: string
-  status?: 'draft' | 'published'
-  lessons?: { lesson: string; isOptional?: boolean }[]
   certificate?: string
+  lessons?: { isOptional?: boolean; lesson: string }[]
+  status?: 'draft' | 'published'
 } = {}): Promise<Doc> =>
   (await payload.create({
     collection: 'courses',
     data: {
       _status: status,
-      title: `Course ${++counter}`,
       enrollment: { accessMode },
       lessons,
+      title: `Course ${++counter}`,
       ...(certificate ? { awards: { certificate } } : {}),
     },
   })) as unknown as Doc
 
-const createQuiz = async (minimumScore = 100): Promise<{ quiz: Doc; correctChoiceId: string; questionId: string }> => {
+const createQuiz = async (minimumScore = 100): Promise<{ correctChoiceId: string; questionId: string; quiz: Doc }> => {
   const question = (await payload.create({
     collection: 'questions',
     data: {
-      title: 'Question',
+      choices: [
+        { isCorrect: true, label: 'Right' },
+        { isCorrect: false, label: 'Wrong' },
+      ],
+      points: 1,
       question: 'Pick the right one',
       questionType: 'multipleChoice',
-      points: 1,
-      choices: [
-        { label: 'Right', isCorrect: true },
-        { label: 'Wrong', isCorrect: false },
-      ],
+      title: 'Question',
     },
   })) as unknown as Doc
   const quiz = (await payload.create({
     collection: 'quizzes',
-    data: { title: `Quiz ${++counter}`, questions: [question.id], minimumScore },
+    data: { minimumScore, questions: [question.id], title: `Quiz ${++counter}` },
   })) as unknown as Doc
   const correctChoice = question.choices.find((choice: Doc) => choice.isCorrect)
-  return { quiz, correctChoiceId: correctChoice.id, questionId: question.id }
+  return { correctChoiceId: correctChoice.id, questionId: question.id, quiz }
 }
 
-const getDoc = async (collection: 'users' | 'courses' | 'groups', id: string): Promise<Doc> =>
-  (await payload.findByID({ collection, id, depth: 0 })) as unknown as Doc
+const getDoc = async (collection: 'courses' | 'groups' | 'users', id: string): Promise<Doc> =>
+  (await payload.findByID({ id, collection, depth: 0 })) as unknown as Doc
 
 const ids = (values: unknown): string[] =>
   (Array.isArray(values) ? values : []).map((value) => String(typeof value === 'object' ? value.id : value))
 
 /** Enrolls a user the way the site does after a verified purchase. */
 const enroll = (user: Doc, course: Doc) =>
-  enrollUser({ req: { payload } as never, userId: user.id, courseId: course.id })
+  enrollUser({ courseId: course.id, req: { payload } as never, userId: user.id })
 
+// One in-memory Payload for every describe in this file.
+/* eslint-disable jest/require-top-level-describe */
 beforeAll(async () => {
   process.env.DISABLE_PAYLOAD_HMR = 'true'
   // Always use an in-memory database so tests never touch the dev database from .env
@@ -155,6 +158,7 @@ afterAll(async () => {
   }
   await memoryDB?.stop()
 })
+/* eslint-enable jest/require-top-level-describe */
 
 describe('every endpoint', () => {
   const endpoints = [
@@ -189,7 +193,7 @@ describe('enroll endpoint', () => {
     const user = await createUser()
     const course = await createCourse({ accessMode: 'open' })
 
-    const { status, body } = await post(await clientFor(user), 'enroll', { courseId: course.id })
+    const { body, status } = await post(await clientFor(user), 'enroll', { courseId: course.id })
 
     expect(status).toBe(200)
     expect(body.status).toBe('enrolled')
@@ -212,17 +216,17 @@ describe('enroll endpoint', () => {
     const user = await createUser()
     const course = await createCourse()
     const { status } = await post(await clientFor(user), 'enroll', {
+      companyName: 'Acme',
       courseId: course.id,
       isGroup: true,
       isLeader: true,
-      companyName: 'Acme',
     })
     expect(status).toBe(403)
   })
 
   it('does not leak internal error details', async () => {
     const user = await createUser()
-    const { status, body } = await post(await clientFor(user), 'enroll', { courseId: 'not-an-id' })
+    const { body, status } = await post(await clientFor(user), 'enroll', { courseId: 'not-an-id' })
     expect([404, 500]).toContain(status)
     expect(body.message).not.toMatch(/Cast|ObjectId|mongo/i)
   })
@@ -244,10 +248,10 @@ describe('enrollUser service', () => {
     const course = await createCourse({ accessMode: 'buy now' })
 
     const { groupId } = await enrollUser({
-      req: { payload } as never,
-      userId: leader.id,
       courseId: course.id,
       group: { companyName: 'Acme', isLeader: true, totalSeats: 5 },
+      req: { payload } as never,
+      userId: leader.id,
     })
 
     const group = await getDoc('groups', String(groupId))
@@ -261,18 +265,18 @@ describe('enrollUser service', () => {
     const course = await createCourse({ accessMode: 'buy now' })
     const owner = await createUser()
     const { groupId: ownerGroup } = await enrollUser({
-      req: { payload } as never,
-      userId: owner.id,
       courseId: course.id,
       group: { companyName: 'Same Name Ltd', isLeader: true },
+      req: { payload } as never,
+      userId: owner.id,
     })
 
     const outsider = await createUser()
     const { groupId: outsiderGroup } = await enrollUser({
-      req: { payload } as never,
-      userId: outsider.id,
       courseId: course.id,
       group: { companyName: 'Same Name Ltd', isLeader: true },
+      req: { payload } as never,
+      userId: outsider.id,
     })
 
     expect(String(outsiderGroup)).not.toBe(String(ownerGroup))
@@ -285,7 +289,7 @@ describe('enrollUser service', () => {
 
     // No company name and no existing group: the group step throws after nothing is saved
     await expect(
-      enrollUser({ req: { payload } as never, userId: user.id, courseId: course.id, group: { isLeader: true } }),
+      enrollUser({ courseId: course.id, group: { isLeader: true }, req: { payload } as never, userId: user.id }),
     ).rejects.toBeInstanceOf(LMSError)
 
     expect(ids((await getDoc('courses', course.id)).enrolledStudents)).not.toContain(user.id)
@@ -319,7 +323,7 @@ describe('complete-lesson endpoint', () => {
   })
 
   it("requires the lesson's quizzes to be passed first", async () => {
-    const { quiz, questionId, correctChoiceId } = await createQuiz()
+    const { correctChoiceId, questionId, quiz } = await createQuiz()
     const lesson = await createLesson([quiz.id])
     const course = await createCourse({ lessons: [{ lesson: lesson.id }, { lesson: (await createLesson()).id }] })
     const user = await createUser()
@@ -330,9 +334,9 @@ describe('complete-lesson endpoint', () => {
     expect(blocked.status).toBe(409)
 
     await post(client, 'submit-quiz', {
+      answers: { [questionId]: correctChoiceId },
       courseId: course.id,
       quizId: quiz.id,
-      answers: { [questionId]: correctChoiceId },
     })
     const allowed = await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
     expect(allowed.status).toBe(200)
@@ -347,13 +351,13 @@ describe('complete-lesson endpoint', () => {
     const required = await createLesson()
     const optional = await createLesson()
     const course = await createCourse({
-      lessons: [{ lesson: required.id }, { lesson: optional.id, isOptional: true }],
       certificate: certificate.id,
+      lessons: [{ lesson: required.id }, { isOptional: true, lesson: optional.id }],
     })
     const user = await createUser()
     await enroll(user, course)
 
-    const { status, body } = await post(await clientFor(user), 'complete-lesson', {
+    const { body, status } = await post(await clientFor(user), 'complete-lesson', {
       courseId: course.id,
       lessonId: required.id,
     })
@@ -376,29 +380,29 @@ describe('submit-quiz endpoint', () => {
     await enroll(user, course)
 
     const { status } = await post(await clientFor(user), 'submit-quiz', {
+      answers: {},
       courseId: course.id,
       quizId: quiz.id,
-      answers: {},
     })
     expect(status).toBe(400)
   })
 
   it('grades answers and keeps the best score', async () => {
-    const { quiz, questionId, correctChoiceId } = await createQuiz()
+    const { correctChoiceId, questionId, quiz } = await createQuiz()
     const course = await createCourse({ lessons: [{ lesson: (await createLesson([quiz.id])).id }] })
     const user = await createUser()
     await enroll(user, course)
     const client = await clientFor(user)
 
     const pass = await post(client, 'submit-quiz', {
+      answers: { [questionId]: correctChoiceId },
       courseId: course.id,
       quizId: quiz.id,
-      answers: { [questionId]: correctChoiceId },
     })
-    expect(pass.body).toMatchObject({ score: 100, passed: true })
+    expect(pass.body).toMatchObject({ passed: true, score: 100 })
 
-    const fail = await post(client, 'submit-quiz', { courseId: course.id, quizId: quiz.id, answers: {} })
-    expect(fail.body).toMatchObject({ score: 0, passed: false })
+    const fail = await post(client, 'submit-quiz', { answers: {}, courseId: course.id, quizId: quiz.id })
+    expect(fail.body).toMatchObject({ passed: false, score: 0 })
 
     const progress = (await getDoc('users', user.id)).coursesProgress[0]
     expect(progress.completedQuizzes[0].score).toBe(100)
@@ -429,11 +433,11 @@ describe('complete-course endpoint', () => {
       collection: 'certificates',
       data: { title: 'Late certificate' },
     })) as unknown as Doc
-    await payload.update({ collection: 'courses', id: course.id, data: { awards: { certificate: certificate.id } } })
+    await payload.update({ id: course.id, collection: 'courses', data: { awards: { certificate: certificate.id } } })
 
-    const result = await completeCourse({ req: { payload } as never, userId: user.id, courseId: course.id })
+    const result = await completeCourse({ courseId: course.id, req: { payload } as never, userId: user.id })
 
-    expect(result).toEqual({ status: 'already-completed', certificateAwarded: true })
+    expect(result).toEqual({ certificateAwarded: true, status: 'already-completed' })
     expect((await getDoc('users', user.id)).certificates).toHaveLength(1)
   })
 })
@@ -449,8 +453,8 @@ describe('generate-certificate endpoint', () => {
     await enroll(user, course)
 
     const { status } = await post(await clientFor(user), 'generate-certificate', {
-      courseId: course.id,
       certificateId: certificate.id,
+      courseId: course.id,
     })
     expect(status).toBe(403)
   })
@@ -461,22 +465,22 @@ describe('generate-certificate endpoint', () => {
       data: { title: 'Earned' },
     })) as unknown as Doc
     const lesson = await createLesson()
-    const course = await createCourse({ lessons: [{ lesson: lesson.id }], certificate: certificate.id })
+    const course = await createCourse({ certificate: certificate.id, lessons: [{ lesson: lesson.id }] })
     const user = await createUser()
     await enroll(user, course)
     const client = await clientFor(user)
     await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
 
-    const first = await post(client, 'generate-certificate', { courseId: course.id, certificateId: certificate.id })
+    const first = await post(client, 'generate-certificate', { certificateId: certificate.id, courseId: course.id })
     expect(first.status).toBe(200)
     expect(first.body.status).toBe('created')
     expect(first.body.certificate.mimeType).toBe('application/pdf')
 
     const second = await generateCertificate({
+      certificateId: certificate.id,
+      courseId: course.id,
       req: { payload } as never,
       userId: user.id,
-      courseId: course.id,
-      certificateId: certificate.id,
     })
     expect(second.status).toBe('existing')
     expect(String(second.media.id)).toBe(String(first.body.certificate.id))
@@ -487,7 +491,7 @@ describe('add-user-to-group endpoint', () => {
   const createGroup = async (leader: Doc): Promise<Doc> =>
     (await payload.create({
       collection: 'groups',
-      data: { title: `Group ${++counter}`, leaders: [leader.id] },
+      data: { leaders: [leader.id], title: `Group ${++counter}` },
     })) as unknown as Doc
 
   it('refuses requesters who are not a leader of the group', async () => {
@@ -523,7 +527,7 @@ describe('add-user-to-group endpoint', () => {
     const leader = await createUser()
     const group = await createGroup(leader)
     await expect(
-      addUserToGroup({ req: { payload } as never, groupId: group.id, userId: leader.id, role: 'leader' }),
+      addUserToGroup({ groupId: group.id, req: { payload } as never, role: 'leader', userId: leader.id }),
     ).rejects.toMatchObject({ status: 409 })
   })
 })
@@ -557,8 +561,8 @@ describe('field access', () => {
 
     await (await clientFor(user)).PATCH(`/users/${user.id}`, {
       body: JSON.stringify({
-        coursesProgress: [{ course: course.id, completed: true, completedLessons: [], completedQuizzes: [] }],
-        certificates: [{ certificate: certificate.id, course: course.id, completedDate: new Date().toISOString() }],
+        certificates: [{ certificate: certificate.id, completedDate: new Date().toISOString(), course: course.id }],
+        coursesProgress: [{ completed: true, completedLessons: [], completedQuizzes: [], course: course.id }],
         roles: ['admin'],
       }),
     })
@@ -619,8 +623,8 @@ describe('hardening', () => {
   })
 
   it('enforces the quiz attempt limit before grading', async () => {
-    const { quiz, questionId, correctChoiceId } = await createQuiz()
-    await payload.update({ collection: 'quizzes', id: quiz.id, data: { attemptLimit: 2 } })
+    const { correctChoiceId, questionId, quiz } = await createQuiz()
+    await payload.update({ id: quiz.id, collection: 'quizzes', data: { attemptLimit: 2 } })
     const course = await createCourse({ lessons: [{ lesson: (await createLesson([quiz.id])).id }] })
     const user = await createUser()
     await enroll(user, course)
@@ -696,7 +700,7 @@ describe('collection access defaults', () => {
     const leader = await createUser()
     const group = (await payload.create({
       collection: 'groups',
-      data: { title: 'Locked Ltd', leaders: [leader.id] },
+      data: { leaders: [leader.id], title: 'Locked Ltd' },
     })) as unknown as Doc
     const student = await createUser()
     const client = await clientFor(student)
@@ -729,7 +733,7 @@ describe('collection access defaults', () => {
       data: { title: 'Private' },
     })) as unknown as Doc
     const lesson = await createLesson()
-    const course = await createCourse({ lessons: [{ lesson: lesson.id }], certificate: certificate.id })
+    const course = await createCourse({ certificate: certificate.id, lessons: [{ lesson: lesson.id }] })
     const user = await createUser()
     await enroll(user, course)
     await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
@@ -889,9 +893,9 @@ describe('ownership access', () => {
 
     await (await clientFor(leader)).PATCH(`/groups/${groupId}`, {
       body: JSON.stringify({
+        leaders: [leader.id, outsider.id],
         purchasedCourses: [{ ...before.purchasedCourses[0], seatManagement: { ...before.purchasedCourses[0].seatManagement, seatsTotal: 500 } }],
         students: [outsider.id],
-        leaders: [leader.id, outsider.id],
       }),
     })
 
@@ -914,7 +918,7 @@ describe('ownership access', () => {
     expect([403, 404]).toContain((await stranger.GET(`/addresses/${address.id}`)).status)
     expect((await (await stranger.GET('/addresses')).json()).docs).toHaveLength(0)
     await stranger.DELETE(`/addresses/${address.id}`)
-    expect(await payload.findByID({ collection: 'addresses', id: address.id, disableErrors: true })).not.toBeNull()
+    expect(await payload.findByID({ id: address.id, collection: 'addresses', disableErrors: true })).not.toBeNull()
   })
 })
 
@@ -922,7 +926,7 @@ describe('service edge cases', () => {
   it('admins can enroll themselves in a paid course', async () => {
     const admin = await createUser(['admin'])
     const course = await createCourse({ accessMode: 'buy now' })
-    const { status, body } = await post(await clientFor(admin), 'enroll', { courseId: course.id })
+    const { body, status } = await post(await clientFor(admin), 'enroll', { courseId: course.id })
     expect(status).toBe(200)
     expect(body.status).toBe('enrolled')
   })
@@ -988,7 +992,7 @@ describe('service edge cases', () => {
     const user = await createUser()
     await enroll(user, course)
     await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
-    await payload.db.updateOne({ collection: 'users', data: { lastName: '' }, id: user.id })
+    await payload.db.updateOne({ id: user.id, collection: 'users', data: { lastName: '' } })
 
     await expect(
       generateCertificate({ certificateId: certificate.id, courseId: course.id, req: { payload } as never, userId: user.id }),
@@ -999,7 +1003,7 @@ describe('service edge cases', () => {
 describe('quiz completion', () => {
   it('passing the last quiz on a lesson completes the lesson and the course', async () => {
     const certificate = (await payload.create({ collection: 'certificates', data: { title: 'Quiz cert' } })) as unknown as Doc
-    const { quiz, questionId, correctChoiceId } = await createQuiz()
+    const { correctChoiceId, questionId, quiz } = await createQuiz()
     const lesson = await createLesson([quiz.id])
     const course = await createCourse({ certificate: certificate.id, lessons: [{ lesson: lesson.id }] })
     const user = await createUser()

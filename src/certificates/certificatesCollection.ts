@@ -1,6 +1,8 @@
-import { CollectionConfig, Field } from 'payload'
+import type { CollectionConfig, Field } from 'payload'
+
+import type { FieldsOverride } from '../types.js'
+
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
-import { FieldsOverride } from '../types.js'
 
 /**
  * Props interface for configuring the certificates collection
@@ -11,9 +13,9 @@ import { FieldsOverride } from '../types.js'
  */
 type Props = {
   coursesCollectionSlug?: string
-  studentsCollectionSlug?: string
   mediaCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
+  studentsCollectionSlug?: string
 }
 
 /**
@@ -27,10 +29,10 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
   props,
 ) => {
   const {
-    overrides,
     coursesCollectionSlug = 'courses',
-    studentsCollectionSlug = 'users',
     mediaCollectionSlug = 'media',
+    overrides,
+    studentsCollectionSlug = 'users',
   } = props || {}
   const fieldsOverride = overrides?.fields
 
@@ -43,10 +45,10 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
     {
       name: 'title',
       type: 'text',
-      required: true,
       admin: {
         description: 'The title of the certificate',
       },
+      required: true,
     },
     {
       name: 'description',
@@ -58,20 +60,20 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
     {
       name: 'template',
       type: 'upload',
-      relationTo: mediaCollectionSlug,
       admin: {
         description: 'The certificate template image',
       },
+      relationTo: mediaCollectionSlug,
     },
     {
       name: 'courses',
       type: 'relationship',
-      relationTo: coursesCollectionSlug,
-      hasMany: true,
       admin: {
         allowCreate: false,
         description: 'The courses this certificate is for',
       },
+      hasMany: true,
+      relationTo: coursesCollectionSlug,
     },
     {
       name: 'expiryDate',
@@ -83,6 +85,9 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
     {
       name: 'status',
       type: 'select',
+      admin: {
+        description: 'The status of the certificate',
+      },
       defaultValue: 'active',
       options: [
         { label: 'Active', value: 'active' },
@@ -90,19 +95,16 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
         { label: 'Revoked', value: 'revoked' },
       ],
       required: true,
-      admin: {
-        description: 'The status of the certificate',
-      },
     },
     {
       name: 'authors',
       type: 'relationship',
-      relationTo: studentsCollectionSlug,
-      hasMany: true,
       admin: {
         allowCreate: false,
         description: 'The authors of the certificate',
       },
+      hasMany: true,
+      relationTo: studentsCollectionSlug,
     },
   ]
 

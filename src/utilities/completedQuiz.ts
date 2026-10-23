@@ -1,5 +1,6 @@
 import type { DefaultDocumentIDType } from 'payload'
-import { CourseProgress, Progress, Quiz } from '../providers/types.js'
+
+import type { CourseProgress, Progress, Quiz } from '../providers/types.js'
 
 /**
  * @fileoverview Utility functions for checking quiz completion and passing status
@@ -31,7 +32,7 @@ import { CourseProgress, Progress, Quiz } from '../providers/types.js'
  */
 const findCompletedQuiz = (
   courseProgress: CourseProgress,
-  quiz: Quiz | DefaultDocumentIDType
+  quiz: DefaultDocumentIDType | Quiz
 ): CourseProgress['completedQuizzes'][number] | null => {
   const quizId = typeof quiz === 'object' ? quiz.id : quiz
   
@@ -50,7 +51,7 @@ const findCompletedQuiz = (
 export const isQuizCompleted = (
   progress: Progress,
   courseId: DefaultDocumentIDType,
-  quiz: Quiz | DefaultDocumentIDType
+  quiz: DefaultDocumentIDType | Quiz
 ): boolean => {
   const courseProgress = progress.find((p: CourseProgress) => 
     (typeof p.course === 'object' ? p.course.id : p.course) === courseId
@@ -69,7 +70,7 @@ export const isQuizCompleted = (
  * @param minimumScore - The minimum score required to pass the quiz
  * @returns boolean indicating if the quiz is passed
  */
-const isScorePassing = (score: number, minimumScore?: number | null): boolean => {
+const isScorePassing = (score: number, minimumScore?: null | number): boolean => {
   // Default minimumScore is 100 if not specified
   const requiredScore = minimumScore ?? 100
   return score >= requiredScore
@@ -85,7 +86,7 @@ const isScorePassing = (score: number, minimumScore?: number | null): boolean =>
 export const isQuizPassed = (
   progress: Progress,
   courseId: DefaultDocumentIDType,
-  quiz: Quiz | DefaultDocumentIDType
+  quiz: DefaultDocumentIDType | Quiz
 ): boolean | null => {
   const courseProgress = progress.find((p: CourseProgress) => 
     (typeof p.course === 'object' ? p.course.id : p.course) === courseId
@@ -119,7 +120,7 @@ export const isQuizPassed = (
 export const completedQuiz = (
   progress: Progress,
   courseId: DefaultDocumentIDType,
-  quiz: Quiz | DefaultDocumentIDType,
+  quiz: DefaultDocumentIDType | Quiz,
 ) => {
   const courseProgress = progress.find((p: CourseProgress) => 
     (typeof p.course === 'object' ? p.course.id : p.course) === courseId
@@ -127,10 +128,10 @@ export const completedQuiz = (
   
   if (!courseProgress) {
     return {
+      completedAt: null,
       isCompleted: false,
       passed: null,
-      score: null,
-      completedAt: null
+      score: null
     }
   }
   
@@ -138,10 +139,10 @@ export const completedQuiz = (
   
   if (!completedQuizEntry) {
     return {
+      completedAt: null,
       isCompleted: false,
       passed: null,
-      score: null,
-      completedAt: null
+      score: null
     }
   }
   
@@ -151,9 +152,9 @@ export const completedQuiz = (
     : null
   
   return {
+    completedAt: completedQuizEntry.completedAt,
     isCompleted: true,
     passed,
-    score: completedQuizEntry.score,
-    completedAt: completedQuizEntry.completedAt
+    score: completedQuizEntry.score
   }
 }

@@ -7,7 +7,7 @@ import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdm
  * @param props - Configuration properties for the quizzes collection
  * @returns CollectionConfig object for quizzes
  */ export const quizzesCollection = (props)=>{
-    const { overrides, mediaCollectionSlug = 'media', studentsCollectionSlug = 'users' } = props || {};
+    const { mediaCollectionSlug = 'media', overrides, studentsCollectionSlug = 'users' } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the quizzes collection
@@ -16,10 +16,10 @@ import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdm
         {
             name: 'title',
             type: 'text',
-            required: true,
             admin: {
                 description: 'The title of the quiz'
-            }
+            },
+            required: true
         },
         {
             name: 'excerpt',
@@ -31,64 +31,64 @@ import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdm
         {
             name: 'description',
             type: 'richText',
-            admin: {
-                description: 'The description of the quiz'
-            },
             access: {
                 read: isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel
+            },
+            admin: {
+                description: 'The description of the quiz'
             }
         },
         {
             name: 'questions',
             type: 'relationship',
-            relationTo: 'questions',
-            hasMany: true,
-            admin: {
-                position: 'sidebar',
-                allowCreate: false,
-                description: 'The questions in this quiz'
-            },
             access: {
                 read: isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel
-            }
+            },
+            admin: {
+                allowCreate: false,
+                description: 'The questions in this quiz',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: 'questions'
         },
         {
             name: 'minimumScore',
             type: 'number',
-            min: 0,
-            max: 100,
-            defaultValue: 100,
             admin: {
                 description: 'Minimum score required (0-100) to pass the quiz'
-            }
+            },
+            defaultValue: 100,
+            max: 100,
+            min: 0
         },
         {
             name: 'attemptLimit',
             type: 'number',
-            min: 0,
             admin: {
                 description: 'Maximum attempts per student. Leave empty for unlimited.'
-            }
+            },
+            min: 0
         },
         {
             name: 'authors',
             type: 'relationship',
-            relationTo: studentsCollectionSlug,
-            hasMany: true,
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
-                description: 'The authors of the quiz'
-            }
+                description: 'The authors of the quiz',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: studentsCollectionSlug
         },
         {
             name: 'featuredImage',
             type: 'upload',
-            relationTo: mediaCollectionSlug,
             admin: {
-                position: 'sidebar',
-                description: 'The featured image of the quiz'
-            }
+                description: 'The featured image of the quiz',
+                position: 'sidebar'
+            },
+            relationTo: mediaCollectionSlug
         }
     ];
     // Apply field overrides if provided

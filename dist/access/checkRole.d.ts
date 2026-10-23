@@ -5,4 +5,4 @@ import type { User } from 'payload';
  * @param user - The user to check roles for (can be null)
  * @returns True if the user has any of the specified roles, false otherwise
  */
-export declare const checkRole: (allRoles: User["roles"] | undefined, user: User | null) => boolean;
+export declare const checkRole: (allRoles: User["roles"] | undefined, user: null | User) => boolean;

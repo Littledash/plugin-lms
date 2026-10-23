@@ -1,8 +1,10 @@
-import { CollectionConfig, Field } from 'payload'
+import type { CollectionConfig, Field } from 'payload'
+
+import type { FieldsOverride } from '../types.js'
+
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
-import { FieldsOverride } from '../types.js'
-import { embeddedVideo } from '../fields/embeddedVideo.js'
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
+import { embeddedVideo } from '../fields/embeddedVideo.js'
 import { videoProgression } from '../fields/videoProgression.js'
 
 /**
@@ -15,10 +17,10 @@ import { videoProgression } from '../fields/videoProgression.js'
  */
 type Props = {
   coursesCollectionSlug?: string
-  mediaCollectionSlug?: string
-  quizzesCollectionSlug?: string
   lessonsCollectionSlug?: string
+  mediaCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
+  quizzesCollectionSlug?: string
 }
 
 /**
@@ -30,11 +32,11 @@ type Props = {
  */
 export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (props) => {
   const {
-    overrides,
-    mediaCollectionSlug = 'media',
     coursesCollectionSlug = 'courses',
-    quizzesCollectionSlug = 'quizzes',
     lessonsCollectionSlug = 'lessons',
+    mediaCollectionSlug = 'media',
+    overrides,
+    quizzesCollectionSlug = 'quizzes',
   } = props || {}
   const fieldsOverride = overrides?.fields
 
@@ -46,10 +48,10 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
     {
       name: 'title',
       type: 'text',
-      required: true,
       admin: {
         description: 'The title of the topic',
       },
+      required: true,
     },
     {
       name: 'excerpt',
@@ -61,22 +63,22 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
     {
       name: 'content',
       type: 'richText',
-      label: 'Topic Content',
-      admin: {
-        description: 'The content of the topic',
-      },
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
       },
+      admin: {
+        description: 'The content of the topic',
+      },
+      label: 'Topic Content',
     },
     {
       name: 'featuredImage',
       type: 'upload',
-      relationTo: mediaCollectionSlug,
       admin: {
-        position: 'sidebar',
         description: 'The featured image of the topic',
+        position: 'sidebar',
       },
+      relationTo: mediaCollectionSlug,
     },
 
     embeddedVideo({
@@ -93,44 +95,44 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
     }),
     videoProgression({
       overrides: {
-        admin: {
-          condition: (data, { topicVideo }) => Boolean(topicVideo.embed),
-        },
         access: {
           read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+        },
+        admin: {
+          condition: (data, { topicVideo }) => Boolean(topicVideo.embed),
         },
       },
     }),
     {
       name: 'topicMaterials',
       type: 'richText',
-      label: 'Topic Materials',
-      admin: {
-        description: 'Additional materials and resources for the topic',
-      },
       access: {
         read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
       },
+      admin: {
+        description: 'Additional materials and resources for the topic',
+      },
+      label: 'Topic Materials',
     },
     {
       name: 'course',
       type: 'relationship',
-      relationTo: coursesCollectionSlug,
       admin: {
-        position: 'sidebar',
         allowCreate: false,
         description: 'The course that the topic is associated with',
+        position: 'sidebar',
       },
+      relationTo: coursesCollectionSlug,
     },
     {
       name: 'lesson',
       type: 'relationship',
-      relationTo: lessonsCollectionSlug,
       admin: {
-        position: 'sidebar',
         allowCreate: false,
         description: 'The lesson that the topic is associated with',
+        position: 'sidebar',
       },
+      relationTo: lessonsCollectionSlug,
     },
   ]
 

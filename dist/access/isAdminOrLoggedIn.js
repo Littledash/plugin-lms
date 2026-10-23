@@ -10,10 +10,12 @@ import { checkRole } from './checkRole.js';
     }
     return Boolean(user);
 };
-export const isAdminOrLoggedInFieldLevel = ({ req: { user }, id })=>{
+export const isAdminOrLoggedInFieldLevel = ({ id, req: { user } })=>{
     if (checkRole([
         'admin'
-    ], user)) return true;
+    ], user)) {
+        return true;
+    }
     return false;
 };
 

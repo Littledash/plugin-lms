@@ -1,89 +1,89 @@
 import type { DefaultDocumentIDType } from 'payload';
-import type { LMSUser, Course, Topic, Lesson, Quiz, Certificate, CourseProgress } from './types.js';
+import type { Certificate, Course, CourseProgress, Lesson, LMSUser, Quiz, Topic } from './types.js';
 export type LMSState = {
-    users: LMSUser[];
+    certificates: Certificate[];
+    completedCourses: DefaultDocumentIDType[];
     courses: Course[];
-    topics: Topic[];
+    enrolledCourses: DefaultDocumentIDType[];
+    error: Error | null;
+    isLoading: boolean;
     lessons: Lesson[];
     progress: CourseProgress[];
-    quizzes: Quiz[];
-    certificates: Certificate[];
-    enrolledCourses: DefaultDocumentIDType[];
-    completedCourses: DefaultDocumentIDType[];
     quizStarted: {
-        quizId: DefaultDocumentIDType | null;
         courseId: DefaultDocumentIDType | null;
+        quizId: DefaultDocumentIDType | null;
     } | null;
-    isLoading: boolean;
-    error: Error | null;
+    quizzes: Quiz[];
+    topics: Topic[];
+    users: LMSUser[];
 };
 export type LMSAction = {
-    type: 'SET_LOADING';
-    payload: boolean;
-} | {
-    type: 'SET_ERROR';
-    payload: Error | null;
-} | {
-    type: 'SET_USERS';
-    payload: LMSUser[];
-} | {
-    type: 'SET_COURSES';
-    payload: Course[];
-} | {
-    type: 'SET_TOPICS';
-    payload: Topic[];
-} | {
-    type: 'SET_LESSONS';
-    payload: Lesson[];
-} | {
-    type: 'SET_QUIZZES';
-    payload: Quiz[];
-} | {
-    type: 'SET_QUIZ_STARTED';
     payload: {
-        quizId: DefaultDocumentIDType;
-        courseId: DefaultDocumentIDType;
-        startedAt: string;
-    };
-} | {
-    type: 'SET_QUIZ_EXITED';
-    payload: {
-        quizId: DefaultDocumentIDType;
-        courseId: DefaultDocumentIDType;
-        exitedAt: string;
-    };
-} | {
-    type: 'SET_QUIZ_COMPLETED';
-    payload: {
-        quizId: DefaultDocumentIDType;
         completedAt: string;
+        quizId: DefaultDocumentIDType;
         score: number;
     };
+    type: 'SET_QUIZ_COMPLETED';
 } | {
-    type: 'SET_CERTIFICATES';
-    payload: Certificate[];
-} | {
-    type: 'ENROLL_IN_COURSE';
-    payload: DefaultDocumentIDType;
-} | {
-    type: 'COMPLETE_COURSE';
-    payload: DefaultDocumentIDType;
-} | {
-    type: 'UPDATE_PROGRESS';
-    payload: CourseProgress[];
-} | {
-    type: 'SET_ENROLLED_COURSES';
-    payload: DefaultDocumentIDType[];
-} | {
-    type: 'SET_COMPLETED_COURSES';
-    payload: DefaultDocumentIDType[];
-} | {
-    type: 'LOAD_FROM_STORAGE';
     payload: {
-        progress: CourseProgress[];
-        enrolledCourses: DefaultDocumentIDType[];
         completedCourses: DefaultDocumentIDType[];
+        enrolledCourses: DefaultDocumentIDType[];
+        progress: CourseProgress[];
     };
+    type: 'LOAD_FROM_STORAGE';
+} | {
+    payload: {
+        courseId: DefaultDocumentIDType;
+        exitedAt: string;
+        quizId: DefaultDocumentIDType;
+    };
+    type: 'SET_QUIZ_EXITED';
+} | {
+    payload: {
+        courseId: DefaultDocumentIDType;
+        quizId: DefaultDocumentIDType;
+        startedAt: string;
+    };
+    type: 'SET_QUIZ_STARTED';
+} | {
+    payload: boolean;
+    type: 'SET_LOADING';
+} | {
+    payload: Certificate[];
+    type: 'SET_CERTIFICATES';
+} | {
+    payload: Course[];
+    type: 'SET_COURSES';
+} | {
+    payload: CourseProgress[];
+    type: 'UPDATE_PROGRESS';
+} | {
+    payload: DefaultDocumentIDType;
+    type: 'COMPLETE_COURSE';
+} | {
+    payload: DefaultDocumentIDType;
+    type: 'ENROLL_IN_COURSE';
+} | {
+    payload: DefaultDocumentIDType[];
+    type: 'SET_COMPLETED_COURSES';
+} | {
+    payload: DefaultDocumentIDType[];
+    type: 'SET_ENROLLED_COURSES';
+} | {
+    payload: Error | null;
+    type: 'SET_ERROR';
+} | {
+    payload: Lesson[];
+    type: 'SET_LESSONS';
+} | {
+    payload: LMSUser[];
+    type: 'SET_USERS';
+} | {
+    payload: Quiz[];
+    type: 'SET_QUIZZES';
+} | {
+    payload: Topic[];
+    type: 'SET_TOPICS';
 } | {
     type: 'RESET_STATE';
 };

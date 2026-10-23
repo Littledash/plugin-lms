@@ -1,4 +1,4 @@
-import { CourseProgress, Progress, Lesson, Quiz } from '../providers/types.js'
+import type { CourseProgress, Lesson, Progress, Quiz } from '../providers/types.js'
 
 /**
  * @fileoverview Utility functions for checking lesson completion status
@@ -38,7 +38,7 @@ export const lessonHasQuizzes = (lesson: Lesson): boolean => {
  * @param minimumScore - The minimum score required to pass the quiz
  * @returns boolean indicating if the quiz is passed
  */
-const isScorePassing = (score: number, minimumScore?: number | null): boolean => {
+const isScorePassing = (score: number, minimumScore?: null | number): boolean => {
   // Default minimumScore is 100 if not specified
   const requiredScore = minimumScore ?? 100
   return score >= requiredScore
@@ -98,9 +98,9 @@ export const completedLesson = (
   
   if (!courseProgress) {
     return {
-      isCompleted: false,
-      hasQuizzes: false,
       allQuizzesCompleted: false,
+      hasQuizzes: false,
+      isCompleted: false,
       lessonCompleted: false
     }
   }
@@ -121,9 +121,9 @@ export const completedLesson = (
   const isCompleted = lessonCompleted && (!hasQuizzes || allQuizzesCompletedForLesson)
   
   return {
-    isCompleted,
-    hasQuizzes,
     allQuizzesCompleted: allQuizzesCompletedForLesson,
+    hasQuizzes,
+    isCompleted,
     lessonCompleted
   }
 }

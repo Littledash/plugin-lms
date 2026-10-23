@@ -1,6 +1,6 @@
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
-import { embeddedVideo } from '../fields/embeddedVideo.js';
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
+import { embeddedVideo } from '../fields/embeddedVideo.js';
 import { videoProgression } from '../fields/videoProgression.js';
 /**
  * Creates a lessons collection configuration for Payload CMS
@@ -9,7 +9,7 @@ import { videoProgression } from '../fields/videoProgression.js';
  * @param props - Configuration properties for the lessons collection
  * @returns CollectionConfig object for lessons
  */ export const lessonsCollection = (props)=>{
-    const { overrides, mediaCollectionSlug = 'media', coursesCollectionSlug = 'courses', quizzesCollectionSlug = 'quizzes', categoriesCollectionSlug = 'categories', studentsCollectionSlug = 'users' } = props || {};
+    const { categoriesCollectionSlug = 'categories', coursesCollectionSlug = 'courses', mediaCollectionSlug = 'media', overrides, quizzesCollectionSlug = 'quizzes', studentsCollectionSlug = 'users' } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the lessons collection
@@ -18,10 +18,10 @@ import { videoProgression } from '../fields/videoProgression.js';
         {
             name: 'title',
             type: 'text',
-            required: true,
             admin: {
                 description: 'The title of the lesson'
-            }
+            },
+            required: true
         },
         {
             name: 'excerpt',
@@ -33,63 +33,62 @@ import { videoProgression } from '../fields/videoProgression.js';
         {
             name: 'content',
             type: 'richText',
-            admin: {
-                description: 'The content of the lesson'
-            },
             access: {
                 read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+            },
+            admin: {
+                description: 'The content of the lesson'
             }
         },
         {
             name: 'authors',
             type: 'relationship',
-            relationTo: studentsCollectionSlug,
-            hasMany: true,
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
-                description: 'The authors of the lesson'
-            }
+                description: 'The authors of the lesson',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: studentsCollectionSlug
         },
         {
             name: 'featuredImage',
             type: 'upload',
-            relationTo: mediaCollectionSlug,
             admin: {
-                position: 'sidebar',
-                description: 'The featured image of the lesson'
-            }
+                description: 'The featured image of the lesson',
+                position: 'sidebar'
+            },
+            relationTo: mediaCollectionSlug
         },
         {
             type: 'tabs',
             tabs: [
                 {
                     name: 'lessonSettings',
-                    label: 'Lesson Settings',
                     description: 'Controls the look and feel of the lesson and optional content settings',
                     fields: [
                         {
                             name: 'lessonMaterials',
                             type: 'richText',
-                            label: 'Lesson Materials',
+                            access: {
+                                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                            },
                             admin: {
                                 description: 'The materials of the lesson'
                             },
-                            access: {
-                                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
-                            }
+                            label: 'Lesson Materials'
                         },
                         {
                             name: 'downloadableFiles',
                             type: 'upload',
-                            relationTo: mediaCollectionSlug,
-                            hasMany: true,
+                            access: {
+                                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                            },
                             admin: {
                                 description: 'The downloadable files of the lesson'
                             },
-                            access: {
-                                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
-                            }
+                            hasMany: true,
+                            relationTo: mediaCollectionSlug
                         },
                         embeddedVideo({
                             mediaCollectionSlug,
@@ -105,24 +104,28 @@ import { videoProgression } from '../fields/videoProgression.js';
                         }),
                         videoProgression({
                             overrides: {
-                                admin: {
-                                    condition: (data, { lessonVideo })=>Boolean(lessonVideo.embed)
-                                },
                                 access: {
                                     read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+                                },
+                                admin: {
+                                    condition: (data, { lessonVideo })=>Boolean(lessonVideo.embed)
                                 }
                             }
                         })
-                    ]
+                    ],
+                    label: 'Lesson Settings'
                 },
                 {
-                    label: 'Access Settings',
                     name: 'accessSettings',
                     description: 'Controls the timing and way lessons can be accessed.',
                     fields: [
                         {
                             name: 'lessonReleaseSchedule',
                             type: 'select',
+                            admin: {
+                                description: 'The progression behavior of the lesson'
+                            },
+                            defaultValue: 'immediately',
                             label: 'Progression Behavior',
                             options: [
                                 {
@@ -137,64 +140,61 @@ import { videoProgression } from '../fields/videoProgression.js';
                                     label: 'Specific Date',
                                     value: 'specificDate'
                                 }
-                            ],
-                            defaultValue: 'immediately',
-                            admin: {
-                                description: 'The progression behavior of the lesson'
-                            }
+                            ]
                         },
                         {
                             name: 'lessonRelaseDays',
                             type: 'number',
-                            label: 'Day(s) after enrollment',
                             admin: {
-                                description: 'The number of days after enrollment the lesson will be released',
-                                condition: (data, { lessonReleaseSchedule })=>lessonReleaseSchedule === 'enrollment'
-                            }
+                                condition: (data, { lessonReleaseSchedule })=>lessonReleaseSchedule === 'enrollment',
+                                description: 'The number of days after enrollment the lesson will be released'
+                            },
+                            label: 'Day(s) after enrollment'
                         },
                         {
                             name: 'lessonReleaseDate',
                             type: 'date',
                             admin: {
-                                description: 'The date the lesson will be released',
-                                condition: (data, { lessonReleaseSchedule })=>lessonReleaseSchedule === 'specificDate'
+                                condition: (data, { lessonReleaseSchedule })=>lessonReleaseSchedule === 'specificDate',
+                                description: 'The date the lesson will be released'
                             }
                         }
-                    ]
+                    ],
+                    label: 'Access Settings'
                 }
             ]
         },
         {
             name: 'categories',
             type: 'relationship',
-            relationTo: categoriesCollectionSlug,
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
-                description: 'The categories that the lesson belongs to'
-            }
+                description: 'The categories that the lesson belongs to',
+                position: 'sidebar'
+            },
+            relationTo: categoriesCollectionSlug
         },
         {
             name: 'course',
             type: 'relationship',
-            relationTo: coursesCollectionSlug,
-            hasMany: false,
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
-                description: 'The course that the lesson belongs to'
-            }
+                description: 'The course that the lesson belongs to',
+                position: 'sidebar'
+            },
+            hasMany: false,
+            relationTo: coursesCollectionSlug
         },
         {
             name: 'quizzes',
             type: 'relationship',
-            relationTo: quizzesCollectionSlug,
-            hasMany: true,
             admin: {
-                position: 'sidebar',
                 allowCreate: false,
-                description: 'The quizzes that are part of the lesson'
-            }
+                description: 'The quizzes that are part of the lesson',
+                position: 'sidebar'
+            },
+            hasMany: true,
+            relationTo: quizzesCollectionSlug
         }
     ];
     // Apply field overrides if provided

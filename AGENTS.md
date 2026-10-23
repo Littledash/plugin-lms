@@ -8,6 +8,7 @@ Guide for coding agents working on `@littledash/plugin-lms`, a Payload CMS plugi
 ```bash
 pnpm install
 pnpm typecheck      # tsc --noEmit
+pnpm lint           # eslint on src and dev; dist is ignored
 pnpm build          # copyfiles + tsc declarations + swc → dist/
 pnpm test           # integration tests (Jest, ESM, in-memory MongoDB), 1–3 minutes
 pnpm dev            # dev app in dev/ against DATABASE_URI from dev/.env

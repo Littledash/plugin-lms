@@ -1,20 +1,22 @@
-import { TypedCollection, DefaultDocumentIDType } from "payload"
-import { Progress, Lesson } from "../providers/types.js"
+import type { DefaultDocumentIDType, TypedCollection } from "payload"
+
+import type { Lesson, Progress } from "../providers/types.js"
+
 import { completedLesson } from "./completedLesson.js"
 
 export const isPreviousLessonCompleted = (
     progress: Progress,
-    course: Pick<TypedCollection['courses'], 'id' | 'title' | 'slug' | 'lessons'>,
+    course: Pick<TypedCollection['courses'], 'id' | 'lessons' | 'slug' | 'title'>,
     lessonId: string,
   ) => {
     const lessonIndex = course.lessons?.findIndex(
-      (l: { lesson: DefaultDocumentIDType | { id: DefaultDocumentIDType } }) => 
+      (l: { lesson: { id: DefaultDocumentIDType } | DefaultDocumentIDType }) => 
         typeof l.lesson === 'object' && l.lesson !== null && l.lesson.id === lessonId,
     )
 
     
     const previousLesson = lessonIndex !== undefined && lessonIndex > 0 ? course.lessons?.[lessonIndex - 1] : undefined
-    if (!previousLesson) return true // If there is no previous lesson, then the previous lesson is completed
+    if (!previousLesson) {return true} // If there is no previous lesson, then the previous lesson is completed
     
     // Get the previous lesson object - it could be a full lesson object or just an ID
     const previousLessonObj = typeof previousLesson.lesson === 'object' && previousLesson.lesson !== null 

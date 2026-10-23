@@ -34,9 +34,9 @@ import { currencyField } from './currencyField.js';
                 },
                 ...overrides?.admin?.components
             },
+            description: 'The price points for this item',
             initCollapsed: true,
-            readOnly: maxRows === minRows,
-            description: 'The price points for this item'
+            readOnly: maxRows === minRows
         },
         fields: [
             amountField({

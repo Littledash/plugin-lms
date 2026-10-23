@@ -5,15 +5,15 @@ import { formatSlugHook } from '../ui/SlugInput/formatSlug.js';
  * @param overrides - Configuration overrides for slug and checkbox fields
  * @returns A tuple containing the slug field and its associated checkbox field
  */ export const slugField = (fieldToUse = 'title', overrides = {})=>{
-    const { slugOverrides, checkboxOverrides } = overrides;
+    const { checkboxOverrides, slugOverrides } = overrides;
     const checkBoxField = {
         name: 'slugLock',
         type: 'checkbox',
-        defaultValue: true,
         admin: {
             hidden: true,
             position: 'sidebar'
         },
+        defaultValue: true,
         ...checkboxOverrides
     };
     // @ts-expect-error - ts mismatch Partial<TextField> with TextField
@@ -23,24 +23,24 @@ import { formatSlugHook } from '../ui/SlugInput/formatSlug.js';
         index: true,
         label: 'Slug',
         ...slugOverrides || {},
-        hooks: {
-            // Kept this in for hook or API based updates
-            beforeValidate: [
-                formatSlugHook(fieldToUse)
-            ]
-        },
         admin: {
             position: 'sidebar',
             ...slugOverrides?.admin || {},
             components: {
                 Field: {
-                    path: '@littledash/plugin-lms/ui/SlugInput#SlugInput',
                     clientProps: {
-                        fieldToUse,
-                        checkboxFieldPath: checkBoxField.name
-                    }
+                        checkboxFieldPath: checkBoxField.name,
+                        fieldToUse
+                    },
+                    path: '@littledash/plugin-lms/ui/SlugInput#SlugInput'
                 }
             }
+        },
+        hooks: {
+            // Kept this in for hook or API based updates
+            beforeValidate: [
+                formatSlugHook(fieldToUse)
+            ]
         }
     };
     return [

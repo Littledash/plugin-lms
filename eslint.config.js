@@ -23,6 +23,10 @@ export const defaultESLintIgnores = [
 ]
 
 export default [
+  {
+    // Global ignores. Without this, `eslint` type-checks dist and never finishes.
+    ignores: defaultESLintIgnores,
+  },
   ...payloadEsLintConfig,
   {
     rules: {

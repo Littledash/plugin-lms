@@ -1,6 +1,8 @@
-import { CollectionConfig, Field } from 'payload'
+import type { CollectionConfig, Field } from 'payload'
+
+import type { FieldsOverride } from '../types.js'
+
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
-import { FieldsOverride } from '../types.js'
 import { mergeFields } from '../utilities/deepMerge.js'
 
 /**
@@ -10,13 +12,13 @@ import { mergeFields } from '../utilities/deepMerge.js'
  * @property overrides - Optional configuration overrides for fields and collection settings
  */
 type Props = {
+  certificatesCollectionSlug?: string
+  overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
+  studentsCollectionSlug?: string
   /**
    * Array of fields used for capturing the students data. Use this over overrides to customise the fields here as it's reused across the plugin.
    */
   studentsFields: Field[]
-  studentsCollectionSlug?: string
-  certificatesCollectionSlug?: string
-  overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
 /**
@@ -27,7 +29,7 @@ type Props = {
  * @returns CollectionConfig object for courses
  */
 export const studentsCollection: (props?: Props) => CollectionConfig = (props) => {
-  const { overrides, studentsFields = [], studentsCollectionSlug = 'users' } = props || {}
+  const { overrides, studentsCollectionSlug = 'users', studentsFields = [] } = props || {}
 
   const fieldsOverride = overrides?.fields
 

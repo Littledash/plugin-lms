@@ -1,10 +1,10 @@
-import type { TextField, CheckboxField } from 'payload';
+import type { CheckboxField, TextField } from 'payload';
 /**
  * Overrides for slug and checkbox fields
  */
 type Overrides = {
-    slugOverrides?: Partial<TextField>;
     checkboxOverrides?: Partial<CheckboxField>;
+    slugOverrides?: Partial<TextField>;
 };
 /**
  * Type definition for the slug field function

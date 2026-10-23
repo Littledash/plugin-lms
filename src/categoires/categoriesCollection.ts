@@ -1,6 +1,8 @@
-import { CollectionConfig, Field } from 'payload'
+import type { CollectionConfig, Field } from 'payload'
+
+import type { FieldsOverride } from '../types.js'
+
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
-import { FieldsOverride } from '../types.js'
 import { slugField } from '../fields/slug.js'
 
 /**
@@ -30,10 +32,10 @@ export const categoriesCollection: (props?: Props) => CollectionConfig<'categori
     {
       name: 'title',
       type: 'text',
-      required: true,
       admin: {
         description: 'The title of the category',
       },
+      required: true,
     },
     ...slugField(),
   ]
@@ -54,8 +56,8 @@ export const categoriesCollection: (props?: Props) => CollectionConfig<'categori
     ...overrides,
     access: withDefaultAccess(defaultAccess.categories, overrides?.access),
     admin: {
-      useAsTitle: 'title',
       group: 'Taxonomy',
+      useAsTitle: 'title',
       ...overrides?.admin,
     },
     fields,

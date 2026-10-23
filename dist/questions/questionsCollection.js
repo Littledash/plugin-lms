@@ -13,7 +13,7 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
  * @param props - Configuration properties for the questions collection
  * @returns CollectionConfig object for questions
  */ export const questionsCollection = (props)=>{
-    const { overrides, studentsCollectionSlug = 'users', questionTypes } = props || {};
+    const { overrides, questionTypes, studentsCollectionSlug = 'users' } = props || {};
     const fieldsOverride = overrides?.fields;
     // Default question types
     const defaultQuestionTypes = [
@@ -59,27 +59,27 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
         {
             name: 'title',
             type: 'text',
-            required: true,
             admin: {
                 description: 'The title of the question'
-            }
+            },
+            required: true
         },
         {
             name: 'points',
             type: 'number',
-            required: true,
-            min: 0,
-            defaultValue: 1,
             admin: {
-                step: 0.1,
-                description: 'Points awarded for correct answer'
-            }
+                description: 'Points awarded for correct answer',
+                step: 0.1
+            },
+            defaultValue: 1,
+            min: 0,
+            required: true
         },
         {
             name: 'questionType',
             type: 'select',
-            required: true,
-            options: availableQuestionTypes
+            options: availableQuestionTypes,
+            required: true
         },
         {
             name: 'question',
@@ -138,8 +138,8 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
         },
         {
             name: 'correctAnswers',
-            access: answerAccess,
             type: 'array',
+            access: answerAccess,
             admin: {
                 condition: (_, siblingData)=>siblingData.questionType === 'fillInBlank'
             },
@@ -153,8 +153,8 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
         },
         {
             name: 'assessmentCriteria',
-            access: answerAccess,
             type: 'array',
+            access: answerAccess,
             admin: {
                 condition: (_, siblingData)=>siblingData.questionType === 'assessment'
             },
@@ -182,12 +182,12 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
         {
             name: 'authors',
             type: 'relationship',
-            relationTo: studentsCollectionSlug,
-            hasMany: true,
             admin: {
                 allowCreate: false,
                 description: 'The authors of the question'
-            }
+            },
+            hasMany: true,
+            relationTo: studentsCollectionSlug
         }
     ];
     // Apply field overrides if provided

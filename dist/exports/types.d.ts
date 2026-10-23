@@ -1,1 +1,1 @@
-export type { CollectionOverride, CurrenciesConfig, LMSPluginConfig, FieldsOverride, } from '../types.js';
+export type { CollectionOverride, CurrenciesConfig, FieldsOverride, LMSPluginConfig, } from '../types.js';

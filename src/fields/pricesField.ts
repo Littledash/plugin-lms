@@ -56,9 +56,9 @@ export const pricesField: (props: Props) => ArrayField = ({ currenciesConfig, ov
         },
         ...overrides?.admin?.components,
       },
+      description: 'The price points for this item',
       initCollapsed: true,
       readOnly: maxRows === minRows,
-      description: 'The price points for this item',
     },
     fields: [amountField({ currenciesConfig }), currencyField({ currenciesConfig })],
   }

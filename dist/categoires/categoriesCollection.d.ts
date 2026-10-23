@@ -1,5 +1,5 @@
-import { CollectionConfig } from 'payload';
-import { FieldsOverride } from '../types.js';
+import type { CollectionConfig } from 'payload';
+import type { FieldsOverride } from '../types.js';
 /**
  * Props interface for configuring the categories collection
  * @property overrides - Optional configuration overrides for fields and collection settings

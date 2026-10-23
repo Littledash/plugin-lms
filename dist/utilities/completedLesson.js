@@ -74,9 +74,9 @@
     const courseProgress = progress.find((p)=>(typeof p.course === 'object' ? p.course.id : p.course) === courseId);
     if (!courseProgress) {
         return {
-            isCompleted: false,
-            hasQuizzes: false,
             allQuizzesCompleted: false,
+            hasQuizzes: false,
+            isCompleted: false,
             lessonCompleted: false
         };
     }
@@ -88,9 +88,9 @@
     // 2. Either there are no quizzes, OR all quizzes are completed
     const isCompleted = lessonCompleted && (!hasQuizzes || allQuizzesCompletedForLesson);
     return {
-        isCompleted,
-        hasQuizzes,
         allQuizzesCompleted: allQuizzesCompletedForLesson,
+        hasQuizzes,
+        isCompleted,
         lessonCompleted
     };
 };

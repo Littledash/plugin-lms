@@ -7,12 +7,17 @@
     const field = {
         name: 'videoProgression',
         type: 'group',
-        interfaceName: 'VideoProgression',
+        admin: {
+            ...overrides?.admin,
+            hideGutter: true
+        },
         fields: [
             {
                 name: 'displayTiming',
                 type: 'select',
-                required: true,
+                admin: {
+                    description: 'Before completed sub-steps: The video will be shown and must be fully watched before the user can access the lesson\’s associated steps | After completed sub-steps:  The video will be visible after the user has completed the lesson’\s associated steps. The full video must be watched in order to complete the lesson.'
+                },
                 defaultValue: 'before',
                 options: [
                     {
@@ -24,31 +29,26 @@
                         value: 'after'
                     }
                 ],
-                admin: {
-                    description: 'Before completed sub-steps: The video will be shown and must be fully watched before the user can access the lesson\’s associated steps | After completed sub-steps:  The video will be visible after the user has completed the lesson’\s associated steps. The full video must be watched in order to complete the lesson.'
-                }
+                required: true
             },
             {
                 name: 'autoStart',
                 type: 'checkbox',
-                defaultValue: true,
                 admin: {
                     description: 'If checked, the video will start automatically when the lesson is opened'
-                }
+                },
+                defaultValue: true
             },
             {
                 name: 'videoControls',
                 type: 'checkbox',
-                defaultValue: true,
                 admin: {
                     description: 'If checked, the video will have controls'
-                }
+                },
+                defaultValue: true
             }
         ],
-        admin: {
-            ...overrides?.admin,
-            hideGutter: true
-        },
+        interfaceName: 'VideoProgression',
         ...overrides
     };
     return field;

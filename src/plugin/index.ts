@@ -1,28 +1,29 @@
 import type { Config } from 'payload'
 
 import type { LMSPluginConfig, SanitizedLMSPluginConfig } from '../types.js'
+
 import { addressesCollection } from '../addresses/addressesCollection.js'
-import { coursesCollection } from '../courses/coursesCollection.js'
-import { groupsCollection } from '../groups/groupsCollection.js'
-import { lessonsCollection } from '../lessons/lessonsCollection.js'
-import { quizzesCollection } from '../quizzes/quizzesCollection.js'
 import { categoriesCollection } from '../categoires/categoriesCollection.js'
-import { tagsCollection } from '../tags/tagsCollection.js'
 import { certificatesCollection } from '../certificates/certificatesCollection.js'
-import { questionsCollection } from '../questions/questionsCollection.js'
-import { topicsCollection } from '../topics/topicsCollection.js'
-import { defaultAddressFields } from '../fields/defaultAddressFields.js'
-import { sanitizePluginConfig } from '../utilities/sanitizePluginConfig.js'
-import { getCollectionSlugMap } from '../utilities/getCollectionSlugMap.js'
-import { studentsCollection } from '../students/studentsCollection.js'
-import { defaultStudentFields } from '../fields/defaultStudentFields.js'
+import { coursesCollection } from '../courses/coursesCollection.js'
+import { addUserToGroupHandler } from '../endpoints/add-user-to-group.js'
+import { completeCourseHandler } from '../endpoints/complete-course.js'
 import { completeLessonHandler } from '../endpoints/complete-lesson.js'
 import { enrollHandler } from '../endpoints/enroll.js'
-import { submitQuizHandler } from '../endpoints/submit-quiz.js'
-import { completeCourseHandler } from '../endpoints/complete-course.js'
-import { addUserToGroupHandler } from '../endpoints/add-user-to-group.js'
 import { fetchProgressHandler } from '../endpoints/fetch-progress.js'
 import { generateCertificateHandler } from '../endpoints/generate-certificate.js'
+import { submitQuizHandler } from '../endpoints/submit-quiz.js'
+import { defaultAddressFields } from '../fields/defaultAddressFields.js'
+import { defaultStudentFields } from '../fields/defaultStudentFields.js'
+import { groupsCollection } from '../groups/groupsCollection.js'
+import { lessonsCollection } from '../lessons/lessonsCollection.js'
+import { questionsCollection } from '../questions/questionsCollection.js'
+import { quizzesCollection } from '../quizzes/quizzesCollection.js'
+import { studentsCollection } from '../students/studentsCollection.js'
+import { tagsCollection } from '../tags/tagsCollection.js'
+import { topicsCollection } from '../topics/topicsCollection.js'
+import { getCollectionSlugMap } from '../utilities/getCollectionSlugMap.js'
+import { sanitizePluginConfig } from '../utilities/sanitizePluginConfig.js'
 
 export const lmsPlugin =
   (pluginConfig?: LMSPluginConfig) =>
@@ -58,9 +59,9 @@ export const lmsPlugin =
 
       if (studentsFields) {
         const students = studentsCollection({
+          overrides: collectionOverrides,
           studentsCollectionSlug: collectionSlugMap.students,
           studentsFields: studentsFields({ defaultFields: defaultStudentFields() }),
-          overrides: collectionOverrides,
         })
 
         incomingConfig.collections.push(students)
@@ -81,8 +82,8 @@ export const lmsPlugin =
 
       const addresses = addressesCollection({
         addressFields: addressFields({ defaultFields: defaultAddressFields() }),
-        studentsCollectionSlug: collectionSlugMap.students,
         overrides: collectionOverrides,
+        studentsCollectionSlug: collectionSlugMap.students,
         supportedCountries,
       })
 
@@ -97,8 +98,8 @@ export const lmsPlugin =
 
       const certificates = certificatesCollection({
         mediaCollectionSlug: collectionSlugMap.media,
-        studentsCollectionSlug: collectionSlugMap.students,
         overrides: collectionOverrides,
+        studentsCollectionSlug: collectionSlugMap.students,
       })
       incomingConfig.collections.push(certificates)
     }
@@ -115,9 +116,9 @@ export const lmsPlugin =
         currenciesConfig,
         lessonsCollectionSlug: collectionSlugMap.lessons,
         mediaCollectionSlug: collectionSlugMap.media,
+        overrides: collectionOverrides,
         studentsCollectionSlug: collectionSlugMap.students,
         tagsCollectionSlug: collectionSlugMap.tags,
-        overrides: collectionOverrides,
       })
       incomingConfig.collections.push(courses)
     }
@@ -129,8 +130,8 @@ export const lmsPlugin =
           : undefined
 
       const groups = groupsCollection({
-        coursesCollectionSlug: collectionSlugMap.courses,
         couponsCollectionSlug: collectionSlugMap.coupons,
+        coursesCollectionSlug: collectionSlugMap.courses,
         usersCollectionSlug: collectionSlugMap.students,
         // certificatesCollectionSlug: collectionSlugMap.certificates,
         overrides: collectionOverrides,
@@ -145,12 +146,12 @@ export const lmsPlugin =
           : undefined
 
       const lessons = lessonsCollection({
+        categoriesCollectionSlug: collectionSlugMap.categories,
         coursesCollectionSlug: collectionSlugMap.courses,
         mediaCollectionSlug: collectionSlugMap.media,
-        quizzesCollectionSlug: collectionSlugMap.quizzes,
-        categoriesCollectionSlug: collectionSlugMap.categories,
-        studentsCollectionSlug: collectionSlugMap.students,
         overrides: collectionOverrides,
+        quizzesCollectionSlug: collectionSlugMap.quizzes,
+        studentsCollectionSlug: collectionSlugMap.students,
       })
       incomingConfig.collections.push(lessons)
     }
@@ -163,10 +164,10 @@ export const lmsPlugin =
 
       const topics = topicsCollection({
         coursesCollectionSlug: collectionSlugMap.courses,
-        mediaCollectionSlug: collectionSlugMap.media,
-        quizzesCollectionSlug: collectionSlugMap.quizzes,
         lessonsCollectionSlug: collectionSlugMap.lessons,
+        mediaCollectionSlug: collectionSlugMap.media,
         overrides: collectionOverrides,
+        quizzesCollectionSlug: collectionSlugMap.quizzes,
       })
       incomingConfig.collections.push(topics)
     }
@@ -179,8 +180,8 @@ export const lmsPlugin =
 
       const quizzes = quizzesCollection({
         mediaCollectionSlug: collectionSlugMap.media,
-        studentsCollectionSlug: collectionSlugMap.students,
         overrides: collectionOverrides,
+        studentsCollectionSlug: collectionSlugMap.students,
       })
       incomingConfig.collections.push(quizzes)
     }
@@ -221,9 +222,9 @@ export const lmsPlugin =
           : undefined
 
       const questions = questionsCollection({
-        studentsCollectionSlug: collectionSlugMap.students,
         overrides: collectionOverrides,
         questionTypes,
+        studentsCollectionSlug: collectionSlugMap.students,
       })
       incomingConfig.collections.push(questions)
     }
@@ -237,17 +238,17 @@ export const lmsPlugin =
 
     // Default endpoints. They act on the logged-in user only; see `services` for server-side use.
     const defaultEndpoints = [
-      { path: '/lms/enroll', method: 'post' as const, handler: enrollHandler() },
-      { path: '/lms/complete-lesson', method: 'post' as const, handler: completeLessonHandler() },
-      { path: '/lms/submit-quiz', method: 'post' as const, handler: submitQuizHandler() },
-      { path: '/lms/complete-course', method: 'post' as const, handler: completeCourseHandler() },
+      { handler: enrollHandler(), method: 'post' as const, path: '/lms/enroll' },
+      { handler: completeLessonHandler(), method: 'post' as const, path: '/lms/complete-lesson' },
+      { handler: submitQuizHandler(), method: 'post' as const, path: '/lms/submit-quiz' },
+      { handler: completeCourseHandler(), method: 'post' as const, path: '/lms/complete-course' },
       {
-        path: '/lms/generate-certificate',
-        method: 'post' as const,
         handler: generateCertificateHandler(),
+        method: 'post' as const,
+        path: '/lms/generate-certificate',
       },
-      { path: '/lms/add-user-to-group', method: 'post' as const, handler: addUserToGroupHandler() },
-      { path: '/lms/fetch-progress', method: 'get' as const, handler: fetchProgressHandler() },
+      { handler: addUserToGroupHandler(), method: 'post' as const, path: '/lms/add-user-to-group' },
+      { handler: fetchProgressHandler(), method: 'get' as const, path: '/lms/fetch-progress' },
     ]
 
     incomingConfig.endpoints = [

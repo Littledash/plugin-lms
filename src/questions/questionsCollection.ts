@@ -1,8 +1,9 @@
-import { CollectionConfig, Field } from 'payload'
+import type { CollectionConfig, Field } from 'payload'
+
+import type { FieldsOverride, QuestionTypeOption } from '../types.js'
 
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
-import { FieldsOverride, QuestionTypeOption } from '../types.js'
 import { isTrueFalseAnswer } from './trueFalseAnswers.js'
 
 /**
@@ -16,9 +17,9 @@ const answerAccess = { read: isAdminOrAuthorFieldLevel }
  * @property questionTypes - Optional array of question type options to override defaults
  */
 type Props = {
-  studentsCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
   questionTypes?: QuestionTypeOption[]
+  studentsCollectionSlug?: string
 }
 
 /**
@@ -29,7 +30,7 @@ type Props = {
  * @returns CollectionConfig object for questions
  */
 export const questionsCollection: (props?: Props) => CollectionConfig<'questions'> = (props) => {
-  const { overrides, studentsCollectionSlug = 'users', questionTypes } = props || {}
+  const { overrides, questionTypes, studentsCollectionSlug = 'users' } = props || {}
   const fieldsOverride = overrides?.fields
 
   // Default question types
@@ -55,27 +56,27 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     {
       name: 'title',
       type: 'text',
-      required: true,
       admin: {
         description: 'The title of the question',
       },
+      required: true,
     },
     {
       name: 'points',
       type: 'number',
-      required: true,
-      min: 0,
-      defaultValue: 1,
       admin: {
-        step: 0.1,
         description: 'Points awarded for correct answer',
+        step: 0.1,
       },
+      defaultValue: 1,
+      min: 0,
+      required: true,
     },
     {
       name: 'questionType',
       type: 'select',
-      required: true,
       options: availableQuestionTypes,
+      required: true,
     },
     {
       name: 'question',
@@ -121,8 +122,8 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     },
     {
       name: 'correctAnswers',
-      access: answerAccess,
       type: 'array',
+      access: answerAccess,
       admin: {
         condition: (_, siblingData) => siblingData.questionType === 'fillInBlank',
       },
@@ -130,8 +131,8 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     },
     {
       name: 'assessmentCriteria',
-      access: answerAccess,
       type: 'array',
+      access: answerAccess,
       admin: {
         condition: (_, siblingData) => siblingData.questionType === 'assessment',
       },
@@ -151,12 +152,12 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     {
       name: 'authors',
       type: 'relationship',
-      relationTo: studentsCollectionSlug,
-      hasMany: true,
       admin: {
         allowCreate: false,
         description: 'The authors of the question',
       },
+      hasMany: true,
+      relationTo: studentsCollectionSlug,
     },
   ]
 

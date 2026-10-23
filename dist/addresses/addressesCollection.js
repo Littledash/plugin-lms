@@ -1,7 +1,7 @@
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { defaultCountries } from './defaultCountries.js';
 export const addressesCollection = (props)=>{
-    const { addressFields, studentsCollectionSlug = 'users', overrides } = props || {};
+    const { addressFields, overrides, studentsCollectionSlug = 'users' } = props || {};
     const fieldsOverride = overrides?.fields;
     const { supportedCountries: supportedCountriesFromProps } = props || {};
     const supportedCountries = supportedCountriesFromProps || defaultCountries;

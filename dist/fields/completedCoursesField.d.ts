@@ -4,8 +4,8 @@ import type { JoinField } from 'payload';
  */
 type Props = {
     coursesCollectionSlug?: string;
-    studentsCollectionSlug?: string;
     overrides?: Partial<JoinField>;
+    studentsCollectionSlug?: string;
 };
 /**
  * Creates a relationship field for completed courses

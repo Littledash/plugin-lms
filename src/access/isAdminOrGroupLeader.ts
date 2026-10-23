@@ -1,7 +1,8 @@
 import type { Access, TypedCollection } from 'payload'
+
 import { checkRole } from './checkRole.js'
 
-export const isAdminOrGroupLeader: Access = async ({ req, id }) => {
+export const isAdminOrGroupLeader: Access = async ({ id, req }) => {
   const { user } = req
 
   if (!user) {
@@ -14,8 +15,8 @@ export const isAdminOrGroupLeader: Access = async ({ req, id }) => {
 
   if (id) {
     const group = await req.payload.findByID({
-      collection: 'groups',
       id,
+      collection: 'groups',
       depth: 1,
     })
 

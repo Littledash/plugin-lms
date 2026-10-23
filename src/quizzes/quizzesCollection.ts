@@ -1,6 +1,8 @@
-import { CollectionConfig, Field } from 'payload'
+import type { CollectionConfig, Field } from 'payload'
+
+import type { FieldsOverride } from '../types.js'
+
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
-import { FieldsOverride } from '../types.js'
 import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
 /**
  * Props interface for configuring the quizzes collection
@@ -9,8 +11,8 @@ import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdm
  */
 type Props = {
   mediaCollectionSlug?: string
-  studentsCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
+  studentsCollectionSlug?: string
 }
 
 /**
@@ -21,7 +23,7 @@ type Props = {
  * @returns CollectionConfig object for quizzes
  */
 export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> = (props) => {
-  const { overrides, mediaCollectionSlug = 'media', studentsCollectionSlug = 'users' } = props || {}
+  const { mediaCollectionSlug = 'media', overrides, studentsCollectionSlug = 'users' } = props || {}
   const fieldsOverride = overrides?.fields
 
   /**
@@ -32,10 +34,10 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
     {
       name: 'title',
       type: 'text',
-      required: true,
       admin: {
         description: 'The title of the quiz',
       },
+      required: true,
     },
     {
       name: 'excerpt',
@@ -47,64 +49,64 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
     {
       name: 'description',
       type: 'richText',
-      admin: {
-        description: 'The description of the quiz',
-      },
       access: {
         read: isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel,
+      },
+      admin: {
+        description: 'The description of the quiz',
       },
     },
     {
       name: 'questions',
       type: 'relationship',
-      relationTo: 'questions',
-      hasMany: true,
-      admin: {
-        position: 'sidebar',
-        allowCreate: false,
-        description: 'The questions in this quiz',
-      },
       access: {
         read: isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel,
       },
+      admin: {
+        allowCreate: false,
+        description: 'The questions in this quiz',
+        position: 'sidebar',
+      },
+      hasMany: true,
+      relationTo: 'questions',
     },
     {
       name: 'minimumScore',
       type: 'number',
-      min: 0,
-      max: 100,
-      defaultValue: 100,
       admin: {
           description: 'Minimum score required (0-100) to pass the quiz',
-      }
+      },
+      defaultValue: 100,
+      max: 100,
+      min: 0
   },
     {
       name: 'attemptLimit',
       type: 'number',
-      min: 0,
       admin: {
         description: 'Maximum attempts per student. Leave empty for unlimited.',
       },
+      min: 0,
     },
     {
       name: 'authors',
       type: 'relationship',
-      relationTo: studentsCollectionSlug,
-      hasMany: true,
       admin: {
-        position: 'sidebar',
         allowCreate: false,
         description: 'The authors of the quiz',
+        position: 'sidebar',
       },
+      hasMany: true,
+      relationTo: studentsCollectionSlug,
     },
     {
       name: 'featuredImage',
       type: 'upload',
-      relationTo: mediaCollectionSlug,
       admin: {
-        position: 'sidebar',
         description: 'The featured image of the quiz',
+        position: 'sidebar',
       },
+      relationTo: mediaCollectionSlug,
     },
   ]
 

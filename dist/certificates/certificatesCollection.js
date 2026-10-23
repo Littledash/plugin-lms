@@ -6,7 +6,7 @@ import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
  * @param props - Configuration properties for the certificates collection
  * @returns CollectionConfig object for certificates
  */ export const certificatesCollection = (props)=>{
-    const { overrides, coursesCollectionSlug = 'courses', studentsCollectionSlug = 'users', mediaCollectionSlug = 'media' } = props || {};
+    const { coursesCollectionSlug = 'courses', mediaCollectionSlug = 'media', overrides, studentsCollectionSlug = 'users' } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the certificates collection
@@ -16,10 +16,10 @@ import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
         {
             name: 'title',
             type: 'text',
-            required: true,
             admin: {
                 description: 'The title of the certificate'
-            }
+            },
+            required: true
         },
         {
             name: 'description',
@@ -31,20 +31,20 @@ import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
         {
             name: 'template',
             type: 'upload',
-            relationTo: mediaCollectionSlug,
             admin: {
                 description: 'The certificate template image'
-            }
+            },
+            relationTo: mediaCollectionSlug
         },
         {
             name: 'courses',
             type: 'relationship',
-            relationTo: coursesCollectionSlug,
-            hasMany: true,
             admin: {
                 allowCreate: false,
                 description: 'The courses this certificate is for'
-            }
+            },
+            hasMany: true,
+            relationTo: coursesCollectionSlug
         },
         {
             name: 'expiryDate',
@@ -56,6 +56,9 @@ import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
         {
             name: 'status',
             type: 'select',
+            admin: {
+                description: 'The status of the certificate'
+            },
             defaultValue: 'active',
             options: [
                 {
@@ -71,20 +74,17 @@ import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
                     value: 'revoked'
                 }
             ],
-            required: true,
-            admin: {
-                description: 'The status of the certificate'
-            }
+            required: true
         },
         {
             name: 'authors',
             type: 'relationship',
-            relationTo: studentsCollectionSlug,
-            hasMany: true,
             admin: {
                 allowCreate: false,
                 description: 'The authors of the certificate'
-            }
+            },
+            hasMany: true,
+            relationTo: studentsCollectionSlug
         }
     ];
     // Apply field overrides if provided

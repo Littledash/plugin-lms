@@ -1,58 +1,27 @@
 export const initialState = {
-    users: [],
+    certificates: [],
+    completedCourses: [],
     courses: [],
-    topics: [],
+    enrolledCourses: [],
+    error: null,
+    isLoading: false,
     lessons: [],
     progress: [],
-    quizzes: [],
-    certificates: [],
-    enrolledCourses: [],
-    completedCourses: [],
     quizStarted: null,
-    isLoading: false,
-    error: null
+    quizzes: [],
+    topics: [],
+    users: []
 };
 export const lmsReducer = (state, action)=>{
     switch(action.type){
-        case 'SET_LOADING':
+        case 'COMPLETE_COURSE':
             return {
                 ...state,
-                isLoading: action.payload
-            };
-        case 'SET_ERROR':
-            return {
-                ...state,
-                error: action.payload
-            };
-        case 'SET_USERS':
-            return {
-                ...state,
-                users: action.payload
-            };
-        case 'SET_COURSES':
-            return {
-                ...state,
-                courses: action.payload
-            };
-        case 'SET_TOPICS':
-            return {
-                ...state,
-                topics: action.payload
-            };
-        case 'SET_LESSONS':
-            return {
-                ...state,
-                lessons: action.payload
-            };
-        case 'SET_QUIZZES':
-            return {
-                ...state,
-                quizzes: action.payload
-            };
-        case 'SET_CERTIFICATES':
-            return {
-                ...state,
-                certificates: action.payload
+                completedCourses: [
+                    ...state.completedCourses,
+                    action.payload
+                ],
+                enrolledCourses: state.enrolledCourses.filter((courseId)=>courseId !== action.payload)
             };
         case 'ENROLL_IN_COURSE':
             return {
@@ -62,71 +31,102 @@ export const lmsReducer = (state, action)=>{
                     action.payload
                 ]
             };
-        case 'COMPLETE_COURSE':
+        case 'LOAD_FROM_STORAGE':
             return {
                 ...state,
-                enrolledCourses: state.enrolledCourses.filter((courseId)=>courseId !== action.payload),
-                completedCourses: [
-                    ...state.completedCourses,
-                    action.payload
-                ]
+                completedCourses: action.payload.completedCourses,
+                enrolledCourses: action.payload.enrolledCourses,
+                progress: action.payload.progress
             };
-        case 'UPDATE_PROGRESS':
+        case 'RESET_STATE':
+            return initialState;
+        case 'SET_CERTIFICATES':
             return {
                 ...state,
-                progress: action.payload
-            };
-        case 'SET_ENROLLED_COURSES':
-            return {
-                ...state,
-                enrolledCourses: action.payload
+                certificates: action.payload
             };
         case 'SET_COMPLETED_COURSES':
             return {
                 ...state,
                 completedCourses: action.payload
             };
-        case 'SET_QUIZ_STARTED':
+        case 'SET_COURSES':
             return {
                 ...state,
-                quizzes: state.quizzes.map((quiz)=>quiz.id === action.payload.quizId ? {
-                        ...quiz,
-                        startedAt: action.payload.startedAt
-                    } : quiz),
-                quizStarted: {
-                    quizId: action.payload.quizId,
-                    courseId: action.payload.courseId
-                },
-                isLoading: false
+                courses: action.payload
+            };
+        case 'SET_ENROLLED_COURSES':
+            return {
+                ...state,
+                enrolledCourses: action.payload
+            };
+        case 'SET_ERROR':
+            return {
+                ...state,
+                error: action.payload
+            };
+        case 'SET_LESSONS':
+            return {
+                ...state,
+                lessons: action.payload
+            };
+        case 'SET_LOADING':
+            return {
+                ...state,
+                isLoading: action.payload
             };
         case 'SET_QUIZ_COMPLETED':
             return {
                 ...state,
+                quizStarted: null,
                 quizzes: state.quizzes.map((quiz)=>quiz.id === action.payload.quizId ? {
                         ...quiz,
                         completedAt: action.payload.completedAt,
                         score: action.payload.score
-                    } : quiz),
-                quizStarted: null
+                    } : quiz)
             };
         case 'SET_QUIZ_EXITED':
             return {
                 ...state,
+                quizStarted: null,
                 quizzes: state.quizzes.map((quiz)=>quiz.id === action.payload.quizId ? {
                         ...quiz,
                         exitedAt: action.payload.exitedAt
-                    } : quiz),
-                quizStarted: null
+                    } : quiz)
             };
-        case 'LOAD_FROM_STORAGE':
+        case 'SET_QUIZ_STARTED':
             return {
                 ...state,
-                progress: action.payload.progress,
-                enrolledCourses: action.payload.enrolledCourses,
-                completedCourses: action.payload.completedCourses
+                isLoading: false,
+                quizStarted: {
+                    courseId: action.payload.courseId,
+                    quizId: action.payload.quizId
+                },
+                quizzes: state.quizzes.map((quiz)=>quiz.id === action.payload.quizId ? {
+                        ...quiz,
+                        startedAt: action.payload.startedAt
+                    } : quiz)
             };
-        case 'RESET_STATE':
-            return initialState;
+        case 'SET_QUIZZES':
+            return {
+                ...state,
+                quizzes: action.payload
+            };
+        case 'SET_TOPICS':
+            return {
+                ...state,
+                topics: action.payload
+            };
+        case 'SET_USERS':
+            return {
+                ...state,
+                users: action.payload
+            };
+        case 'UPDATE_PROGRESS':
+            return {
+                ...state,
+                progress: action.payload
+            };
         default:
             return state;
     }

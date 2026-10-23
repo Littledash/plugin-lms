@@ -1,30 +1,30 @@
 type RichTextNode = {
+    [k: string]: unknown;
+    children?: RichTextNode[];
+    text?: string;
     type: string;
     version: number;
-    text?: string;
-    children?: RichTextNode[];
-    [k: string]: unknown;
 };
 type RichText = {
+    [k: string]: unknown;
     root: {
-        type: string;
         children: RichTextNode[];
         direction: ('ltr' | 'rtl') | null;
-        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        format: '' | 'center' | 'end' | 'justify' | 'left' | 'right' | 'start';
         indent: number;
+        type: string;
         version: number;
     };
-    [k: string]: unknown;
 };
 type createPDFProps = {
-    studentName: string;
-    courseTitle: string;
-    completionDate: string;
-    certificateNumber: string;
-    templateImage: string;
-    description: string | RichText;
-    fontFamily: string;
     authorName?: string;
+    certificateNumber: string;
+    completionDate: string;
+    courseTitle: string;
+    description: RichText | string;
+    fontFamily: string;
+    studentName: string;
+    templateImage: string;
 };
-export declare const createPDF: ({ studentName, courseTitle, completionDate, certificateNumber, templateImage, description, fontFamily, authorName, }: createPDFProps) => Promise<Uint8Array>;
+export declare const createPDF: ({ authorName, certificateNumber, completionDate, courseTitle, description, fontFamily, studentName, templateImage, }: createPDFProps) => Promise<Uint8Array>;
 export {};

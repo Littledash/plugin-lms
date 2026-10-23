@@ -1,11 +1,12 @@
-import { CollectionConfig, Field } from 'payload'
+import type { CollectionConfig, Field } from 'payload'
+
+import type { CurrenciesConfig, FieldsOverride  } from '../types.js'
+
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
-import { FieldsOverride } from '../types.js'
-import type { CurrenciesConfig } from '../types.js'
-import { pricesField } from '../fields/pricesField.js'
 import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
-import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js'
 import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
+import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js'
+import { pricesField } from '../fields/pricesField.js'
 /**
  * Props interface for configuring the courses collection
  * @property categoriesCollectionSlug - Slug for the categories collection (default: 'categories')
@@ -23,9 +24,9 @@ type Props = {
   currenciesConfig?: CurrenciesConfig
   lessonsCollectionSlug?: string
   mediaCollectionSlug?: string
+  overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
   studentsCollectionSlug?: string
   tagsCollectionSlug?: string
-  overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
 }
 
 /**
@@ -37,14 +38,14 @@ type Props = {
  */
 export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> = (props) => {
   const {
-    overrides,
-    mediaCollectionSlug = 'media',
-    lessonsCollectionSlug = 'lessons',
     categoriesCollectionSlug = 'categories',
-    tagsCollectionSlug = 'tags',
-    currenciesConfig,
-    studentsCollectionSlug = 'users',
     certificatesCollectionSlug = 'certificates',
+    currenciesConfig,
+    lessonsCollectionSlug = 'lessons',
+    mediaCollectionSlug = 'media',
+    overrides,
+    studentsCollectionSlug = 'users',
+    tagsCollectionSlug = 'tags',
   } = props || {}
 
   const fieldsOverride = overrides?.fields
@@ -57,10 +58,10 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     {
       name: 'title',
       type: 'text',
-      required: true,
       admin: {
         description: 'The title of the course',
       },
+      required: true,
     },
     {
       name: 'excerpt',
@@ -79,7 +80,9 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     {
       name: 'lessons',
       type: 'array',
-      label: 'Course Lessons',
+      access: {
+        read: isAdminOrAuthorOrStudentFieldLevel,
+      },
       admin: {
         description: 'The lessons that are part of the course in specific order',
       },
@@ -94,14 +97,12 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
           name: 'isOptional',
           type: 'checkbox',
           admin: {
-            width: '50%',
             description: 'Check if this lesson is optional',
+            width: '50%',
           },
         },
       ],
-      access: {
-        read: isAdminOrAuthorOrStudentFieldLevel,
-      },
+      label: 'Course Lessons',
     },
 
     {
@@ -109,13 +110,15 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
 
       tabs: [
         {
-          label: 'Enrollment',
           name: 'enrollment',
           description: 'Controls how students gain access to the course',
           fields: [
             {
               name: 'accessMode',
               type: 'select',
+              admin: {
+                description: 'Controls how students gain access to the course',
+              },
               defaultValue: 'open',
               options: [
                 { label: 'Open', value: 'open' },
@@ -125,9 +128,6 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
                 { label: 'Closed', value: 'closed' },
               ],
               required: true,
-              admin: {
-                description: 'Controls how students gain access to the course',
-              },
             },
 
             ...(currenciesConfig
@@ -137,7 +137,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
                     overrides: {
                       admin: {
                         condition: (_, siblingData) => {
-                          return ['buy now', 'recurring', 'closed'].includes(
+                          return ['buy now', 'closed', 'recurring'].includes(
                             siblingData?.accessMode,
                           )
                         },
@@ -150,25 +150,25 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
               name: 'enrollmentUrl',
               type: 'text',
               admin: {
-                description: 'The URL for the enrollment page',
                 condition: (_, siblingData) => siblingData?.accessMode === 'closed',
+                description: 'The URL for the enrollment page',
               },
             },
           ],
+          label: 'Enrollment',
         },
         {
-          label: 'Course Settings',
           name: 'courseSettings',
           description: 'Controls the look and feel of the course and optional content settings',
           fields: [
             {
               name: 'courseMaterials',
               type: 'richText',
-              admin: {
-                description: 'The materials that are part of the course',
-              },
               access: {
                 read: isAdminOrAuthorOrEnrolledInThisCourseFieldLevel,
+              },
+              admin: {
+                description: 'The materials that are part of the course',
               },
             },
 
@@ -183,6 +183,9 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
             {
               name: 'duration',
               type: 'group',
+              admin: {
+                description: 'The duration of the course',
+              },
               fields: [
                 {
                   type: 'row',
@@ -190,32 +193,29 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
                     {
                       name: 'hours',
                       type: 'number',
-                      label: 'hour(s)',
                       admin: {
                         description: 'The number of hours in the course',
                         width: '50%',
                       },
+                      label: 'hour(s)',
                     },
                     {
                       name: 'minutes',
                       type: 'number',
-                      label: 'minute(s)',
                       admin: {
-                        width: '50%',
                         description: 'The number of minutes in the course',
+                        width: '50%',
                       },
+                      label: 'minute(s)',
                     },
                   ],
                 },
               ],
-              admin: {
-                description: 'The duration of the course',
-              },
             },
           ],
+          label: 'Course Settings',
         },
         {
-          label: 'Access Settings',
           name: 'accessSettings',
           description:
             'Controls additional requirements and restrictions that enrollees need to meet to access the course',
@@ -237,6 +237,10 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
                 {
                   name: 'completionRequirement',
                   type: 'select',
+                  admin: {
+                    description: 'What is required to satisfy this prerequisite',
+                    width: '50%',
+                  },
                   defaultValue: 'complete',
                   options: [
                     { label: 'Complete Course', value: 'complete' },
@@ -244,43 +248,39 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
                     { label: 'Minimum Score', value: 'minimumScore' },
                     { label: 'Complete Specific Lessons', value: 'specificLessons' },
                   ],
-                  admin: {
-                    width: '50%',
-                    description: 'What is required to satisfy this prerequisite',
-                  },
                 },
                 {
                   name: 'minimumScore',
                   type: 'number',
-                  min: 0,
-                  max: 100,
                   admin: {
-                    width: '50%',
-                    description: 'Minimum score required (0-100)',
                     condition: (_, siblingData) =>
                       siblingData?.completionRequirement === 'minimumScore',
+                    description: 'Minimum score required (0-100)',
+                    width: '50%',
                   },
+                  max: 100,
+                  min: 0,
                 },
                 {
                   name: 'requiredLessons',
                   type: 'relationship',
-                  relationTo: lessonsCollectionSlug,
-                  hasMany: true,
                   admin: {
-                    width: '50%',
-                    description: 'Specific lessons that must be completed',
                     condition: (_, siblingData) =>
                       siblingData?.completionRequirement === 'specificLessons',
+                    description: 'Specific lessons that must be completed',
+                    width: '50%',
                   },
+                  hasMany: true,
+                  relationTo: lessonsCollectionSlug,
                 },
                 {
                   name: 'isOptional',
                   type: 'checkbox',
-                  defaultValue: false,
                   admin: {
-                    width: '50%',
                     description: 'Whether this prerequisite is optional',
+                    width: '50%',
                   },
+                  defaultValue: false,
                 },
               ],
             },
@@ -299,139 +299,140 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
               },
             },
           ],
+          label: 'Access Settings',
         },
         {
-          label: 'Awards',
           name: 'awards',
           description: 'Controls the awards settings of the course',
           fields: [
             {
               name: 'certificate',
               type: 'relationship',
-              relationTo: certificatesCollectionSlug,
-              hasMany: false,
               admin: {
                 allowCreate: false,
                 description:
                   'The certificate that is awarded to the students who complete the course',
               },
+              hasMany: false,
+              relationTo: certificatesCollectionSlug,
             },
             {
               name: 'coursePoints',
               type: 'number',
-              label: 'Course completion points',
               admin: {
                 description: 'The points that are awarded to the students who complete the course',
               },
+              label: 'Course completion points',
             },
           ],
+          label: 'Awards',
         },
         {
-          label: 'Navigation',
           name: 'navigation',
           description: 'Controls the navigation settings of the course',
           fields: [
             {
               name: 'navigationMode',
               type: 'select',
-              label: 'Course Navigation Mode',
-              defaultValue: 'linear',
-              required: true,
-              options: [
-                { label: 'Linear', value: 'linear' },
-                { label: 'Free Form', value: 'free' },
-              ],
               admin: {
                 description:
                   'Controls how students interact with the content and their navigational experience',
               },
+              defaultValue: 'linear',
+              label: 'Course Navigation Mode',
+              options: [
+                { label: 'Linear', value: 'linear' },
+                { label: 'Free Form', value: 'free' },
+              ],
+              required: true,
             },
           ],
+          label: 'Navigation',
         },
       ],
     },
     {
       name: 'enrolledStudents',
       type: 'relationship',
-      relationTo: studentsCollectionSlug,
-      hasMany: true,
-      admin: {
-        position: 'sidebar',
-        allowCreate: false,
-        description: 'Controls the students enrolled in the course',
-      },
       access: {
         read: isAdminOrAuthorFieldLevel,
       },
+      admin: {
+        allowCreate: false,
+        description: 'Controls the students enrolled in the course',
+        position: 'sidebar',
+      },
+      hasMany: true,
+      relationTo: studentsCollectionSlug,
     },
     {
       name: 'courseCompletedStudents',
       type: 'relationship',
-      relationTo: studentsCollectionSlug,
-      hasMany: true,
       admin: {
-        position: 'sidebar',
         allowCreate: false,
         description: 'The students completed the course',
+        position: 'sidebar',
       },
+      hasMany: true,
+      relationTo: studentsCollectionSlug,
     },
     {
       name: 'courseEnrolledGroups',
       type: 'relationship',
-      relationTo: 'groups',
-      hasMany: true,
-      label: 'Course Enrolled Groups',
       admin: {
-        position: 'sidebar',
         allowCreate: false,
         allowEdit: false,
         description: 'Controls the groups enrolled in the course', // TODO move ibnto lms  plugin
+        position: 'sidebar',
       },
+      hasMany: true,
+      label: 'Course Enrolled Groups',
+      relationTo: 'groups',
     },
     {
       name: 'authors',
       type: 'relationship',
-      relationTo: studentsCollectionSlug,
-      hasMany: true,
-      admin: {
-        position: 'sidebar',
-        allowCreate: false,
-        description: 'The authors of the course',
-      },
       access: {
         read: isAdminOrAuthorFieldLevel,
       },
+      admin: {
+        allowCreate: false,
+        description: 'The authors of the course',
+        position: 'sidebar',
+      },
+      hasMany: true,
+      relationTo: studentsCollectionSlug,
     },
     {
       name: 'categories',
       type: 'relationship',
-      relationTo: categoriesCollectionSlug,
-      hasMany: true,
       admin: {
-        position: 'sidebar',
         allowCreate: false,
         description: 'The categories that are part of the course',
+        position: 'sidebar',
       },
+      hasMany: true,
+      relationTo: categoriesCollectionSlug,
     },
     {
       name: 'tags',
       type: 'relationship',
-      relationTo: tagsCollectionSlug,
-      hasMany: true,
       admin: {
-        position: 'sidebar',
         allowCreate: false,
         description: 'The tags that are part of the course',
+        position: 'sidebar',
       },
+      hasMany: true,
+      relationTo: tagsCollectionSlug,
     },
     {
       name: 'featuredImage',
       type: 'upload',
-      relationTo: mediaCollectionSlug,
       admin: {
-        position: 'sidebar',
         description: 'The featured image of the course',
+        position: 'sidebar',
       },
+      relationTo: mediaCollectionSlug,
     },
   ]
 
