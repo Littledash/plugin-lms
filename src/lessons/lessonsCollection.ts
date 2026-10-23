@@ -212,6 +212,9 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
     {
       name: 'quizzes',
       type: 'relationship',
+      access: {
+        read: isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+      },
       admin: {
         allowCreate: false,
         description: 'The quizzes that are part of the lesson',
@@ -219,7 +222,6 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
       },
       hasMany: true,
       relationTo: quizzesCollectionSlug,
-      
     },
     // {
     //   name: 'lessonCompletedStudents',

@@ -792,6 +792,18 @@ describe('content access', () => {
 
   const read = async (user: Doc, path: string) => (await (await clientFor(user)).GET(path as `/${string}`)).json()
 
+  it('hides quiz ids on a lesson from users who are not enrolled', async () => {
+    const { quiz } = await createQuiz()
+    const lesson = await createLesson([quiz.id])
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    const enrolled = await createUser()
+    await enroll(enrolled, course)
+
+    expect((await read(enrolled, `/lessons/${lesson.id}`)).quizzes).toBeDefined()
+    expect(await read(await createUser(), `/lessons/${lesson.id}`)).not.toHaveProperty('quizzes')
+    expect(await (await anonymous().GET(`/lessons/${lesson.id}`)).json()).not.toHaveProperty('quizzes')
+  })
+
   it('shows lesson content only to enrolled students', async () => {
     const { enrolled, lesson, outsider } = await setup()
     expect((await read(enrolled, `/lessons/${lesson.id}`)).content).toBeDefined()

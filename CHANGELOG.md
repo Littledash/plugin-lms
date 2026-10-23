@@ -38,6 +38,8 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - The groups collection ignored its overrides, including `access`.
 - Draft courses could be self-enrolled in.
 - Passing a quiz never completed its lesson (1.x read a `quiz.lesson` field that does not exist).
+- Lesson documents are public, and their `quizzes` relationship was too, so anyone could read the
+  quiz ids. That field now follows the same enrollment check as lesson content.
 - `isAdminOrAuthorOrEnrolledInCourse` read `data.course`, which is empty on a read, so it denied
   every enrolled student. It now checks the stored document, and a list is limited to enrolled
   courses and their lessons.

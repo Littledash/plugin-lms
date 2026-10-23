@@ -43,7 +43,8 @@ return a generic `500` message, so internal details never reach the client.
 - Question answer fields (`choices.isCorrect`, `correctAnswer`, `correctAnswers`,
   `assessmentCriteria`): read by admins and authors only.
 - Lesson, topic, quiz and course content fields: read by admins, authors, and users enrolled in a
-  course that contains them.
+  course that contains them. A lesson's `quizzes` relationship is included, so quiz ids are not
+  public.
 
 Overriding one of these fields replaces its `access`. Keep an equivalent rule.
 

@@ -188,6 +188,9 @@ import { videoProgression } from '../fields/videoProgression.js';
         {
             name: 'quizzes',
             type: 'relationship',
+            access: {
+                read: isAdminOrAuthorOrEnrolledInCourseFieldLevel
+            },
             admin: {
                 allowCreate: false,
                 description: 'The quizzes that are part of the lesson',
