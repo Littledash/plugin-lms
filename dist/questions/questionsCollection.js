@@ -1,5 +1,6 @@
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
+import { isTrueFalseAnswer } from './trueFalseAnswers.js';
 /**
  * Answer fields are graded server-side and must never be sent to students.
  */ const answerAccess = {
@@ -116,26 +117,24 @@ import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
             ]
         },
         {
+            // Text, not select: the stored values `true` and `false` are illegal GraphQL enum names.
             name: 'correctAnswer',
+            type: 'text',
             access: answerAccess,
-            type: 'select',
             admin: {
+                components: {
+                    Field: {
+                        path: '@littledash/plugin-lms/ui/TrueFalseAnswer#TrueFalseAnswer'
+                    }
+                },
                 condition: (_, siblingData)=>siblingData.questionType === 'trueFalse'
             },
-            options: [
-                {
-                    label: 'True',
-                    value: 'true'
-                },
-                {
-                    label: 'False',
-                    value: 'false'
-                },
-                {
-                    label: 'Both',
-                    value: 'both'
+            validate: (value)=>{
+                if (value == null || value === '') {
+                    return true;
                 }
-            ]
+                return isTrueFalseAnswer(value) || 'Choose True, False, or Both.';
+            }
         },
         {
             name: 'correctAnswers',

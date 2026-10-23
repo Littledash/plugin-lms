@@ -577,7 +577,7 @@ export interface Question {
         id?: string | null
       }[]
     | null
-  correctAnswer?: ('true' | 'false') | null
+  correctAnswer?: string | null
   correctAnswers?:
     | {
         answer: string

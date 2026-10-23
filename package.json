@@ -54,6 +54,11 @@
       "types": "./dist/ui/SlugInput/index.d.ts",
       "default": "./dist/ui/SlugInput/index.js"
     },
+    "./ui/TrueFalseAnswer": {
+      "import": "./dist/ui/TrueFalseAnswer/index.js",
+      "types": "./dist/ui/TrueFalseAnswer/index.d.ts",
+      "default": "./dist/ui/TrueFalseAnswer/index.js"
+    },
     "./categories": {
       "import": "./dist/exports/categories.js",
       "types": "./dist/exports/categories.d.ts",

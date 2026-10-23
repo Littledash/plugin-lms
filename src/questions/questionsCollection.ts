@@ -1,7 +1,9 @@
 import { CollectionConfig, Field } from 'payload'
+
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
-import { FieldsOverride, QuestionTypeOption } from '../types.js'
 import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
+import { FieldsOverride, QuestionTypeOption } from '../types.js'
+import { isTrueFalseAnswer } from './trueFalseAnswers.js'
 
 /**
  * Answer fields are graded server-side and must never be sent to students.
@@ -98,17 +100,24 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       ],
     },
     {
+      // Text, not select: the stored values `true` and `false` are illegal GraphQL enum names.
       name: 'correctAnswer',
+      type: 'text',
       access: answerAccess,
-      type: 'select',
       admin: {
+        components: {
+          Field: {
+            path: '@littledash/plugin-lms/ui/TrueFalseAnswer#TrueFalseAnswer',
+          },
+        },
         condition: (_, siblingData) => siblingData.questionType === 'trueFalse',
       },
-      options: [
-        { label: 'True', value: 'true' },
-        { label: 'False', value: 'false' },
-        { label: 'Both', value: 'both' },
-      ],
+      validate: (value: unknown) => {
+        if (value == null || value === '') {
+          return true
+        }
+        return isTrueFalseAnswer(value) || 'Choose True, False, or Both.'
+      },
     },
     {
       name: 'correctAnswers',

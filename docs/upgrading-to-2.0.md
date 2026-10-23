@@ -129,3 +129,6 @@ guessable URLs, regenerate those PDFs and delete the old files.
 8. Optionally backfill missing certificates: run `completeCourse` for users in
    `courseCompletedStudents`; it only awards certificates that are missing. See
    [Certificates](./how-to/certificates.md#backfill-missing-certificates).
+9. Regenerate the admin import map (`payload generate:importmap`). True/false questions keep the
+   stored values `true`, `false` and `both`; the field is text so GraphQL can build, and the select
+   comes from `@littledash/plugin-lms/ui/TrueFalseAnswer`.

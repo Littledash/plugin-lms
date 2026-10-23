@@ -24,6 +24,7 @@ import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { PriceInput as PriceInput_756a17b03e70a91885aac500631399ef } from '@littledash/plugin-lms/ui/PriceInput'
 import { PriceRowLabel as PriceRowLabel_6fee0210e3b7ac79b9e43bec13e81b6e } from '@littledash/plugin-lms/ui/PriceRowLabel'
 import { SlugInput as SlugInput_d43170cfa357939fd5f7fa383ad4fcb2 } from '@littledash/plugin-lms/ui/SlugInput'
+import { TrueFalseAnswer as TrueFalseAnswer_9f13911906b8a9b1894eebac0153975d } from '@littledash/plugin-lms/ui/TrueFalseAnswer'
 
 export const importMap = {
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
@@ -51,5 +52,6 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@littledash/plugin-lms/ui/PriceInput#PriceInput": PriceInput_756a17b03e70a91885aac500631399ef,
   "@littledash/plugin-lms/ui/PriceRowLabel#PriceRowLabel": PriceRowLabel_6fee0210e3b7ac79b9e43bec13e81b6e,
-  "@littledash/plugin-lms/ui/SlugInput#SlugInput": SlugInput_d43170cfa357939fd5f7fa383ad4fcb2
+  "@littledash/plugin-lms/ui/SlugInput#SlugInput": SlugInput_d43170cfa357939fd5f7fa383ad4fcb2,
+  "@littledash/plugin-lms/ui/TrueFalseAnswer#TrueFalseAnswer": TrueFalseAnswer_9f13911906b8a9b1894eebac0153975d
 }

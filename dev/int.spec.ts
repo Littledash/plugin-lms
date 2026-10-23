@@ -1050,3 +1050,61 @@ describe('quiz completion', () => {
   })
 })
 
+describe('true/false questions', () => {
+  const trueFalseQuestion = (correctAnswer: string) =>
+    payload.create({
+      collection: 'questions',
+      data: {
+        correctAnswer,
+        points: 1,
+        question: 'The sky is blue',
+        questionType: 'trueFalse',
+        title: `True/false ${correctAnswer} ${++counter}`,
+      },
+    })
+
+  it('stores true, false and both, and rejects any other answer', async () => {
+    for (const correctAnswer of ['true', 'false', 'both']) {
+      const question = (await trueFalseQuestion(correctAnswer)) as unknown as Doc
+      expect(question.correctAnswer).toBe(correctAnswer)
+    }
+
+    await expect(trueFalseQuestion('yes')).rejects.toMatchObject({
+      data: {
+        errors: [expect.objectContaining({ message: 'Choose True, False, or Both.', path: 'correctAnswer' })],
+      },
+    })
+  })
+
+  it('grades either submitted answer when the stored answer is both', async () => {
+    const question = (await trueFalseQuestion('both')) as unknown as Doc
+    const quiz = (await payload.create({
+      collection: 'quizzes',
+      data: { minimumScore: 100, questions: [question.id], title: `True/false quiz ${++counter}` },
+    })) as unknown as Doc
+    const lesson = await createLesson([quiz.id])
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    const user = await createUser()
+    await enroll(user, course)
+
+    const { body } = await post(await clientFor(user), 'submit-quiz', {
+      answers: { [question.id]: 'false' },
+      courseId: course.id,
+      quizId: quiz.id,
+    })
+
+    expect(body).toMatchObject({ passed: true, score: 100 })
+  })
+
+  it('builds a GraphQL schema', async () => {
+    const response = await anonymous().GRAPHQL_POST({
+      body: JSON.stringify({ query: '{ __typename }' }),
+    })
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.errors).toBeUndefined()
+    expect(body.data.__typename).toBe('Query')
+  })
+})
+

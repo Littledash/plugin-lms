@@ -95,9 +95,8 @@ Also check:
   `accessExpirationDays` are not enforced on the server yet. Enforce them in your app if they matter.
 - The quiz cooldown slows scripted guessing but cannot stop it; the score a user gets back always
   reveals how many answers were right. Use `attemptLimit` on assessments that matter.
-- **GraphQL does not work with the questions collection.** The `correctAnswer` select has the
-  values `true` and `false`, which Payload turns into GraphQL enum values, and GraphQL forbids those
-  names, so the whole schema fails to build. If you do not use GraphQL, turn it off
+- `correctAnswer` is stored as `true`, `false` or `both`. It is a text field rendered as a select,
+  because those words are illegal GraphQL enum names. If you do not use GraphQL, turn it off
   (`graphQL: { disable: true }` in your Payload config), which also removes an attack surface.
 - Group leaders can update their group (for example its title), but `purchasedCourses`, `students`
   and `leaders` are writable only by admins and the LMS services, so leaders cannot grant

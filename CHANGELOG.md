@@ -38,9 +38,10 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - The groups collection ignored its overrides, including `access`.
 - Draft courses could be self-enrolled in.
 - Passing a quiz never completed its lesson (1.x read a `quiz.lesson` field that does not exist).
+- GraphQL schema failed to build. `correctAnswer` is still stored as `true`, `false` or `both`, and
+  the admin still shows a select, but the field is text so those words are not GraphQL enum names.
+  Regenerate the admin import map after upgrading so the select renders.
 
 ### Known issues
 
-- GraphQL fails to build with the questions collection (`correctAnswer` values `true`/`false` are
-  invalid enum names). Disable GraphQL if you do not use it.
 - Dependencies: 84 audit findings down to 1 (dev-only, no fix available); 0 in production.
