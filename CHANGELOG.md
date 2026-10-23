@@ -21,7 +21,7 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - Passing a quiz completes its lessons (and the course) once all of a lesson's quizzes are passed.
 - Secure default access on every plugin collection; overrides merge per operation.
 - `certificates[].file` links each award to its PDF, stored under a random file name.
-- Integration tests (52) and documentation with how-to guides.
+- Integration tests and client tests for the React provider and admin field components.
 
 ### Fixed
 

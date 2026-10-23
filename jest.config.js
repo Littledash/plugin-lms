@@ -30,12 +30,6 @@ const customJestConfig = {
     `/node_modules/(?!.pnpm)(?!(${esModules})/)`,
     `/node_modules/.pnpm/(?!(${esModules.replace(/\//g, '\\+')})@)`,
   ],
-  moduleNameMapper: {
-    '\\.(css|scss)$': '<rootDir>/test/helpers/mocks/emptyModule.js',
-    '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
-      '<rootDir>/test/helpers/mocks/fileMock.js',
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-  },
   testEnvironment: 'node',
   // The MongoDB driver and memory server keep internal handles open after teardown
   forceExit: true,
@@ -44,11 +38,11 @@ const customJestConfig = {
     '^.+\\.(t|j)sx?$': ['@swc/jest'],
   },
   verbose: true,
-  testMatch: ['<rootDir>/**/*int.spec.ts', '<rootDir>/**/*.unit.spec.ts'],
+  testMatch: ['<rootDir>/**/*int.spec.ts', '<rootDir>/**/*.unit.spec.ts', '<rootDir>/**/*.unit.spec.tsx'],
   moduleNameMapper: {
-    '\\.(css|scss)$': '<rootDir>/helpers/mocks/emptyModule.js',
+    '\\.(css|scss)$': '<rootDir>/dev/helpers/emptyModule.js',
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
-      '<rootDir>/helpers/mocks/fileMock.js',
+      '<rootDir>/dev/helpers/emptyModule.js',
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
 }
