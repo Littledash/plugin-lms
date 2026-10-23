@@ -5,6 +5,7 @@ import type { ArrayField } from 'payload';
 type Props = {
     certificatesCollectionSlug?: string;
     coursesCollectionSlug?: string;
+    mediaCollectionSlug?: string;
     overrides?: Partial<ArrayField>;
 };
 /**

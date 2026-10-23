@@ -1,4 +1,5 @@
 import { CollectionConfig, Field } from 'payload'
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 import { FieldsOverride } from '../types.js'
 import { embeddedVideo } from '../fields/embeddedVideo.js'
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
@@ -147,6 +148,7 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
     slug: 'topics',
     timestamps: true,
     ...overrides,
+    access: withDefaultAccess(defaultAccess.topics, overrides?.access),
     admin: {
       useAsTitle: 'title',
       //  group: 'LMS',

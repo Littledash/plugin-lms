@@ -1,3 +1,4 @@
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { slugField } from '../fields/slug.js';
 /**
  * Creates a categories collection configuration for Payload CMS
@@ -33,6 +34,7 @@ import { slugField } from '../fields/slug.js';
         slug: 'categories',
         timestamps: true,
         ...overrides,
+        access: withDefaultAccess(defaultAccess.categories, overrides?.access),
         admin: {
             useAsTitle: 'title',
             group: 'Taxonomy',

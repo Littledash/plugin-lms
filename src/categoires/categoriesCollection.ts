@@ -1,4 +1,5 @@
 import { CollectionConfig, Field } from 'payload'
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 import { FieldsOverride } from '../types.js'
 import { slugField } from '../fields/slug.js'
 
@@ -51,6 +52,7 @@ export const categoriesCollection: (props?: Props) => CollectionConfig<'categori
     slug: 'categories',
     timestamps: true,
     ...overrides,
+    access: withDefaultAccess(defaultAccess.categories, overrides?.access),
     admin: {
       useAsTitle: 'title',
       group: 'Taxonomy',

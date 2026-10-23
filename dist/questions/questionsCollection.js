@@ -1,3 +1,4 @@
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
 /**
  * Answer fields are graded server-side and must never be sent to students.
@@ -201,6 +202,7 @@ import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
         slug: 'questions',
         timestamps: true,
         ...overrides,
+        access: withDefaultAccess(defaultAccess.questions, overrides?.access),
         admin: {
             useAsTitle: 'title',
             // group: 'LMS',

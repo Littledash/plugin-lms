@@ -1,3 +1,4 @@
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 /**
  * Creates a quizzes collection configuration for Payload CMS
@@ -101,6 +102,7 @@ import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdm
         slug: 'quizzes',
         timestamps: true,
         ...overrides,
+        access: withDefaultAccess(defaultAccess.quizzes, overrides?.access),
         admin: {
             useAsTitle: 'title',
             // group: 'LMS',

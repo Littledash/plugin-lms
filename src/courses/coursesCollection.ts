@@ -1,4 +1,5 @@
 import { CollectionConfig, Field } from 'payload'
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 import { FieldsOverride } from '../types.js'
 import type { CurrenciesConfig } from '../types.js'
 import { pricesField } from '../fields/pricesField.js'
@@ -448,6 +449,7 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     slug: 'courses',
     timestamps: true,
     ...overrides,
+    access: withDefaultAccess(defaultAccess.courses, overrides?.access),
     admin: {
       useAsTitle: 'title',
       // group: 'LMS',

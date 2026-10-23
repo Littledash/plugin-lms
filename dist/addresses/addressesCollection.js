@@ -1,3 +1,4 @@
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { defaultCountries } from './defaultCountries.js';
 export const addressesCollection = (props)=>{
     const { addressFields, studentsCollectionSlug = 'users', overrides } = props || {};
@@ -35,6 +36,7 @@ export const addressesCollection = (props)=>{
         slug: 'addresses',
         timestamps: true,
         ...overrides,
+        access: withDefaultAccess(defaultAccess.addresses, overrides?.access),
         admin: {
             useAsTitle: 'createdAt',
             ...overrides?.admin

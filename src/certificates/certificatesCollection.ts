@@ -1,4 +1,5 @@
 import { CollectionConfig, Field } from 'payload'
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 import { FieldsOverride } from '../types.js'
 
 /**
@@ -119,6 +120,7 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
     slug: 'certificates',
     timestamps: true,
     ...overrides,
+    access: withDefaultAccess(defaultAccess.certificates, overrides?.access),
     admin: {
       useAsTitle: 'title',
       ...overrides?.admin,

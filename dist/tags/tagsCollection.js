@@ -1,3 +1,4 @@
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { slugField } from '../fields/slug.js';
 export const tagsCollection = (props)=>{
     const { overrides } = props || {};
@@ -20,6 +21,7 @@ export const tagsCollection = (props)=>{
         slug: 'tags',
         timestamps: true,
         ...overrides,
+        access: withDefaultAccess(defaultAccess.tags, overrides?.access),
         admin: {
             useAsTitle: 'title',
             group: 'Taxonomy',

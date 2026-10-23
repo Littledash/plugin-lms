@@ -23,8 +23,13 @@ export const enrollHandler = (_args?: Record<string, unknown>): Endpoint['handle
     }
 
     const course = await findDoc(req, getSlugs(req).courses, courseId, 'Course')
+    const isAdmin = checkRole(['admin'], req.user)
+    // Unpublished courses are not enrollable; answer as if they do not exist
+    if (course._status === 'draft' && !isAdmin) {
+      throw new LMSError('Course not found.', 404)
+    }
     const accessMode = course.enrollment?.accessMode ?? 'open'
-    if (!SELF_ENROLL_ACCESS_MODES.includes(accessMode) && !checkRole(['admin'], req.user)) {
+    if (!SELF_ENROLL_ACCESS_MODES.includes(accessMode) && !isAdmin) {
       throw new LMSError('This course requires a purchase.', 403)
     }
 

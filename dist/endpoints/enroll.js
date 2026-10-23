@@ -16,10 +16,15 @@ const messages = {
             throw new LMSError('Group enrollment requires a purchase.', 403);
         }
         const course = await findDoc(req, getSlugs(req).courses, courseId, 'Course');
-        const accessMode = course.enrollment?.accessMode ?? 'open';
-        if (!SELF_ENROLL_ACCESS_MODES.includes(accessMode) && !checkRole([
+        const isAdmin = checkRole([
             'admin'
-        ], req.user)) {
+        ], req.user);
+        // Unpublished courses are not enrollable; answer as if they do not exist
+        if (course._status === 'draft' && !isAdmin) {
+            throw new LMSError('Course not found.', 404);
+        }
+        const accessMode = course.enrollment?.accessMode ?? 'open';
+        if (!SELF_ENROLL_ACCESS_MODES.includes(accessMode) && !isAdmin) {
             throw new LMSError('This course requires a purchase.', 403);
         }
         const { status } = await enrollUser({

@@ -1,4 +1,5 @@
 import { CollectionConfig, Field } from 'payload'
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 import { FieldsOverride } from '../types.js'
 import { mergeFields } from '../utilities/deepMerge.js'
 
@@ -56,6 +57,7 @@ export const studentsCollection: (props?: Props) => CollectionConfig = (props) =
     slug: studentsCollectionSlug,
     timestamps: true,
     ...overrides,
+    access: withDefaultAccess(defaultAccess.students, overrides?.access),
     admin: {
       ...overrides?.admin,
     },

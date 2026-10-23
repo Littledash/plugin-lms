@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload'
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 import { slugField } from '../fields/slug.js'
 // import { isAdminOrGroupLeader } from '../access/isAdminOrGroupLeader.js'
 // import { isMemberOfGroup } from '../access/isMemberOfGroup.js'
@@ -236,6 +237,8 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
 
   const baseConfig: CollectionConfig = {
     slug: 'groups',
+    ...overrides,
+    access: withDefaultAccess(defaultAccess.groups, overrides?.access),
     admin: {
       useAsTitle: 'title',
       // group: 'LMS',

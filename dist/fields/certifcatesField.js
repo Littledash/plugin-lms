@@ -3,7 +3,7 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
  * Creates an array field for certificates with certificate and completed date
  * @param props - Configuration overrides for the field
  * @returns A configured array field for certificates
- */ export const certificatesField = ({ overrides, certificatesCollectionSlug = 'certificates', coursesCollectionSlug = 'courses' })=>{
+ */ export const certificatesField = ({ certificatesCollectionSlug = 'certificates', coursesCollectionSlug = 'courses', mediaCollectionSlug = 'media', overrides })=>{
     const field = {
         name: 'certificates',
         type: 'array',
@@ -14,34 +14,43 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
         },
         fields: [
             {
+                // Set when the PDF is generated; its file name is random so it cannot be guessed
+                name: 'file',
+                type: 'upload',
+                admin: {
+                    readOnly: true
+                },
+                relationTo: mediaCollectionSlug
+            },
+            {
                 name: 'certificate',
                 type: 'relationship',
-                relationTo: certificatesCollectionSlug || 'certificates',
-                required: true,
                 admin: {
                     allowCreate: false,
                     allowEdit: false
-                }
+                },
+                relationTo: certificatesCollectionSlug || 'certificates',
+                required: true
             },
             {
                 name: 'completedDate',
                 type: 'date',
-                required: true,
                 admin: {
                     description: 'The date when the certificate was completed'
-                }
+                },
+                required: true
             },
             {
                 name: 'course',
                 type: 'relationship',
-                relationTo: coursesCollectionSlug || 'courses',
-                required: true,
-                hasMany: false,
                 admin: {
-                    description: 'The course that the certificate is for',
                     allowCreate: false,
-                    allowEdit: false
-                }
+                    allowEdit: false,
+                    description: 'The course that the certificate is for'
+                },
+                hasMany: false,
+                relationTo: coursesCollectionSlug || 'courses',
+                required: true
             }
         ],
         ...overrides,

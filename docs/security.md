@@ -47,31 +47,33 @@ return a generic `500` message, so internal details never reach the client.
 
 Overriding one of these fields replaces its `access`. Keep an equivalent rule.
 
-## What your app must configure
+## Default collection access
 
-The plugin does not set collection-level access on the collections it creates. Payload's default
-lets **any logged-in user create, update and delete** documents, so set `access` on every LMS
-collection you enable. A typical setup:
+Payload's own default lets any logged-in user create, update and delete documents. The plugin
+therefore sets every operation on its collections:
+
+| Collection | create / update / delete | read |
+| --- | --- | --- |
+| courses, lessons, topics, categories, tags | admins and authors | anyone (content fields need enrollment) |
+| quizzes, questions, certificates | admins and authors | logged-in users (answer fields hidden) |
+| groups | create and delete: admins; update: admins and group leaders | group members |
+| addresses | create: logged-in users; update and delete: admins and the owner (`customer`) | admins and the owner |
+| students | create: anyone; update: admins and the user; delete: admins | admins and the user |
+
+Your `access` override is merged over these per operation, so setting only `read` keeps the safe
+`create`, `update` and `delete`:
 
 ```typescript
-import { isAdminOrAuthor, isAdminOrPublished, isAdminOrSelf, isAdmin, anyone } from '@littledash/plugin-lms/access'
-
 lmsPlugin({
-  students: {
-    slug: 'users',
-    studentsCollection: {
-      access: { create: anyone, read: isAdminOrSelf, update: isAdminOrSelf, delete: isAdmin },
-      // ...
+  tags: {
+    tagsCollection: {
+      access: { read: anyone }, // create/update/delete stay admin-or-author
     },
   },
-  courses: {
-    coursesCollection: {
-      access: { create: isAdminOrAuthor, read: isAdminOrPublished, update: isAdminOrAuthor, delete: isAdminOrAuthor },
-    },
-  },
-  // Same pattern for lessons, topics, quizzes, questions and certificates
 })
 ```
+
+## What your app must configure
 
 Also check:
 
@@ -82,6 +84,10 @@ Also check:
 - **API keys.** If you enabled `useAPIKey` only so your server could call the LMS endpoints, switch
   to the services and consider removing the key.
 - **Logging.** The plugin logs document IDs, not user details. Keep it that way in your own hooks.
+- **Media access.** Certificate PDFs are stored in your media collection. New PDFs get a random file
+  name and are linked from the award (`certificates[].file`), so their URLs cannot be guessed, but
+  anyone with the URL can download them if media is publicly readable. Do not let ordinary users
+  `create`, `update` or `delete` media.
 
 ## Known limits
 

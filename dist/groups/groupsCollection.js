@@ -1,3 +1,4 @@
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { slugField } from '../fields/slug.js';
 export const groupsCollection = (props)=>{
     const { overrides, coursesCollectionSlug = 'courses', usersCollectionSlug = 'users', couponsCollectionSlug = 'coupons' } = props || {};
@@ -169,6 +170,8 @@ export const groupsCollection = (props)=>{
     }) : defaultFields;
     const baseConfig = {
         slug: 'groups',
+        ...overrides,
+        access: withDefaultAccess(defaultAccess.groups, overrides?.access),
         admin: {
             useAsTitle: 'title',
             // group: 'LMS',

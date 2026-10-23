@@ -1,4 +1,5 @@
 import { CollectionConfig, Field } from 'payload'
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 import { FieldsOverride, QuestionTypeOption } from '../types.js'
 import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
 
@@ -164,6 +165,7 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     slug: 'questions',
     timestamps: true,
     ...overrides,
+    access: withDefaultAccess(defaultAccess.questions, overrides?.access),
     admin: {
       useAsTitle: 'title',
       // group: 'LMS',

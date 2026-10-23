@@ -18,6 +18,8 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
   `completeCourse`, `generateCertificate`, `addUserToGroup`, `getProgress`, `LMSError`.
 - Quiz `attemptLimit` field and `quizzes.attemptCooldownSeconds` option.
 - Group seat limits.
+- Secure default access on every plugin collection; overrides merge per operation.
+- `certificates[].file` links each award to its PDF, stored under a random file name.
 - Integration tests (52) and documentation with how-to guides.
 
 ### Fixed
@@ -32,4 +34,6 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - Enrollment field access ran an invalid query per field.
 - `fetch-progress` returned empty `enrolledCourses` and `completedCourses`.
 - The `./addresses` export pointed at a missing file.
+- The groups collection ignored its overrides, including `access`.
+- Draft courses could be self-enrolled in.
 - Dependencies: 84 audit findings down to 1 (dev-only, no fix available); 0 in production.

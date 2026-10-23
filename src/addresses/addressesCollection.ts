@@ -1,4 +1,5 @@
 import type { CollectionConfig, Field } from 'payload'
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 
 import type { CountryType, FieldsOverride } from '../types.js'
 
@@ -61,6 +62,7 @@ export const addressesCollection: (props: Props) => CollectionConfig = (props) =
     slug: 'addresses',
     timestamps: true,
     ...overrides,
+    access: withDefaultAccess(defaultAccess.addresses, overrides?.access),
     admin: {
       useAsTitle: 'createdAt',
       ...overrides?.admin,

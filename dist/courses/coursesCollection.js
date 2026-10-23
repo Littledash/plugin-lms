@@ -1,3 +1,4 @@
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { pricesField } from '../fields/pricesField.js';
 import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
 import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js';
@@ -428,6 +429,7 @@ import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdm
         slug: 'courses',
         timestamps: true,
         ...overrides,
+        access: withDefaultAccess(defaultAccess.courses, overrides?.access),
         admin: {
             useAsTitle: 'title',
             // group: 'LMS',

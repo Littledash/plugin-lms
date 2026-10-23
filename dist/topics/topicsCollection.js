@@ -1,3 +1,4 @@
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { embeddedVideo } from '../fields/embeddedVideo.js';
 import { isAdminOrAuthorOrEnrolledInCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 import { videoProgression } from '../fields/videoProgression.js';
@@ -114,6 +115,7 @@ import { videoProgression } from '../fields/videoProgression.js';
         slug: 'topics',
         timestamps: true,
         ...overrides,
+        access: withDefaultAccess(defaultAccess.topics, overrides?.access),
         admin: {
             useAsTitle: 'title',
             //  group: 'LMS',

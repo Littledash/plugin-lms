@@ -1,4 +1,5 @@
 import { CollectionConfig, Field } from 'payload'
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
 import { FieldsOverride } from '../types.js'
 import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
 /**
@@ -121,6 +122,7 @@ export const quizzesCollection: (props?: Props) => CollectionConfig<'quizzes'> =
     slug: 'quizzes',
     timestamps: true,
     ...overrides,
+    access: withDefaultAccess(defaultAccess.quizzes, overrides?.access),
     admin: {
       useAsTitle: 'title',
       // group: 'LMS',

@@ -148,7 +148,8 @@ export default buildConfig({
         studentsCollection: studentCollection,
       },
       groups: true,
-      courses: true,
+      // Drafts on, as in the consuming site
+      courses: { coursesCollection: { versions: { drafts: true } } },
       lessons: true,
       // Tests retry quizzes back-to-back; the cooldown test raises this at runtime
       quizzes: { attemptCooldownSeconds: 0 },

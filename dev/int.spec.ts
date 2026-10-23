@@ -67,14 +67,17 @@ const createCourse = async ({
   accessMode = 'open',
   lessons = [],
   certificate,
+  status = 'published',
 }: {
   accessMode?: string
+  status?: 'draft' | 'published'
   lessons?: { lesson: string; isOptional?: boolean }[]
   certificate?: string
 } = {}): Promise<Doc> =>
   (await payload.create({
     collection: 'courses',
     data: {
+      _status: status,
       title: `Course ${++counter}`,
       enrollment: { accessMode },
       lessons,
@@ -684,6 +687,63 @@ describe('hardening', () => {
     await join(true)
     await join(false)
     await expect(join(false)).rejects.toMatchObject({ status: 409 })
+  })
+})
+
+describe('collection access defaults', () => {
+  it('students cannot create, edit or join groups through the REST API', async () => {
+    const leader = await createUser()
+    const group = (await payload.create({
+      collection: 'groups',
+      data: { title: 'Locked Ltd', leaders: [leader.id] },
+    })) as unknown as Doc
+    const student = await createUser()
+    const client = await clientFor(student)
+
+    const created = await client.POST('/groups', { body: JSON.stringify({ title: 'Mine' }) })
+    expect(created.status).toBe(403)
+
+    await client.PATCH(`/groups/${group.id}`, { body: JSON.stringify({ students: [student.id] }) })
+    expect(ids((await getDoc('groups', group.id)).students)).not.toContain(student.id)
+  })
+
+  it.each(['courses', 'lessons', 'quizzes', 'questions', 'certificates', 'tags', 'topics', 'categories'])(
+    'students cannot create %s',
+    async (collection) => {
+      const client = await clientFor(await createUser())
+      const response = await client.POST(`/${collection}`, { body: JSON.stringify({ title: 'Nope' }) })
+      expect(response.status).toBe(403)
+    },
+  )
+
+  it('refuses self-enrollment in an unpublished course', async () => {
+    const course = await createCourse({ status: 'draft' })
+    const { status } = await post(await clientFor(await createUser()), 'enroll', { courseId: course.id })
+    expect(status).toBe(404)
+  })
+
+  it('stores generated certificates under a random file name on the award', async () => {
+    const certificate = (await payload.create({
+      collection: 'certificates',
+      data: { title: 'Private' },
+    })) as unknown as Doc
+    const lesson = await createLesson()
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }], certificate: certificate.id })
+    const user = await createUser()
+    await enroll(user, course)
+    await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+
+    const { media } = await generateCertificate({
+      certificateId: certificate.id,
+      courseId: course.id,
+      req: { payload } as never,
+      userId: user.id,
+    })
+
+    expect(media.filename).not.toContain(String(user.id))
+    expect(media.filename).toMatch(/^certificate-[0-9a-f-]{36}\.pdf$/)
+    const award = (await getDoc('users', user.id)).certificates[0]
+    expect(String(award.file)).toBe(String(media.id))
   })
 })
 

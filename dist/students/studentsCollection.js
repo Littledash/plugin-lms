@@ -1,3 +1,4 @@
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 import { mergeFields } from '../utilities/deepMerge.js';
 /**
  * Creates a courses collection configuration for Payload CMS
@@ -33,6 +34,7 @@ import { mergeFields } from '../utilities/deepMerge.js';
         slug: studentsCollectionSlug,
         timestamps: true,
         ...overrides,
+        access: withDefaultAccess(defaultAccess.students, overrides?.access),
         admin: {
             ...overrides?.admin
         },
