@@ -1,9 +1,26 @@
-import type { CollectionConfig, Field } from 'payload'
+import type { CollectionBeforeChangeHook, CollectionConfig, Field } from 'payload'
 
 import type { CountryType, FieldsOverride } from '../types.js'
 
+import { checkRole } from '../access/checkRole.js'
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js'
+import { isAdminFieldLevel } from '../access/isAdmin.js'
+import { toId } from '../services/shared.js'
 import { defaultCountries } from './defaultCountries.js'
+
+/**
+ * Students can create and edit their own addresses, but the owner is always the logged-in user.
+ * Admins may set `customer` to someone else.
+ */
+const forceAddressCustomer: CollectionBeforeChangeHook = ({ data, originalDoc, req }) => {
+  if (checkRole(['admin'], req.user)) {return data}
+  const ownerId = req.user?.id
+  if (ownerId === undefined) {return data}
+  return {
+    ...data,
+    customer: originalDoc ? (toId(originalDoc.customer) ?? ownerId) : ownerId,
+  }
+}
 
 type Props = {
   /**
@@ -30,6 +47,10 @@ export const addressesCollection: (props: Props) => CollectionConfig = (props) =
     {
       name: 'customer',
       type: 'relationship',
+      access: {
+        create: isAdminFieldLevel,
+        update: isAdminFieldLevel,
+      },
       label: 'Student',
       relationTo: studentsCollectionSlug,
     },
@@ -68,6 +89,10 @@ export const addressesCollection: (props: Props) => CollectionConfig = (props) =
       ...overrides?.admin,
     },
     fields,
+    hooks: {
+      ...overrides?.hooks,
+      beforeChange: [forceAddressCustomer, ...(overrides?.hooks?.beforeChange || [])],
+    },
   }
 
   return { ...baseConfig }

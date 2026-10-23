@@ -57,7 +57,7 @@ therefore sets every operation on its collections:
 | courses, lessons, topics, categories, tags | admins and authors | anyone (content fields need enrollment) |
 | quizzes, questions, certificates | admins and authors | logged-in users (answer fields hidden) |
 | groups | create and delete: admins; update: admins and group leaders | group members |
-| addresses | create: logged-in users; update and delete: admins and the owner (`customer`) | admins and the owner |
+| addresses | create: logged-in users; update and delete: admins and the owner (`customer`). `customer` is set to the logged-in user; only admins can choose or change it | admins and the owner |
 | students | create: anyone; update: admins and the user; delete: admins | admins and the user |
 
 Your `access` override is merged over these per operation, so setting only `read` keeps the safe

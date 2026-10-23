@@ -109,7 +109,7 @@ const createQuiz = async (minimumScore = 100): Promise<{ correctChoiceId: string
   return { correctChoiceId: correctChoice.id, questionId: question.id, quiz }
 }
 
-const getDoc = async (collection: 'courses' | 'groups' | 'users', id: string): Promise<Doc> =>
+const getDoc = async (collection: 'addresses' | 'courses' | 'groups' | 'users', id: string): Promise<Doc> =>
   (await payload.findByID({ id, collection, depth: 0 })) as unknown as Doc
 
 const ids = (values: unknown): string[] =>
@@ -919,6 +919,36 @@ describe('ownership access', () => {
     expect((await (await stranger.GET('/addresses')).json()).docs).toHaveLength(0)
     await stranger.DELETE(`/addresses/${address.id}`)
     expect(await payload.findByID({ id: address.id, collection: 'addresses', disableErrors: true })).not.toBeNull()
+  })
+
+  it('saves an address against the logged-in user even when customer names someone else', async () => {
+    const owner = await createUser()
+    const victim = await createUser()
+    const created = await (await clientFor(owner)).POST('/addresses', {
+      body: JSON.stringify({ addressLine1: '2 Test St', city: 'Brisbane', country: 'AU', customer: victim.id }),
+    })
+    expect(created.status).toBe(201)
+    const address = (await created.json()).doc as Doc
+
+    expect((await getDoc('addresses', address.id)).customer).toBe(owner.id)
+    const victimList = await (await (await clientFor(victim)).GET('/addresses')).json()
+    expect(victimList.docs).toHaveLength(0)
+
+    await (await clientFor(owner)).PATCH(`/addresses/${address.id}`, {
+      body: JSON.stringify({ customer: victim.id }),
+    })
+    expect((await getDoc('addresses', address.id)).customer).toBe(owner.id)
+  })
+
+  it('lets an admin assign an address to another user', async () => {
+    const admin = await createUser(['admin'])
+    const student = await createUser()
+    const created = await (await clientFor(admin)).POST('/addresses', {
+      body: JSON.stringify({ addressLine1: '3 Test St', city: 'Brisbane', country: 'AU', customer: student.id }),
+    })
+    expect(created.status).toBe(201)
+    const assigned = (await created.json()).doc as Doc
+    expect((await getDoc('addresses', assigned.id)).customer).toBe(student.id)
   })
 })
 

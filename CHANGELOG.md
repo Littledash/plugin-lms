@@ -38,6 +38,8 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - The groups collection ignored its overrides, including `access`.
 - Draft courses could be self-enrolled in.
 - Passing a quiz never completed its lesson (1.x read a `quiz.lesson` field that does not exist).
+- A logged-in user could save an address with `customer` set to someone else. The owner is now
+  the logged-in user, and only admins can set or change `customer`.
 - GraphQL schema failed to build. `correctAnswer` is still stored as `true`, `false` or `both`, and
   the admin still shows a select, but the field is text so those words are not GraphQL enum names.
   Regenerate the admin import map after upgrading so the select renders.
