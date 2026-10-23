@@ -7,6 +7,14 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
 > [!WARNING]
 > This plugin is under heavy development. And it may not be stable for production use. Please use with caution.
 
+## Documentation
+
+- [Upgrading to 2.0](./docs/upgrading-to-2.0.md)
+- [Security model](./docs/security.md)
+- How-to guides: [enroll after payment](./docs/how-to/enroll-after-payment.md),
+  [certificates](./docs/how-to/certificates.md), [groups and seats](./docs/how-to/groups-and-seats.md),
+  [quizzes](./docs/how-to/quizzes.md), [testing](./docs/how-to/testing.md)
+
 ## Compatibility
 
 - **Payload CMS:** `^3.92.0`
@@ -298,10 +306,10 @@ is rejected with `400`. The endpoints enforce the course rules on the server:
 | --- | --- |
 | `POST /lms/enroll` | Only `open` or `free` courses. Paid (`buy now`, `recurring`, `closed`) and group enrollments return `403`. |
 | `POST /lms/complete-lesson` | User is enrolled, the lesson is in the course, and every quiz on the lesson is passed. |
-| `POST /lms/submit-quiz` | User is enrolled and the quiz belongs to a lesson in the course. Answers are graded server-side; answer fields are hidden from students. |
+| `POST /lms/submit-quiz` | User is enrolled and the quiz belongs to a lesson in the course. Answers are graded server-side; answer fields are hidden from students. The quiz's attempt limit and the attempt cooldown apply (`429`). |
 | `POST /lms/complete-course` | Every required lesson is completed. |
 | `POST /lms/generate-certificate` | The user has been awarded that certificate for that course. Returns the media document as `certificate`. |
-| `POST /lms/add-user-to-group` | Requester is an admin or a leader of the group. Send the user being added as `memberId`. |
+| `POST /lms/add-user-to-group` | Requester is an admin or a leader of the group, and the group has a free seat. Send the user being added as `memberId`. |
 | `GET /lms/fetch-progress` | Returns the logged-in user's progress. |
 
 Users cannot edit their own `coursesProgress` or `certificates` through the REST API; only admins
