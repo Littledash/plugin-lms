@@ -1,6 +1,17 @@
 import type { PayloadRequest } from 'payload'
 
-import { asSlug, findDoc, getSlugs, type ID, includesId, LMSError, toIds, withTransaction } from './shared.js'
+import {
+  asSlug,
+  findDoc,
+  getSlugs,
+  type ID,
+  includesId,
+  type LMSDoc,
+  LMSError,
+  takeSeatOnEachPurchase,
+  toIds,
+  withTransaction,
+} from './shared.js'
 
 type AddUserToGroupArgs = {
   groupId: ID
@@ -10,8 +21,8 @@ type AddUserToGroupArgs = {
 }
 
 /**
- * Adds a user to a group as a leader or student. Does not check who is asking; the endpoint
- * checks that the requester is an admin or a leader of the group.
+ * Adds a user to a group as a leader or student, using a seat on each purchased course. Does not
+ * check who is asking; the endpoint checks that the requester is an admin or a leader of the group.
  */
 export const addUserToGroup = ({ groupId, req, role, userId }: AddUserToGroupArgs): Promise<void> =>
   withTransaction(req, async () => {
@@ -32,7 +43,13 @@ export const addUserToGroup = ({ groupId, req, role, userId }: AddUserToGroupArg
     await req.payload.update({
       id: group.id,
       collection: asSlug(slugs.groups),
-      data: { [field]: [...members, user.id] },
+      data: {
+        [field]: [...members, user.id],
+        // Every member uses a seat on each course the group bought
+        purchasedCourses: takeSeatOnEachPurchase(
+          Array.isArray(group.purchasedCourses) ? (group.purchasedCourses as LMSDoc[]) : [],
+        ),
+      },
       req,
     })
 

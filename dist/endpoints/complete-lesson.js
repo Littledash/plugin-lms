@@ -1,13 +1,9 @@
 import { completeLesson } from '../services/progress.js';
-import { lmsHandler, requireFields } from './handler.js';
+import { lmsHandler, requireId } from './handler.js';
 export const completeLessonHandler = (_args)=>lmsHandler(async ({ data, req, userId })=>{
-        requireFields(data, [
-            'courseId',
-            'lessonId'
-        ]);
         const { courseCompleted } = await completeLesson({
-            courseId: data.courseId,
-            lessonId: data.lessonId,
+            courseId: requireId(data, 'courseId'),
+            lessonId: requireId(data, 'lessonId'),
             req,
             userId
         });

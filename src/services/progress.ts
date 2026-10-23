@@ -3,6 +3,7 @@ import type { PayloadRequest } from 'payload'
 import { markCourseCompleted } from './completeCourse.js'
 import {
   asSlug,
+  type CourseProgressEntry,
   ensureCourseProgress,
   findDoc,
   getCourseLessonIds,
@@ -120,6 +121,30 @@ export type SubmitQuizResult = {
   score: number
 }
 
+const DEFAULT_ATTEMPT_COOLDOWN_SECONDS = 5
+
+const assertCanAttempt = (
+  req: PayloadRequest,
+  quiz: LMSDoc,
+  attempt: CourseProgressEntry['completedQuizzes'][number] | undefined,
+) => {
+  if (!attempt) {
+    return
+  }
+  const attempts = attempt.attempts ?? 1
+  if (quiz.attemptLimit && attempts >= quiz.attemptLimit) {
+    throw new LMSError(`You have used all ${quiz.attemptLimit} attempts for this quiz.`, 429)
+  }
+
+  const cooldownSeconds: number =
+    req.payload.config.custom?.lms?.quizAttemptCooldownSeconds ?? DEFAULT_ATTEMPT_COOLDOWN_SECONDS
+  const lastAttemptAt = Date.parse(attempt.lastAttemptAt || attempt.completedAt)
+  const waitSeconds = Math.ceil(cooldownSeconds - (Date.now() - lastAttemptAt) / 1000)
+  if (cooldownSeconds > 0 && waitSeconds > 0) {
+    throw new LMSError(`Please wait ${waitSeconds} seconds before trying this quiz again.`, 429)
+  }
+}
+
 const isCorrectAnswer = (question: LMSDoc, submittedAnswer: unknown): boolean => {
   if (question.questionType === 'trueFalse') {
     // 'both' accepts either answer
@@ -179,6 +204,12 @@ export const submitQuiz = ({
       throw new LMSError('Quiz not found.', 404)
     }
 
+    const coursesProgress = getCoursesProgress(user)
+    const progress = ensureCourseProgress(coursesProgress, course.id)
+    const attempt = progress.completedQuizzes.find((entry) => sameId(entry.quiz, quiz.id))
+    // Checked before grading so a rejected attempt reveals nothing about the answers
+    assertCanAttempt(req, quiz, attempt)
+
     const questions = (Array.isArray(quiz.questions) ? quiz.questions : []).filter(
       (question: unknown) => question && typeof question === 'object',
     ) as LMSDoc[]
@@ -188,17 +219,18 @@ export const submitQuiz = ({
     const score = questions.length > 0 ? (correctAnswers / questions.length) * 100 : 0
     const minimumScore = quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE
 
-    const coursesProgress = getCoursesProgress(user)
-    const progress = ensureCourseProgress(coursesProgress, course.id)
     const now = new Date().toISOString()
-    const attempt = progress.completedQuizzes.find((entry) => sameId(entry.quiz, quiz.id))
 
     if (!attempt) {
-      progress.completedQuizzes.push({ completedAt: now, quiz: quiz.id, score })
-    } else if (score > attempt.score) {
-      // Only an improved score replaces the previous attempt
-      attempt.score = score
-      attempt.completedAt = now
+      progress.completedQuizzes.push({ attempts: 1, completedAt: now, lastAttemptAt: now, quiz: quiz.id, score })
+    } else {
+      attempt.attempts = (attempt.attempts ?? 1) + 1
+      attempt.lastAttemptAt = now
+      if (score > attempt.score) {
+        // Only an improved score replaces the previous attempt
+        attempt.score = score
+        attempt.completedAt = now
+      }
     }
 
     await req.payload.update({

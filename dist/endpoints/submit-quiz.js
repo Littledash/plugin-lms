@@ -1,19 +1,10 @@
 import { submitQuiz } from '../services/progress.js';
-import { LMSError } from '../services/shared.js';
-import { lmsHandler, requireFields } from './handler.js';
+import { lmsHandler, requireAnswers, requireId } from './handler.js';
 export const submitQuizHandler = (_args)=>lmsHandler(async ({ data, req, userId })=>{
-        requireFields(data, [
-            'courseId',
-            'quizId',
-            'answers'
-        ]);
-        if (typeof data.answers !== 'object' || Array.isArray(data.answers)) {
-            throw new LMSError('Answers must be an object keyed by question ID.', 400);
-        }
         const { minimumScore, passed, score } = await submitQuiz({
-            answers: data.answers,
-            courseId: data.courseId,
-            quizId: data.quizId,
+            answers: requireAnswers(data),
+            courseId: requireId(data, 'courseId'),
+            quizId: requireId(data, 'quizId'),
             req,
             userId
         });

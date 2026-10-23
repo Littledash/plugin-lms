@@ -138,5 +138,20 @@ export const requireUser = (req)=>{
     }
     return req.user.id;
 };
+export const hasFreeSeat = (seatManagement)=>(seatManagement?.seatsUsed || 0) < (seatManagement?.seatsTotal ?? 1);
+/**
+ * Takes one seat on every course the group purchased. Throws when any of them is full.
+ */ export const takeSeatOnEachPurchase = (purchasedCourses)=>{
+    if (purchasedCourses.some((entry)=>!hasFreeSeat(entry?.seatManagement))) {
+        throw new LMSError('This group has no seats remaining.', 409);
+    }
+    return purchasedCourses.map((entry)=>({
+            ...entry,
+            seatManagement: {
+                ...entry.seatManagement,
+                seatsUsed: (entry.seatManagement?.seatsUsed || 0) + 1
+            }
+        }));
+};
 
 //# sourceMappingURL=shared.js.map

@@ -1,13 +1,9 @@
 import { generateCertificate } from '../services/generateCertificate.js';
-import { lmsHandler, requireFields } from './handler.js';
+import { lmsHandler, requireId } from './handler.js';
 export const generateCertificateHandler = (_args)=>lmsHandler(async ({ data, req, userId })=>{
-        requireFields(data, [
-            'courseId',
-            'certificateId'
-        ]);
         const { media, status } = await generateCertificate({
-            certificateId: data.certificateId,
-            courseId: data.courseId,
+            certificateId: requireId(data, 'certificateId'),
+            courseId: requireId(data, 'courseId'),
             req,
             userId
         });

@@ -1,16 +1,13 @@
 import type { Endpoint } from 'payload'
 
-import type { ID } from '../services/shared.js'
-
 import { generateCertificate } from '../services/generateCertificate.js'
-import { lmsHandler, requireFields } from './handler.js'
+import { lmsHandler, requireId } from './handler.js'
 
 export const generateCertificateHandler = (_args?: Record<string, unknown>): Endpoint['handler'] =>
   lmsHandler(async ({ data, req, userId }) => {
-    requireFields(data, ['courseId', 'certificateId'])
     const { media, status } = await generateCertificate({
-      certificateId: data.certificateId as ID,
-      courseId: data.courseId as ID,
+      certificateId: requireId(data, 'certificateId'),
+      courseId: requireId(data, 'courseId'),
       req,
       userId,
     })

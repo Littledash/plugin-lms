@@ -5,8 +5,8 @@ import type { ArrayField } from 'payload';
 type Props = {
     coursesCollectionSlug?: string;
     lessonsCollectionSlug?: string;
-    quizzesCollectionSlug?: string;
     overrides?: Partial<ArrayField>;
+    quizzesCollectionSlug?: string;
 };
 /**
  * Creates a field for the courses progress

@@ -71,6 +71,13 @@ export type LessonsConfig = {
     lessonsCollection?: CollectionOverride;
 };
 export type QuizzesConfig = {
+    /**
+     * Minimum seconds between two attempts at the same quiz by one user. Slows down scripted
+     * guessing of answers.
+     *
+     * @default 5
+     */
+    attemptCooldownSeconds?: number;
     quizzesCollection?: CollectionOverride;
 };
 export type CategoriesConfig = {

@@ -262,7 +262,13 @@ export const lmsPlugin =
       custom: {
         ...incomingConfig.custom,
         // Read by the LMS services so they work without the plugin config
-        lms: { slugs: collectionSlugMap },
+        lms: {
+          quizAttemptCooldownSeconds:
+            typeof sanitizedPluginConfig.quizzes === 'object'
+              ? (sanitizedPluginConfig.quizzes.attemptCooldownSeconds ?? 5)
+              : 5,
+          slugs: collectionSlugMap,
+        },
       },
     }
   }

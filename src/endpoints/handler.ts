@@ -40,9 +40,39 @@ export const lmsHandler =
     }
   }
 
-export const requireFields = (data: Record<string, unknown>, fields: string[]) => {
-  const missing = fields.filter((field) => data[field] === undefined || data[field] === null || data[field] === '')
-  if (missing.length > 0) {
-    throw new LMSError(`Missing required fields: ${missing.join(', ')}.`, 400)
+const ID_PATTERN = /^[\w-]{1,64}$/
+
+/**
+ * Reads a document ID from the body. Only plain strings and positive integers are accepted, so
+ * query objects such as `{ "$ne": null }` never reach the database.
+ */
+export const requireId = (data: Record<string, unknown>, field: string): ID => {
+  const value = data[field]
+  if (typeof value === 'string' && ID_PATTERN.test(value)) {
+    return value
   }
+  if (typeof value === 'number' && Number.isSafeInteger(value) && value > 0) {
+    return value
+  }
+  throw new LMSError(`${field} must be a valid ID.`, 400)
+}
+
+const MAX_ANSWERS = 500
+
+/**
+ * Reads quiz answers: an object keyed by question ID with primitive values.
+ */
+export const requireAnswers = (data: Record<string, unknown>): Record<string, unknown> => {
+  const { answers } = data
+  if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
+    throw new LMSError('answers must be an object keyed by question ID.', 400)
+  }
+  const entries = Object.entries(answers)
+  if (entries.length > MAX_ANSWERS) {
+    throw new LMSError('Too many answers.', 400)
+  }
+  if (entries.some(([, value]) => value !== null && typeof value === 'object')) {
+    throw new LMSError('Each answer must be a string, number or boolean.', 400)
+  }
+  return answers as Record<string, unknown>
 }

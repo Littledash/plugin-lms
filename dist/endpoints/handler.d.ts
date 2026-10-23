@@ -11,5 +11,13 @@ type HandlerContext = {
  * user IDs, and turns errors into JSON responses without leaking internal details.
  */
 export declare const lmsHandler: (fn: (context: HandlerContext) => Promise<Response>) => Endpoint["handler"];
-export declare const requireFields: (data: Record<string, unknown>, fields: string[]) => void;
+/**
+ * Reads a document ID from the body. Only plain strings and positive integers are accepted, so
+ * query objects such as `{ "$ne": null }` never reach the database.
+ */
+export declare const requireId: (data: Record<string, unknown>, field: string) => ID;
+/**
+ * Reads quiz answers: an object keyed by question ID with primitive values.
+ */
+export declare const requireAnswers: (data: Record<string, unknown>) => Record<string, unknown>;
 export {};

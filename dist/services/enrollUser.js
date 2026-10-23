@@ -1,4 +1,4 @@
-import { asSlug, ensureCourseProgress, findDoc, getCoursesProgress, getSlugs, includesId, LMSError, sameId, toId, toIds, withTransaction } from './shared.js';
+import { asSlug, ensureCourseProgress, findDoc, getCoursesProgress, getSlugs, hasFreeSeat, includesId, LMSError, sameId, toId, toIds, withTransaction } from './shared.js';
 const findExistingGroup = async (req, userId, { companyName, couponId })=>{
     const where = couponId ? {
         'purchasedCourses.seatManagement.coupon': {
@@ -42,6 +42,9 @@ const enrollGroup = async ({ course, group: groupArgs, req, user })=>{
         const purchasedCourses = Array.isArray(group.purchasedCourses) ? group.purchasedCourses : [];
         const purchase = purchasedCourses.find((entry)=>sameId(entry?.seatManagement?.course, course.id));
         const data = {};
+        if (purchase && isNewMember && !hasFreeSeat(purchase.seatManagement)) {
+            throw new LMSError('This group has no seats remaining for this course.', 409);
+        }
         if (isNewMember) {
             data[memberField] = [
                 ...members,

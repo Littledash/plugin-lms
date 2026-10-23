@@ -19,7 +19,9 @@ export type CourseProgressEntry = {
         lesson: ID;
     }[];
     completedQuizzes: {
+        attempts?: null | number;
         completedAt: string;
+        lastAttemptAt?: null | string;
         quiz: ID;
         score: number;
     }[];
@@ -63,4 +65,13 @@ export declare const hasCompletedRequiredLessons: (course: LMSDoc, progress: Cou
  */
 export declare const isEnrolledInCourse: (req: PayloadRequest, course: LMSDoc, userId: ID) => Promise<boolean>;
 export declare const requireUser: (req: PayloadRequest) => ID;
+type SeatManagement = {
+    seatsTotal?: null | number;
+    seatsUsed?: null | number;
+} | undefined;
+export declare const hasFreeSeat: (seatManagement: SeatManagement) => boolean;
+/**
+ * Takes one seat on every course the group purchased. Throws when any of them is full.
+ */
+export declare const takeSeatOnEachPurchase: (purchasedCourses: LMSDoc[]) => LMSDoc[];
 export {};

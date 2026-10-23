@@ -6,6 +6,7 @@ import {
   findDoc,
   getCoursesProgress,
   getSlugs,
+  hasFreeSeat,
   type ID,
   includesId,
   type LMSDoc,
@@ -88,6 +89,9 @@ const enrollGroup = async ({
     )
 
     const data: Record<string, unknown> = {}
+    if (purchase && isNewMember && !hasFreeSeat(purchase.seatManagement)) {
+      throw new LMSError('This group has no seats remaining for this course.', 409)
+    }
     if (isNewMember) {
       data[memberField] = [...members, user.id]
     }

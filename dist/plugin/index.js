@@ -211,6 +211,7 @@ export const lmsPlugin = (pluginConfig)=>(incomingConfig)=>{
                 ...incomingConfig.custom,
                 // Read by the LMS services so they work without the plugin config
                 lms: {
+                    quizAttemptCooldownSeconds: typeof sanitizedPluginConfig.quizzes === 'object' ? sanitizedPluginConfig.quizzes.attemptCooldownSeconds ?? 5 : 5,
                     slugs: collectionSlugMap
                 }
             }

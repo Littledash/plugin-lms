@@ -1,0 +1,102 @@
+# How to award and generate certificates
+
+## How a certificate is awarded
+
+1. An admin sets **Awards → Certificate** on the course.
+2. The student completes the last required lesson (`complete-lesson`), or calls `complete-course`
+   once every required lesson is done.
+3. In one transaction, the plugin:
+   - moves the student from `enrolledStudents` to `courseCompletedStudents`
+   - marks the course complete in the student's `coursesProgress`
+   - adds `{ certificate, course, completedDate }` to the student's `certificates`
+
+The student's `certificates` array is the record that they earned it. Nothing else can award one:
+students cannot write that field, and `generate-certificate` refuses certificates that are not in it.
+
+## Generate the PDF
+
+From the browser, as the student:
+
+```typescript
+const response = await fetch('/api/lms/generate-certificate', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ courseId, certificateId }),
+})
+const { certificate } = await response.json()
+// certificate is the media document: certificate.url, certificate.filename, ...
+```
+
+On the server (a hook, a job, a Server Component):
+
+```typescript
+import { generateCertificate } from '@littledash/plugin-lms/services'
+
+const { media, status } = await generateCertificate({ req, userId, courseId, certificateId })
+// status is 'created' the first time and 'existing' afterwards
+```
+
+The PDF is stored once per user, course and certificate, in the media collection, as
+`certificate-<courseId>-<certificateId>-<userId>.pdf`. Use `getCertificateFileName` to look it up.
+
+## Email the certificate when it is awarded
+
+Add an `afterChange` hook to your students collection that reacts to new entries in `certificates`.
+Because the plugin awards the certificate and saves the user in one update, the hook sees it once.
+
+```typescript
+import type { CollectionAfterChangeHook } from 'payload'
+import { generateCertificate } from '@littledash/plugin-lms/services'
+
+const key = (entry: { certificate: unknown; course: unknown }) =>
+  `${typeof entry.certificate === 'object' ? (entry.certificate as { id: string }).id : entry.certificate}-${
+    typeof entry.course === 'object' ? (entry.course as { id: string }).id : entry.course
+  }`
+
+export const emailNewCertificates: CollectionAfterChangeHook = async ({ doc, previousDoc, req }) => {
+  const before = new Set((previousDoc?.certificates ?? []).map(key))
+  const added = (doc.certificates ?? []).filter((entry: { certificate: unknown; course: unknown }) => !before.has(key(entry)))
+
+  for (const entry of added) {
+    const { media } = await generateCertificate({
+      req,
+      userId: doc.id,
+      courseId: typeof entry.course === 'object' ? entry.course.id : entry.course,
+      certificateId: typeof entry.certificate === 'object' ? entry.certificate.id : entry.certificate,
+    })
+    await req.payload.sendEmail({
+      to: doc.email,
+      subject: 'Your certificate',
+      html: `<p>Congratulations! <a href="${media.url}">Download your certificate</a>.</p>`,
+    })
+  }
+}
+```
+
+## Backfill missing certificates
+
+If a course gained a certificate after students finished it, or 1.x missed some, run
+`completeCourse` for each completed student. On an already completed course it only awards a
+certificate that is missing, and returns `certificateAwarded`.
+
+```typescript
+import type { PayloadRequest } from 'payload'
+import { completeCourse } from '@littledash/plugin-lms/services'
+
+const course = await payload.findByID({ collection: 'courses', id: courseId, depth: 0 })
+for (const userId of course.courseCompletedStudents ?? []) {
+  const { certificateAwarded } = await completeCourse({
+    req: { payload } as PayloadRequest,
+    userId,
+    courseId,
+  })
+  if (certificateAwarded) payload.logger.info(`Awarded certificate to ${userId}`)
+}
+```
+
+## Template
+
+Upload the certificate background as the certificate's **Template** image. The PDF writes the
+student's name, the course title, the completion date, a certificate number and the first author on
+top of it. If the template is missing or cannot be loaded, the PDF is generated on a plain page.

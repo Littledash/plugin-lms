@@ -1,3 +1,4 @@
+import { isAdminFieldLevel } from '../access/isAdmin.js';
 /**
  * Available role options for the select field
  */ export const rolesOptions = [
@@ -40,6 +41,11 @@
         ],
         hasMany: true,
         options: rolesOptions,
+        // Users must not be able to grant themselves roles
+        access: {
+            create: isAdminFieldLevel,
+            update: isAdminFieldLevel
+        },
         ...overrides,
         admin: {
             ...overrides?.admin

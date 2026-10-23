@@ -1,5 +1,7 @@
 import type { SelectField } from 'payload'
 
+import { isAdminFieldLevel } from '../access/isAdmin.js'
+
 /**
  * Props for the roles field configuration
  */
@@ -50,6 +52,11 @@ export const rolesField: (props: Props) => SelectField = ({ overrides }) => {
     defaultValue: ['student'],
     hasMany: true,
     options: rolesOptions,
+    // Users must not be able to grant themselves roles
+    access: {
+      create: isAdminFieldLevel,
+      update: isAdminFieldLevel,
+    },
     ...overrides,
     admin: { ...overrides?.admin },
   }

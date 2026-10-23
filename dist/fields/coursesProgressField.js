@@ -3,7 +3,7 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
  * Creates a field for the courses progress
  * @param props - Configuration overrides for the field
  * @returns A configured field for the courses progress
- */ export const coursesProgressField = ({ coursesCollectionSlug = 'courses', lessonsCollectionSlug = 'lessons', quizzesCollectionSlug = 'quizzes', overrides })=>{
+ */ export const coursesProgressField = ({ coursesCollectionSlug = 'courses', lessonsCollectionSlug = 'lessons', overrides, quizzesCollectionSlug = 'quizzes' })=>{
     const field = {
         name: 'coursesProgress',
         type: 'array',
@@ -16,13 +16,13 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
             {
                 name: 'course',
                 type: 'relationship',
-                relationTo: coursesCollectionSlug,
-                hasMany: false,
-                required: true,
                 admin: {
                     allowCreate: false,
                     allowEdit: false
-                }
+                },
+                hasMany: false,
+                relationTo: coursesCollectionSlug,
+                required: true
             },
             {
                 name: 'completed',
@@ -43,8 +43,8 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
                     {
                         name: 'lesson',
                         type: 'relationship',
-                        relationTo: lessonsCollectionSlug,
                         hasMany: false,
+                        relationTo: lessonsCollectionSlug,
                         required: true
                     },
                     {
@@ -61,14 +61,23 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
                     {
                         name: 'quiz',
                         type: 'relationship',
-                        relationTo: quizzesCollectionSlug,
                         hasMany: false,
+                        relationTo: quizzesCollectionSlug,
                         required: true
                     },
                     {
                         name: 'score',
                         type: 'number',
                         required: true
+                    },
+                    {
+                        name: 'attempts',
+                        type: 'number',
+                        defaultValue: 1
+                    },
+                    {
+                        name: 'lastAttemptAt',
+                        type: 'date'
                     },
                     {
                         name: 'completedAt',

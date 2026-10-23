@@ -62,6 +62,14 @@ import { isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel } from '../access/isAdm
             }
         },
         {
+            name: 'attemptLimit',
+            type: 'number',
+            min: 0,
+            admin: {
+                description: 'Maximum attempts per student. Leave empty for unlimited.'
+            }
+        },
+        {
             name: 'authors',
             type: 'relationship',
             relationTo: studentsCollectionSlug,

@@ -25,7 +25,13 @@ export type CourseProgressEntry = {
   completed?: boolean | null
   completedAt?: null | string
   completedLessons: { completedAt: string; lesson: ID }[]
-  completedQuizzes: { completedAt: string; quiz: ID; score: number }[]
+  completedQuizzes: {
+    attempts?: null | number
+    completedAt: string
+    lastAttemptAt?: null | string
+    quiz: ID
+    score: number
+  }[]
   course: ID
 }
 
@@ -189,4 +195,22 @@ export const requireUser = (req: PayloadRequest): ID => {
     throw new LMSError('You must be logged in.', 401)
   }
   return req.user.id
+}
+
+type SeatManagement = { seatsTotal?: null | number; seatsUsed?: null | number } | undefined
+
+export const hasFreeSeat = (seatManagement: SeatManagement): boolean =>
+  (seatManagement?.seatsUsed || 0) < (seatManagement?.seatsTotal ?? 1)
+
+/**
+ * Takes one seat on every course the group purchased. Throws when any of them is full.
+ */
+export const takeSeatOnEachPurchase = (purchasedCourses: LMSDoc[]): LMSDoc[] => {
+  if (purchasedCourses.some((entry) => !hasFreeSeat(entry?.seatManagement))) {
+    throw new LMSError('This group has no seats remaining.', 409)
+  }
+  return purchasedCourses.map((entry) => ({
+    ...entry,
+    seatManagement: { ...entry.seatManagement, seatsUsed: (entry.seatManagement?.seatsUsed || 0) + 1 },
+  }))
 }

@@ -123,7 +123,13 @@ beforeAll(async () => {
     memoryDB = await MongoMemoryReplSet.create({
       replSet: { count: 1, dbName: 'payloadmemory' },
       // MongoDB's default 5ms lock wait makes back-to-back writes to one user flaky in tests
-      instanceOpts: [{ args: ['--setParameter', 'maxTransactionLockRequestTimeoutMillis=5000'] }],
+      instanceOpts: [
+        {
+          args: ['--setParameter', 'maxTransactionLockRequestTimeoutMillis=5000'],
+          // The default 10s start timeout is too short on a busy machine
+          launchTimeout: 60000,
+        },
+      ],
     })
     process.env.DATABASE_URI = `${memoryDB.getUri()}&retryWrites=true`
   }
@@ -586,3 +592,98 @@ describe('field access', () => {
     expect(await read(outsider)).not.toHaveProperty('questions')
   })
 })
+
+describe('hardening', () => {
+  it.each([{ $ne: null }, ['a'], 'not a valid id!', -1, 1.5])('rejects courseId %p', async (courseId) => {
+    const user = await createUser()
+    const { status } = await post(await clientFor(user), 'enroll', { courseId })
+    expect(status).toBe(400)
+  })
+
+  it.each([[['a']], [{ q: { $gt: '' } }], ['answers']])('rejects malformed answers %p', async (answers) => {
+    const { quiz } = await createQuiz()
+    const course = await createCourse({ lessons: [{ lesson: (await createLesson([quiz.id])).id }] })
+    const user = await createUser()
+    await enroll(user, course)
+
+    const { status } = await post(await clientFor(user), 'submit-quiz', {
+      answers,
+      courseId: course.id,
+      quizId: quiz.id,
+    })
+    expect(status).toBe(400)
+  })
+
+  it('enforces the quiz attempt limit before grading', async () => {
+    const { quiz, questionId, correctChoiceId } = await createQuiz()
+    await payload.update({ collection: 'quizzes', id: quiz.id, data: { attemptLimit: 2 } })
+    const course = await createCourse({ lessons: [{ lesson: (await createLesson([quiz.id])).id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    const client = await clientFor(user)
+    const attempt = (answers: Record<string, string>) =>
+      post(client, 'submit-quiz', { answers, courseId: course.id, quizId: quiz.id })
+
+    expect((await attempt({})).status).toBe(200)
+    expect((await attempt({})).status).toBe(200)
+    const third = await attempt({ [questionId]: correctChoiceId })
+    expect(third.status).toBe(429)
+    expect(third.body).not.toHaveProperty('score')
+  })
+
+  it('enforces a cooldown between quiz attempts', async () => {
+    const lms = payload.config.custom.lms as { quizAttemptCooldownSeconds: number }
+    lms.quizAttemptCooldownSeconds = 60
+    try {
+      const { quiz } = await createQuiz()
+      const course = await createCourse({ lessons: [{ lesson: (await createLesson([quiz.id])).id }] })
+      const user = await createUser()
+      await enroll(user, course)
+      const client = await clientFor(user)
+      const attempt = () => post(client, 'submit-quiz', { answers: {}, courseId: course.id, quizId: quiz.id })
+
+      expect((await attempt()).status).toBe(200)
+      const second = await attempt()
+      expect(second.status).toBe(429)
+      expect(second.body.message).toMatch(/wait \d+ seconds/)
+    } finally {
+      lms.quizAttemptCooldownSeconds = 0
+    }
+  })
+
+  it('stops a leader adding more members than the group paid for', async () => {
+    const leader = await createUser()
+    const course = await createCourse({ accessMode: 'buy now' })
+    const { groupId } = await enrollUser({
+      courseId: course.id,
+      group: { companyName: 'Two Seats Ltd', isLeader: true, totalSeats: 2 },
+      req: { payload } as never,
+      userId: leader.id,
+    })
+    const client = await clientFor(leader)
+    const add = async () =>
+      post(client, 'add-user-to-group', { groupId, memberId: (await createUser()).id, role: 'student' })
+
+    expect((await add()).status).toBe(200)
+    expect((await add()).status).toBe(409)
+    const group = await getDoc('groups', String(groupId))
+    expect(group.purchasedCourses[0].seatManagement.seatsUsed).toBe(2)
+  })
+
+  it('stops coupon enrollments once the group is full', async () => {
+    const coupon = (await payload.create({ collection: 'coupons', data: {} })) as unknown as Doc
+    const course = await createCourse({ accessMode: 'buy now' })
+    const join = async (isLeader: boolean) =>
+      enrollUser({
+        courseId: course.id,
+        group: { companyName: 'Coupon Co', couponId: coupon.id, isLeader, totalSeats: 2 },
+        req: { payload } as never,
+        userId: (await createUser()).id,
+      })
+
+    await join(true)
+    await join(false)
+    await expect(join(false)).rejects.toMatchObject({ status: 409 })
+  })
+})
+

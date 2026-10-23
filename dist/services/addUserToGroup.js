@@ -1,7 +1,7 @@
-import { asSlug, findDoc, getSlugs, includesId, LMSError, toIds, withTransaction } from './shared.js';
+import { asSlug, findDoc, getSlugs, includesId, LMSError, takeSeatOnEachPurchase, toIds, withTransaction } from './shared.js';
 /**
- * Adds a user to a group as a leader or student. Does not check who is asking; the endpoint
- * checks that the requester is an admin or a leader of the group.
+ * Adds a user to a group as a leader or student, using a seat on each purchased course. Does not
+ * check who is asking; the endpoint checks that the requester is an admin or a leader of the group.
  */ export const addUserToGroup = ({ groupId, req, role, userId })=>withTransaction(req, async ()=>{
         if (role !== 'leader' && role !== 'student') {
             throw new LMSError('Role must be either "leader" or "student".', 400);
@@ -21,7 +21,9 @@ import { asSlug, findDoc, getSlugs, includesId, LMSError, toIds, withTransaction
                 [field]: [
                     ...members,
                     user.id
-                ]
+                ],
+                // Every member uses a seat on each course the group bought
+                purchasedCourses: takeSeatOnEachPurchase(Array.isArray(group.purchasedCourses) ? group.purchasedCourses : [])
             },
             req
         });

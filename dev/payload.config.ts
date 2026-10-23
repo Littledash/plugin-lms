@@ -150,7 +150,8 @@ export default buildConfig({
       groups: true,
       courses: true,
       lessons: true,
-      quizzes: true,
+      // Tests retry quizzes back-to-back; the cooldown test raises this at runtime
+      quizzes: { attemptCooldownSeconds: 0 },
       categories: true,
       topics: true,
       tags: true,

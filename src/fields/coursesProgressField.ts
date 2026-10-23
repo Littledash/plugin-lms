@@ -8,8 +8,8 @@ import { isAdminFieldLevel } from '../access/isAdmin.js'
 type Props = {
   coursesCollectionSlug?: string
   lessonsCollectionSlug?: string
-  quizzesCollectionSlug?: string
   overrides?: Partial<ArrayField>
+  quizzesCollectionSlug?: string
 }
 
 /**
@@ -20,8 +20,8 @@ type Props = {
 export const coursesProgressField: (props: Props) => ArrayField = ({
   coursesCollectionSlug = 'courses',
   lessonsCollectionSlug = 'lessons',
-  quizzesCollectionSlug = 'quizzes',
   overrides,
+  quizzesCollectionSlug = 'quizzes',
 }) => {
   const field: ArrayField = {
     name: 'coursesProgress',
@@ -35,13 +35,13 @@ export const coursesProgressField: (props: Props) => ArrayField = ({
       {
         name: 'course',
         type: 'relationship',
-        relationTo: coursesCollectionSlug,
-        hasMany: false,
-        required: true,
         admin: {
           allowCreate: false,
           allowEdit: false,
         },
+        hasMany: false,
+        relationTo: coursesCollectionSlug,
+        required: true,
       },
       {
         name: 'completed',
@@ -62,8 +62,8 @@ export const coursesProgressField: (props: Props) => ArrayField = ({
           {
             name: 'lesson',
             type: 'relationship',
-            relationTo: lessonsCollectionSlug,
             hasMany: false,
+            relationTo: lessonsCollectionSlug,
             required: true,
           },
           {
@@ -80,14 +80,23 @@ export const coursesProgressField: (props: Props) => ArrayField = ({
           {
             name: 'quiz',
             type: 'relationship',
-            relationTo: quizzesCollectionSlug,
             hasMany: false,
+            relationTo: quizzesCollectionSlug,
             required: true,
           },
           {
             name: 'score',
             type: 'number',
             required: true,
+          },
+          {
+            name: 'attempts',
+            type: 'number',
+            defaultValue: 1,
+          },
+          {
+            name: 'lastAttemptAt',
+            type: 'date',
           },
           {
             name: 'completedAt',

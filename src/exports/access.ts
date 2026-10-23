@@ -11,8 +11,11 @@ export {
 export { anyone } from '../access/anyone.js'
 export { isAdminOrSelf, isAdminOrSelfFieldLevel } from '../access/isAdminOrSelf.js'
 export {
+  getEnrolledCourseIds,
   isAdminOrAuthorOrEnrolledInCourse,
   isAdminOrAuthorOrEnrolledInCourseFieldLevel,
+  isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel,
+  isAdminOrAuthorOrEnrolledInThisCourseFieldLevel,
 } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
 export { isAdminOrPublished } from '../access/isAdminOrPublished.js'
 export { isAdminOrGroupLeader } from '../access/isAdminOrGroupLeader.js'
