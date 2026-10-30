@@ -1,5 +1,7 @@
 import type { PayloadRequest } from 'payload';
 import { type ID } from '../services/shared.js';
+/** Number of users currently tracked. Exposed for tests. */
+export declare const trackedRateLimitKeys: () => number;
 /**
  * Records one call and returns whether it is still inside the limit. A non-positive `max` means
  * no limit. Timestamps outside the window are dropped.

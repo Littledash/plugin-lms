@@ -122,6 +122,26 @@ const enroll = (user: Doc, course: Doc) =>
 
 // One in-memory Payload for every describe in this file.
 /* eslint-disable jest/require-top-level-describe */
+const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+
+const setEnrolledAt = async (userId: string, courseId: string, enrolledAt: null | string) => {
+  const saved = await getDoc('users', userId)
+  await payload.update({
+    id: userId,
+    collection: 'users',
+    data: {
+      coursesProgress: (saved.coursesProgress ?? []).map((entry: Doc) => ({
+        ...entry,
+        course: typeof entry.course === 'object' ? entry.course.id : entry.course,
+        enrolledAt:
+          String(typeof entry.course === 'object' ? entry.course.id : entry.course) === courseId
+            ? enrolledAt
+            : entry.enrolledAt,
+      })),
+    },
+  })
+}
+
 beforeAll(async () => {
   process.env.DISABLE_PAYLOAD_HMR = 'true'
   // Always use an in-memory database so tests never touch the dev database from .env
@@ -146,10 +166,10 @@ beforeAll(async () => {
   const { default: config } = await import('./payload.config.js')
   payload = await getPayload({ config })
   // Payload builds indexes in the background; writes in a transaction fail until they exist
+  // Versions collections (from drafts) need their indexes too
+  const db = payload.db as unknown as Record<'collections' | 'versions', Record<string, { init: () => Promise<unknown> }>>
   await Promise.all(
-    Object.values((payload.db as unknown as { collections: Record<string, { init: () => Promise<unknown> }> }).collections).map(
-      (model) => model.init(),
-    ),
+    [...Object.values(db.collections), ...Object.values(db.versions ?? {})].map((model) => model.init()),
   )
 })
 
@@ -1040,25 +1060,6 @@ describe('enrollment collection access', () => {
 })
 
 describe('lesson availability', () => {
-  const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
-
-  const setEnrolledAt = async (userId: string, courseId: string, enrolledAt: null | string) => {
-    const saved = await getDoc('users', userId)
-    await payload.update({
-      id: userId,
-      collection: 'users',
-      data: {
-        coursesProgress: (saved.coursesProgress ?? []).map((entry: Doc) => ({
-          ...entry,
-          course: typeof entry.course === 'object' ? entry.course.id : entry.course,
-          enrolledAt:
-            String(typeof entry.course === 'object' ? entry.course.id : entry.course) === courseId
-              ? enrolledAt
-              : entry.enrolledAt,
-        })),
-      },
-    })
-  }
 
   it('requires the earlier lesson before a later one', async () => {
     const first = await createLesson()
@@ -1466,3 +1467,85 @@ describe('true/false questions', () => {
   })
 })
 
+
+describe('access renewal', () => {
+  const DAY = 24 * 60 * 60 * 1000
+
+  const expiringCourse = async (days: number) => {
+    const lesson = await createLesson()
+    const course = await createCourse({ accessMode: 'buy now', lessons: [{ lesson: lesson.id }] })
+    await payload.update({ id: course.id, collection: 'courses', data: { courseSettings: { accessExpirationDays: days } } })
+    return { course, lesson }
+  }
+
+  const progressFor = async (userId: string, courseId: string) =>
+    (await getDoc('users', userId)).coursesProgress.find((entry: Doc) => String(entry.course) === String(courseId))
+
+  it('a renewal purchase restores access for an expired student without moving the enrollment date', async () => {
+    const { course, lesson } = await expiringCourse(30)
+    const user = await createUser()
+    await enroll(user, course)
+    const enrolledAt = daysAgo(40)
+    await setEnrolledAt(user.id, course.id, enrolledAt)
+    const client = await clientFor(user)
+    expect((await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })).status).toBe(403)
+
+    const result = await enrollUser({ courseId: course.id, renew: true, req: { payload } as never, userId: user.id })
+
+    expect(result.status).toBe('renewed')
+    const progress = await progressFor(user.id, course.id)
+    expect(Math.abs(Date.parse(progress.accessFrom) - Date.now())).toBeLessThan(60_000)
+    expect(Date.parse(progress.enrolledAt)).toBe(Date.parse(enrolledAt))
+    expect((await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })).status).toBe(200)
+  })
+
+  it('a renewal before expiry adds a full period to the end of the current one', async () => {
+    const { course } = await expiringCourse(30)
+    const user = await createUser()
+    await enroll(user, course)
+    const enrolledAt = daysAgo(10)
+    await setEnrolledAt(user.id, course.id, enrolledAt)
+
+    await enrollUser({ courseId: course.id, renew: true, req: { payload } as never, userId: user.id })
+
+    const progress = await progressFor(user.id, course.id)
+    expect(Date.parse(progress.accessFrom)).toBe(Date.parse(enrolledAt) + 30 * DAY)
+  })
+
+  it('enrolling again without renew, including over HTTP, does not extend access', async () => {
+    const { course } = await expiringCourse(30)
+    await payload.update({ id: course.id, collection: 'courses', data: { enrollment: { accessMode: 'open' } } })
+    const user = await createUser()
+    await enroll(user, course)
+    await setEnrolledAt(user.id, course.id, daysAgo(40))
+
+    const service = await enrollUser({ courseId: course.id, req: { payload } as never, userId: user.id })
+    const http = await post(await clientFor(user), 'enroll', { courseId: course.id })
+
+    expect(service.status).toBe('already-enrolled')
+    expect(http.body.status).toBe('already-enrolled')
+    expect((await progressFor(user.id, course.id)).accessFrom ?? null).toBeNull()
+  })
+
+  it('a member added by a group leader is dated on the day they join', async () => {
+    const course = await createCourse({ accessMode: 'buy now' })
+    const leader = await createUser()
+    const { groupId } = await enrollUser({
+      courseId: course.id,
+      group: { companyName: 'Dated Ltd', isLeader: true, totalSeats: 3 },
+      req: { payload } as never,
+      userId: leader.id,
+    })
+    const member = await createUser()
+
+    const { status } = await post(await clientFor(leader), 'add-user-to-group', {
+      groupId,
+      memberId: member.id,
+      role: 'student',
+    })
+
+    expect(status).toBe(200)
+    const progress = await progressFor(member.id, course.id)
+    expect(Math.abs(Date.parse(progress.enrolledAt) - Date.now())).toBeLessThan(60_000)
+  })
+})

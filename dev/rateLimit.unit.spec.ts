@@ -1,4 +1,4 @@
-import { takeRateLimitSlot } from '../src/endpoints/rateLimit.js'
+import { takeRateLimitSlot, trackedRateLimitKeys } from '../src/endpoints/rateLimit.js'
 
 describe('LMS endpoint rate limit', () => {
   it('allows a fixed number of calls in a window, then allows them again once the window has passed', () => {
@@ -15,5 +15,17 @@ describe('LMS endpoint rate limit', () => {
     const slot = () => takeRateLimitSlot({ key: 'rate-limit-off', max: 0, now: 0, windowMs: 1000 })
     expect(slot()).toBe(true)
     expect(slot()).toBe(true)
+  })
+
+  it('forgets users who have not called within the window', () => {
+    const base = 1_000_000_000
+    for (let user = 0; user < 50; user++) {
+      takeRateLimitSlot({ key: `idle-${user}`, max: 5, now: base, windowMs: 1000 })
+    }
+    expect(trackedRateLimitKeys()).toBeGreaterThanOrEqual(50)
+
+    // A later call by someone else, after the window, clears the idle users
+    takeRateLimitSlot({ key: 'active', max: 5, now: base + 5000, windowMs: 1000 })
+    expect(trackedRateLimitKeys()).toBe(1)
   })
 })

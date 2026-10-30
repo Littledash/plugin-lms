@@ -2,13 +2,16 @@ import type { PayloadRequest } from 'payload'
 
 import {
   asSlug,
+  ensureCourseProgress,
   findDoc,
+  getCoursesProgress,
   getSlugs,
   type ID,
   includesId,
   type LMSDoc,
   LMSError,
   takeSeatOnEachPurchase,
+  toId,
   toIds,
   withTransaction,
 } from './shared.js'
@@ -40,18 +43,36 @@ export const addUserToGroup = ({ groupId, req, role, userId }: AddUserToGroupArg
       throw new LMSError(`User is already a ${role} in this group.`, 409)
     }
 
+    const purchasedCourses: LMSDoc[] = Array.isArray(group.purchasedCourses) ? group.purchasedCourses : []
     await req.payload.update({
       id: group.id,
       collection: asSlug(slugs.groups),
       data: {
         [field]: [...members, user.id],
         // Every member uses a seat on each course the group bought
-        purchasedCourses: takeSeatOnEachPurchase(
-          Array.isArray(group.purchasedCourses) ? (group.purchasedCourses as LMSDoc[]) : [],
-        ),
+        purchasedCourses: takeSeatOnEachPurchase(purchasedCourses),
       },
       req,
     })
+
+    // Date the member's enrollment now, so access expiry and lesson release delays count from
+    // when they joined rather than from their first lesson
+    const coursesProgress = getCoursesProgress(user)
+    const before = coursesProgress.length
+    for (const entry of purchasedCourses) {
+      const courseId = toId(entry?.seatManagement?.course)
+      if (courseId !== undefined) {
+        ensureCourseProgress(coursesProgress, courseId)
+      }
+    }
+    if (coursesProgress.length > before) {
+      await req.payload.update({
+        id: user.id,
+        collection: asSlug(slugs.students),
+        data: { coursesProgress },
+        req,
+      })
+    }
 
     req.payload.logger.info(`User ${user.id} added to group ${group.id} as ${role}`)
   })

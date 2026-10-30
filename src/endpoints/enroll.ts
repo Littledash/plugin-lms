@@ -9,6 +9,7 @@ const messages = {
   'already-completed': 'You have already completed this course.',
   'already-enrolled': 'You are already enrolled in this course.',
   enrolled: 'Successfully enrolled in course.',
+  renewed: 'Your access has been renewed.',
 }
 
 /**

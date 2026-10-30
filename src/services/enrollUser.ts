@@ -1,5 +1,6 @@
 import type { PayloadRequest, Where } from 'payload'
 
+import { renewAccess } from './lessonAccess.js'
 import {
   asSlug,
   ensureCourseProgress,
@@ -29,13 +30,18 @@ export type GroupEnrollment = {
 type EnrollUserArgs = {
   courseId: ID
   group?: GroupEnrollment
+  /**
+   * Start a new access period when the user already has this course, for example when an
+   * expired student buys it again. Only pass it for a verified purchase.
+   */
+  renew?: boolean
   req: PayloadRequest
   userId: ID
 }
 
 export type EnrollUserResult = {
   groupId?: ID
-  status: 'already-completed' | 'already-enrolled' | 'enrolled'
+  status: 'already-completed' | 'already-enrolled' | 'enrolled' | 'renewed'
 }
 
 const findExistingGroup = async (
@@ -169,7 +175,13 @@ const enrollGroup = async ({
  * This is a trusted server-side operation: it does not check payment. Call it only after the
  * purchase has been verified, with a `userId` taken from trusted server state.
  */
-export const enrollUser = ({ courseId, group, req, userId }: EnrollUserArgs): Promise<EnrollUserResult> =>
+export const enrollUser = ({
+  courseId,
+  group,
+  renew = false,
+  req,
+  userId,
+}: EnrollUserArgs): Promise<EnrollUserResult> =>
   withTransaction(req, async () => {
     const slugs = getSlugs(req)
     const user = await findDoc(req, slugs.students, userId, 'User')
@@ -183,11 +195,14 @@ export const enrollUser = ({ courseId, group, req, userId }: EnrollUserArgs): Pr
 
     const coursesProgress = getCoursesProgress(user)
     const hadProgress = coursesProgress.some((progress) => sameId(progress.course, course.id))
-    const saveProgress = async () => {
-      if (hadProgress) {
+    const saveProgress = async ({ renewing = false } = {}) => {
+      if (hadProgress && !renewing) {
         return
       }
-      ensureCourseProgress(coursesProgress, course.id)
+      const progress = ensureCourseProgress(coursesProgress, course.id)
+      if (renewing) {
+        renewAccess(course, progress)
+      }
       await req.payload.update({
         id: user.id,
         collection: asSlug(slugs.students),
@@ -196,11 +211,18 @@ export const enrollUser = ({ courseId, group, req, userId }: EnrollUserArgs): Pr
       })
     }
 
-    if (includesId(toIds(course.enrolledStudents), user.id)) {
+    const isEnrolled = includesId(toIds(course.enrolledStudents), user.id)
+    const hasCompleted = includesId(toIds(course.courseCompletedStudents), user.id)
+    if ((isEnrolled || hasCompleted) && renew) {
+      await saveProgress({ renewing: true })
+      req.payload.logger.info(`User ${user.id} renewed access to course ${toId(course)}`)
+      return { groupId, status: 'renewed' }
+    }
+    if (isEnrolled) {
       await saveProgress()
       return { groupId, status: 'already-enrolled' }
     }
-    if (includesId(toIds(course.courseCompletedStudents), user.id)) {
+    if (hasCompleted) {
       return { groupId, status: 'already-completed' }
     }
 

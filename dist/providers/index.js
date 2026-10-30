@@ -1,7 +1,7 @@
 'use client';
 import { jsx as _jsx } from "react/jsx-runtime";
 import * as qs from 'qs-esm';
-import React, { createContext, use, useCallback, useEffect, useReducer } from 'react';
+import React, { createContext, use, useCallback, useEffect, useReducer, useRef } from 'react';
 import { initialState, lmsReducer } from './reducer.js';
 const defaultContext = {
     addUserToGroup: async ()=>{},
@@ -37,6 +37,7 @@ const defaultContext = {
     users: []
 };
 const LMSContext = /*#__PURE__*/ createContext(defaultContext);
+/** fetch-progress returns ids; older responses and caches held `{ id }` objects. */ const toCourseId = (course)=>typeof course === 'object' && course !== null ? course.id : course;
 const defaultLocalStorage = {
     key: 'lms'
 };
@@ -48,6 +49,9 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
     const { apiRoute = '/api', serverURL = '' } = api || {};
     const baseAPIURL = `${serverURL}${apiRoute}`;
     const [state, dispatch] = useReducer(lmsReducer, initialState);
+    // The cache is only read or written once the logged-in user is known, so one person's progress
+    // never shows for another on a shared browser
+    const cachedUserId = useRef(null);
     const getUser = useCallback(async ()=>{
         try {
             const response = await fetch(`${baseAPIURL}/users/me`, {
@@ -80,6 +84,52 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
     }, [
         baseAPIURL
     ]);
+    /**
+   * Shows cached progress for this user while fresh data loads. A cache saved for anyone else, or
+   * one without an owner (written by older versions), is removed.
+   */ const restoreCache = useCallback((userId)=>{
+        const storedProgress = localStorage.getItem(localStorageConfig.key);
+        if (!storedProgress) {
+            return;
+        }
+        try {
+            const parsed = JSON.parse(storedProgress);
+            if (parsed.userId !== userId) {
+                localStorage.removeItem(localStorageConfig.key);
+                return;
+            }
+            // Normalize progress data to use IDs only for backward compatibility
+            const normalizedProgress = (parsed.progress || []).map((progress)=>({
+                    ...progress,
+                    completedLessons: progress.completedLessons?.map((lesson)=>({
+                            ...lesson,
+                            lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson
+                        })) || [],
+                    completedQuizzes: progress.completedQuizzes?.map((quiz)=>({
+                            ...quiz,
+                            quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz
+                        })) || [],
+                    completionPercentage: progress.completionPercentage || 0,
+                    course: typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course,
+                    courseCompletion: progress.courseCompletion || ''
+                }));
+            // Normalize enrolled and completed courses to use IDs only
+            const normalizedEnrolledCourses = (parsed.enrolledCourses || []).map(toCourseId);
+            const normalizedCompletedCourses = (parsed.completedCourses || []).map(toCourseId);
+            dispatch({
+                type: 'LOAD_FROM_STORAGE',
+                payload: {
+                    completedCourses: normalizedCompletedCourses,
+                    enrolledCourses: normalizedEnrolledCourses,
+                    progress: normalizedProgress
+                }
+            });
+        } catch  {
+            localStorage.removeItem(localStorageConfig.key);
+        }
+    }, [
+        localStorageConfig.key
+    ]);
     const fetchProgress = useCallback(async ()=>{
         dispatch({
             type: 'SET_LOADING',
@@ -92,8 +142,12 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
         try {
             // Check if user is logged in first
             const currentUser = await getUser();
-            // If no user is logged in, reset progress and return early
+            // If no user is logged in, reset progress, forget the cache and return early
             if (!currentUser) {
+                cachedUserId.current = null;
+                if (syncLocalStorage) {
+                    localStorage.removeItem(localStorageConfig.key);
+                }
                 dispatch({
                     type: 'UPDATE_PROGRESS',
                     payload: []
@@ -108,6 +162,11 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
                 });
                 return;
             }
+            const userId = String(currentUser.id);
+            if (syncLocalStorage && cachedUserId.current !== userId) {
+                restoreCache(userId);
+            }
+            cachedUserId.current = userId;
             // User is logged in, fetch progress
             const response = await fetch(`${baseAPIURL}/lms/fetch-progress`, {
                 credentials: 'include',
@@ -130,13 +189,13 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
             const enrolledCoursesArray = Array.isArray(enrolledCourses) ? enrolledCourses : [];
             dispatch({
                 type: 'SET_ENROLLED_COURSES',
-                payload: enrolledCoursesArray.map((course)=>course.id)
+                payload: enrolledCoursesArray.map(toCourseId)
             });
             // Ensure completedCourses is an array before mapping
             const completedCoursesArray = Array.isArray(completedCourses) ? completedCourses : [];
             dispatch({
                 type: 'SET_COMPLETED_COURSES',
-                payload: completedCoursesArray.map((course)=>course.id)
+                payload: completedCoursesArray.map(toCourseId)
             });
         } catch (e) {
             dispatch({
@@ -151,57 +210,29 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
         }
     }, [
         baseAPIURL,
-        getUser
+        getUser,
+        localStorageConfig.key,
+        restoreCache,
+        syncLocalStorage
     ]);
-    // Load progress and course status from database on initial render
+    // Load progress and course status from database on initial render. Cached progress is shown
+    // only after the server confirms it belongs to the logged-in user.
     useEffect(()=>{
         if (syncLocalStorage) {
-            // First try to load from localStorage for immediate UI rendering
-            const storedProgress = localStorage.getItem(localStorageConfig.key);
-            if (storedProgress) {
-                const parsed = JSON.parse(storedProgress);
-                // Normalize progress data to use IDs only for backward compatibility
-                const normalizedProgress = (parsed.progress || []).map((progress)=>({
-                        ...progress,
-                        completedLessons: progress.completedLessons?.map((lesson)=>({
-                                ...lesson,
-                                lesson: typeof lesson.lesson === 'object' && lesson.lesson !== null ? lesson.lesson.id : lesson.lesson
-                            })) || [],
-                        completedQuizzes: progress.completedQuizzes?.map((quiz)=>({
-                                ...quiz,
-                                quiz: typeof quiz.quiz === 'object' && quiz.quiz !== null ? quiz.quiz.id : quiz.quiz
-                            })) || [],
-                        completionPercentage: progress.completionPercentage || 0,
-                        course: typeof progress.course === 'object' && progress.course !== null ? progress.course.id : progress.course,
-                        courseCompletion: progress.courseCompletion || ''
-                    }));
-                // Normalize enrolled and completed courses to use IDs only
-                const normalizedEnrolledCourses = (parsed.enrolledCourses || []).map((course)=>typeof course === 'object' && course !== null ? course.id : course);
-                const normalizedCompletedCourses = (parsed.completedCourses || []).map((course)=>typeof course === 'object' && course !== null ? course.id : course);
-                dispatch({
-                    type: 'LOAD_FROM_STORAGE',
-                    payload: {
-                        completedCourses: normalizedCompletedCourses,
-                        enrolledCourses: normalizedEnrolledCourses,
-                        progress: normalizedProgress
-                    }
-                });
-            }
-            // Then fetch fresh data from database. The effect must not wait on it.
             void fetchProgress();
         }
     }, [
         syncLocalStorage,
-        localStorageConfig.key,
         fetchProgress
     ]);
     // Persist progress and course status to localStorage whenever they change
     useEffect(()=>{
-        if (syncLocalStorage) {
+        if (syncLocalStorage && cachedUserId.current) {
             const serializedState = JSON.stringify({
                 completedCourses: state.completedCourses,
                 enrolledCourses: state.enrolledCourses,
-                progress: state.progress
+                progress: state.progress,
+                userId: cachedUserId.current
             });
             localStorage.setItem(localStorageConfig.key, serializedState);
         }

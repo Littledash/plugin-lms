@@ -83,10 +83,11 @@ describe('LMSProvider', () => {
       const url = String(input)
       if (url.endsWith('/users/me')) {return json({ user: { id: 'user-1' } })}
       if (url.endsWith('/lms/fetch-progress')) {
+        // The shape fetch-progress returns: plain ids
         return json({
-          completedCourses: [{ id: 'course-2' }],
+          completedCourses: ['course-2'],
           coursesProgress: [],
-          enrolledCourses: [{ id: 'course-1' }, { id: 'course-2' }],
+          enrolledCourses: ['course-1', 'course-2'],
         })
       }
       return json({})
@@ -100,39 +101,76 @@ describe('LMSProvider', () => {
     expect(screen.getByTestId('completed').textContent).toBe('course-2')
   })
 
-  it('normalizes stored progress to ids, then clears it when the user is logged out', async () => {
-    let releaseMe: (response: Response) => void = () => {}
-    const me = new Promise<Response>((resolve) => {
-      releaseMe = resolve
+  const storedFor = (userId?: string) =>
+    JSON.stringify({
+      completedCourses: [],
+      enrolledCourses: [{ id: 'course-1' }],
+      progress: [
+        {
+          completed: false,
+          completedLessons: [{ completedAt: '2026-01-01', lesson: { id: 'lesson-1' } }],
+          completedQuizzes: [{ completedAt: '2026-01-01', quiz: { id: 'quiz-1' }, score: 1 }],
+          course: { id: 'course-1' },
+        },
+      ],
+      ...(userId ? { userId } : {}),
     })
-    localStorage.setItem(
-      'lms',
-      JSON.stringify({
-        completedCourses: [],
-        enrolledCourses: [{ id: 'course-1' }],
-        progress: [
-          {
-            completed: false,
-            completedLessons: [{ completedAt: '2026-01-01', lesson: { id: 'lesson-1' } }],
-            completedQuizzes: [{ completedAt: '2026-01-01', quiz: { id: 'quiz-1' }, score: 1 }],
-            course: { id: 'course-1' },
-          },
-        ],
-      }),
-    )
+
+  it("shows the logged-in user's cached progress, normalized to ids, while fresh data loads", async () => {
+    let releaseProgress: (response: Response) => void = () => {}
+    const progress = new Promise<Response>((resolve) => {
+      releaseProgress = resolve
+    })
+    localStorage.setItem('lms', storedFor('user-1'))
     fetchMock.mockImplementation((input) => {
-      if (String(input).endsWith('/users/me')) {return me}
-      return json({ completedCourses: [], coursesProgress: [], enrolledCourses: [] })
+      if (String(input).endsWith('/users/me')) {return json({ user: { id: 'user-1' } })}
+      return progress
     })
 
     renderProvider()
     await waitFor(() => expect(screen.getByTestId('lesson').textContent).toBe('lesson-1'))
     expect(screen.getByTestId('enrolled').textContent).toBe('course-1')
 
-    releaseMe(json({}, 401))
+    releaseProgress(json({ completedCourses: [], coursesProgress: [], enrolledCourses: ['course-1'] }))
+    await settle()
+    expect(JSON.parse(localStorage.getItem('lms') ?? '{}').userId).toBe('user-1')
+  })
+
+  it.each([
+    ['another user', 'user-2'],
+    ['no owner (older versions)', undefined],
+  ])('never shows a cache saved for %s, and removes it', async (_label, owner) => {
+    localStorage.setItem('lms', storedFor(owner))
+    let releaseProgress: (response: Response) => void = () => {}
+    fetchMock.mockImplementation((input) => {
+      if (String(input).endsWith('/users/me')) {return json({ user: { id: 'user-1' } })}
+      return new Promise<Response>((resolve) => {
+        releaseProgress = resolve
+      })
+    })
+
+    renderProvider()
+    await waitFor(() => expect(urls().some((url) => url.endsWith('/lms/fetch-progress'))).toBe(true))
+    expect(screen.getByTestId('lesson').textContent).toBe('')
+    expect(screen.getByTestId('enrolled').textContent).toBe('')
+    expect(localStorage.getItem('lms')).toBeNull()
+
+    releaseProgress(json({ completedCourses: [], coursesProgress: [], enrolledCourses: [] }))
+    await settle()
+  })
+
+  it('removes the cache and shows nothing when the user is logged out', async () => {
+    localStorage.setItem('lms', storedFor('user-1'))
+    fetchMock.mockImplementation((input) => {
+      if (String(input).endsWith('/users/me')) {return json({}, 401)}
+      return json({ completedCourses: [], coursesProgress: [], enrolledCourses: [] })
+    })
+
+    renderProvider()
     await settle()
     expect(screen.getByTestId('enrolled').textContent).toBe('')
     expect(screen.getByTestId('lesson').textContent).toBe('')
+    expect(localStorage.getItem('lms')).toBeNull()
     expect(urls().some((url) => url.endsWith('/lms/fetch-progress'))).toBe(false)
   })
 

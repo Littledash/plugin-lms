@@ -1,3 +1,4 @@
+import { renewAccess } from './lessonAccess.js';
 import { asSlug, ensureCourseProgress, findDoc, getCoursesProgress, getSlugs, hasFreeSeat, includesId, LMSError, sameId, toId, toIds, withTransaction } from './shared.js';
 const findExistingGroup = async (req, userId, { companyName, couponId })=>{
     const where = couponId ? {
@@ -141,7 +142,7 @@ const enrollGroup = async ({ course, group: groupArgs, req, user })=>{
  *
  * This is a trusted server-side operation: it does not check payment. Call it only after the
  * purchase has been verified, with a `userId` taken from trusted server state.
- */ export const enrollUser = ({ courseId, group, req, userId })=>withTransaction(req, async ()=>{
+ */ export const enrollUser = ({ courseId, group, renew = false, req, userId })=>withTransaction(req, async ()=>{
         const slugs = getSlugs(req);
         const user = await findDoc(req, slugs.students, userId, 'User');
         // The group step may update the course, so read it again afterwards
@@ -157,11 +158,14 @@ const enrollGroup = async ({ course, group: groupArgs, req, user })=>{
         }
         const coursesProgress = getCoursesProgress(user);
         const hadProgress = coursesProgress.some((progress)=>sameId(progress.course, course.id));
-        const saveProgress = async ()=>{
-            if (hadProgress) {
+        const saveProgress = async ({ renewing = false } = {})=>{
+            if (hadProgress && !renewing) {
                 return;
             }
-            ensureCourseProgress(coursesProgress, course.id);
+            const progress = ensureCourseProgress(coursesProgress, course.id);
+            if (renewing) {
+                renewAccess(course, progress);
+            }
             await req.payload.update({
                 id: user.id,
                 collection: asSlug(slugs.students),
@@ -171,14 +175,26 @@ const enrollGroup = async ({ course, group: groupArgs, req, user })=>{
                 req
             });
         };
-        if (includesId(toIds(course.enrolledStudents), user.id)) {
+        const isEnrolled = includesId(toIds(course.enrolledStudents), user.id);
+        const hasCompleted = includesId(toIds(course.courseCompletedStudents), user.id);
+        if ((isEnrolled || hasCompleted) && renew) {
+            await saveProgress({
+                renewing: true
+            });
+            req.payload.logger.info(`User ${user.id} renewed access to course ${toId(course)}`);
+            return {
+                groupId,
+                status: 'renewed'
+            };
+        }
+        if (isEnrolled) {
             await saveProgress();
             return {
                 groupId,
                 status: 'already-enrolled'
             };
         }
-        if (includesId(toIds(course.courseCompletedStudents), user.id)) {
+        if (hasCompleted) {
             return {
                 groupId,
                 status: 'already-completed'

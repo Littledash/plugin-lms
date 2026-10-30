@@ -28,7 +28,15 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
                 name: 'enrolledAt',
                 type: 'date',
                 admin: {
-                    description: 'When the student was enrolled. Access expiry and lesson release count from this date.',
+                    description: 'When the student was enrolled. Lesson release delays count from this date, and access expiry too unless the access was renewed.',
+                    readOnly: true
+                }
+            },
+            {
+                name: 'accessFrom',
+                type: 'date',
+                admin: {
+                    description: 'Set when access is renewed by a purchase. Access expiry counts from this date instead of the enrollment date.',
                     readOnly: true
                 }
             },

@@ -1,4 +1,4 @@
-import { asSlug, findDoc, getSlugs, includesId, LMSError, takeSeatOnEachPurchase, toIds, withTransaction } from './shared.js';
+import { asSlug, ensureCourseProgress, findDoc, getCoursesProgress, getSlugs, includesId, LMSError, takeSeatOnEachPurchase, toId, toIds, withTransaction } from './shared.js';
 /**
  * Adds a user to a group as a leader or student, using a seat on each purchased course. Does not
  * check who is asking; the endpoint checks that the requester is an admin or a leader of the group.
@@ -14,6 +14,7 @@ import { asSlug, findDoc, getSlugs, includesId, LMSError, takeSeatOnEachPurchase
         if (includesId(members, user.id)) {
             throw new LMSError(`User is already a ${role} in this group.`, 409);
         }
+        const purchasedCourses = Array.isArray(group.purchasedCourses) ? group.purchasedCourses : [];
         await req.payload.update({
             id: group.id,
             collection: asSlug(slugs.groups),
@@ -23,10 +24,30 @@ import { asSlug, findDoc, getSlugs, includesId, LMSError, takeSeatOnEachPurchase
                     user.id
                 ],
                 // Every member uses a seat on each course the group bought
-                purchasedCourses: takeSeatOnEachPurchase(Array.isArray(group.purchasedCourses) ? group.purchasedCourses : [])
+                purchasedCourses: takeSeatOnEachPurchase(purchasedCourses)
             },
             req
         });
+        // Date the member's enrollment now, so access expiry and lesson release delays count from
+        // when they joined rather than from their first lesson
+        const coursesProgress = getCoursesProgress(user);
+        const before = coursesProgress.length;
+        for (const entry of purchasedCourses){
+            const courseId = toId(entry?.seatManagement?.course);
+            if (courseId !== undefined) {
+                ensureCourseProgress(coursesProgress, courseId);
+            }
+        }
+        if (coursesProgress.length > before) {
+            await req.payload.update({
+                id: user.id,
+                collection: asSlug(slugs.students),
+                data: {
+                    coursesProgress
+                },
+                req
+            });
+        }
         req.payload.logger.info(`User ${user.id} added to group ${group.id} as ${role}`);
     });
 

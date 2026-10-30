@@ -3,6 +3,22 @@ import type { PayloadRequest } from 'payload'
 import { type ID, LMSError } from '../services/shared.js'
 
 const hits = new Map<string, number[]>()
+let lastSweep = 0
+
+/** Number of users currently tracked. Exposed for tests. */
+export const trackedRateLimitKeys = (): number => hits.size
+
+/**
+ * Forgets users with no calls inside the window, so the map does not grow with every user the
+ * process has ever seen. Runs at most once per window.
+ */
+const sweep = (now: number, windowMs: number) => {
+  if (now - lastSweep < windowMs) {return}
+  lastSweep = now
+  for (const [key, times] of hits) {
+    if (times.every((time) => now - time >= windowMs)) {hits.delete(key)}
+  }
+}
 
 /**
  * Records one call and returns whether it is still inside the limit. A non-positive `max` means
@@ -20,6 +36,7 @@ export const takeRateLimitSlot = ({
   windowMs: number
 }): boolean => {
   if (max <= 0) {return true}
+  sweep(now, windowMs)
   const recent = (hits.get(key) ?? []).filter((time) => now - time < windowMs)
   if (recent.length >= max) {
     hits.set(key, recent)

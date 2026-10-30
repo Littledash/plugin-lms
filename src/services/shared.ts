@@ -22,6 +22,8 @@ export type ID = DefaultDocumentIDType
 type Relation = { id: ID } | ID | null | undefined
 
 export type CourseProgressEntry = {
+  /** Set by a renewal; access expiry counts from here instead of `enrolledAt`. */
+  accessFrom?: null | string
   completed?: boolean | null
   completedAt?: null | string
   completedLessons: { completedAt: string; lesson: ID }[]

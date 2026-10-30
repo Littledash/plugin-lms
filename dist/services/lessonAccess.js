@@ -21,17 +21,32 @@ const parsedTime = (value)=>{
     const time = Date.parse(value);
     return Number.isNaN(time) ? undefined : time;
 };
+const accessDays = (course)=>{
+    const days = course.courseSettings?.accessExpirationDays;
+    return typeof days === 'number' && days > 0 ? days : undefined;
+};
+/** Access counts from the last renewal, or from enrollment when it was never renewed. */ const accessStart = (progress)=>parsedTime(progress?.accessFrom) ?? parsedTime(progress?.enrolledAt);
 /**
  * Access has expired when the course sets a positive `accessExpirationDays` and the student's
- * enrollment date is at least that many days ago. Enrollments with no date are left open: they
+ * access started at least that many days ago. Enrollments with no date are left open: they
  * predate this field.
  */ export const isAccessExpired = (course, progress, now = new Date())=>{
-    const days = course.courseSettings?.accessExpirationDays;
-    const enrolledAt = parsedTime(progress?.enrolledAt);
-    if (typeof days !== 'number' || days <= 0 || enrolledAt === undefined) {
+    const days = accessDays(course);
+    const start = accessStart(progress);
+    if (days === undefined || start === undefined) {
         return false;
     }
-    return now.getTime() >= enrolledAt + days * DAY_MS;
+    return now.getTime() >= start + days * DAY_MS;
+};
+/**
+ * Starts a new access period for a renewal purchase. A renewal before expiry is added to the end
+ * of the current period, so paid days are not lost; after expiry it starts now. `enrolledAt` is
+ * left alone so lessons already released by their delay stay released.
+ */ export const renewAccess = (course, progress, now = new Date())=>{
+    const days = accessDays(course);
+    const start = accessStart(progress);
+    const currentEnd = days !== undefined && start !== undefined ? start + days * DAY_MS : undefined;
+    progress.accessFrom = new Date(Math.max(now.getTime(), currentEnd ?? 0)).toISOString();
 };
 const isReleased = (lesson, progress, now)=>{
     const settings = lesson.accessSettings ?? {};
