@@ -13,7 +13,7 @@ A comprehensive Learning Management System (LMS) plugin for Payload CMS that ena
 - [Security model](./docs/security.md)
 - How-to guides: [enroll after payment](./docs/how-to/enroll-after-payment.md),
   [certificates](./docs/how-to/certificates.md), [groups and seats](./docs/how-to/groups-and-seats.md),
-  [quizzes](./docs/how-to/quizzes.md), [testing](./docs/how-to/testing.md)
+  [quizzes](./docs/how-to/quizzes.md), [lesson files](./docs/how-to/course-files.md), [testing](./docs/how-to/testing.md)
 
 ## Compatibility
 

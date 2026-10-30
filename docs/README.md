@@ -9,4 +9,5 @@
 - [Award and generate certificates](./how-to/certificates.md)
 - [Sell courses to groups](./how-to/groups-and-seats.md)
 - [Add quizzes to lessons](./how-to/quizzes.md)
+- [Protect lesson files](./how-to/course-files.md)
 - [Run and write the tests](./how-to/testing.md)

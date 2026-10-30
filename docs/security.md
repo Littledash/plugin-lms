@@ -57,6 +57,7 @@ therefore sets every operation on its collections:
 | --- | --- | --- |
 | courses, lessons, topics, categories, tags | admins and authors | anyone (content fields need enrollment) |
 | quizzes, questions, certificates | admins and authors | logged-in users (answer fields hidden) |
+| course-files (lesson downloads) | admins and authors | admins, authors, and students who can open a lesson offering the file now (enrollment, expiry, release and order apply), including downloads |
 | documents (private uploads, certificate PDFs; PDF, images and Word `.docx` by default) | create: logged-in users, who always own what they upload; update and delete: admins | admins, authors and the owner, including file downloads |
 | groups | create and delete: admins; update: admins and group leaders | group members |
 | addresses | create: logged-in users; update and delete: admins and the owner (`customer`). `customer` is set to the logged-in user; only admins can choose or change it | admins and the owner |

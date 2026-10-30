@@ -101,6 +101,14 @@ If you override these fields, your overrides replace the plugin's `access`, so s
   group overrides are what you want before deploying.
 - Self-enrollment refuses draft courses (`404`).
 
+### Lesson files
+
+A lesson's `downloadableFiles` now points at a new protected **course files** collection
+(`course-files`, on by default) instead of media. Files unlock with their lesson: enrollment,
+expiry, release and order apply, including downloads. Existing lessons still hold media IDs, so move
+the files after upgrading, and add `course-files` to your storage adapter. See
+[Protect lesson files](./how-to/course-files.md#moving-existing-files-out-of-media).
+
 ### Certificate files
 
 Certificate PDFs move to a new private **documents** collection (on by default; turn it off with

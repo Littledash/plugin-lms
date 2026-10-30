@@ -31,6 +31,9 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
   `certificates[].document`, dated with the completion date. Public copies in media from older
   versions are deleted when a certificate is first requested.
 - `renderCertificatePDF` returns a certificate's PDF bytes for email attachments.
+- A protected `course-files` upload collection (on by default) for lesson downloads. A file is
+  readable and downloadable only by staff and by students who can open a lesson offering it now
+  (enrollment, expiry, release and order apply). `downloadableFiles` points here instead of media.
 - Integration tests and client tests for the React provider and admin field components.
 
 ### Fixed
@@ -52,6 +55,7 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - The `./addresses` export pointed at a missing file.
 - The groups collection ignored its overrides, including `access`.
 - Draft courses could be self-enrolled in.
+- Lesson downloads were stored in media, so anyone could list and download paid course files.
 - Passing a quiz never completed its lesson (1.x read a `quiz.lesson` field that does not exist).
 - Certificate PDFs from 1.x kept a file name built from the course, certificate and user ids. The
   first request now copies the file to a random name and deletes the old one.
