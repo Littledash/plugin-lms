@@ -355,7 +355,8 @@
       "sharp"
     ],
     "overrides": {
-      "@eslint/plugin-kit": "^0.3.4"
+      "@eslint/plugin-kit": "^0.3.4",
+      "happy-dom": "^21.0.4"
     }
   },
   "registry": "https://registry.npmjs.org/",
