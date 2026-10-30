@@ -105,9 +105,10 @@ Also check:
   script; it does not stop one. A quiz score still reveals how many answers were right. Use
   `attemptLimit` on assessments that matter. The limit is counted in this server process, so run one
   Node process or put your own limit in front of several.
-- `correctAnswer` is stored as `true`, `false` or `both`. It is a text field rendered as a select,
-  because those words are illegal GraphQL enum names. If you do not use GraphQL, turn it off
-  (`graphQL: { disable: true }` in your Payload config), which also removes an attack surface.
+- GraphQL works and applies the same access rules. (`correctAnswer` is a text field rendered as a
+  select, because its stored values `true`, `false` and `both` are illegal GraphQL enum names.) If
+  you do not use GraphQL, turn it off (`graphQL: { disable: true }` in your Payload config) to
+  remove an attack surface you do not need.
 - Group leaders can update their group (for example its title), but `purchasedCourses`, `students`
   and `leaders` are writable only by admins and the LMS services, so leaders cannot grant
   themselves seats or skip seat limits. Whether leaders can delete their group is up to your
