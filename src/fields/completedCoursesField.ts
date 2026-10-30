@@ -1,4 +1,4 @@
-import type { JoinField, RelationshipField } from 'payload'
+import type { JoinField } from 'payload'
 
 /**
  * Props for the roles field configuration
@@ -17,7 +17,6 @@ type Props = {
 export const completedCoursesField: (props: Props) => JoinField = ({
   coursesCollectionSlug,
   overrides,
-  studentsCollectionSlug,
 }) => {
   const field: JoinField = {
     name: 'completedCourses',

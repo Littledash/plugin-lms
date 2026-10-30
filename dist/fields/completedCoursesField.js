@@ -2,7 +2,7 @@
  * Creates a relationship field for completed courses
  * @param props - Configuration overrides for the field
  * @returns A configured relationship field for completed courses
- */ export const completedCoursesField = ({ coursesCollectionSlug, overrides, studentsCollectionSlug })=>{
+ */ export const completedCoursesField = ({ coursesCollectionSlug, overrides })=>{
     const field = {
         name: 'completedCourses',
         type: 'join',

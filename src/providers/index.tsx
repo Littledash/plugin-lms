@@ -3,11 +3,11 @@
 import type { DefaultDocumentIDType, TypedUser } from 'payload'
 
 import * as qs from 'qs-esm'
-import React, { createContext, use, useCallback, useEffect, useReducer, useState } from 'react'
+import React, { createContext, use, useCallback, useEffect, useReducer } from 'react'
 
 import type { CourseProgress, LMSContextType, LMSProviderProps } from './types.js'
 
-import { initialState, lmsReducer, type LMSState } from './reducer.js'
+import { initialState, lmsReducer } from './reducer.js'
 
 const defaultContext: LMSContextType = {
   addUserToGroup: async () => {},

@@ -3,7 +3,6 @@
 
 import type { Field } from 'payload'
 
-import { findFieldByNameAndType } from './findFieldByNameAndType.js'
 
 /**
  * Simple object check.
@@ -90,8 +89,8 @@ const mergeFieldConfigurations = (existingField: Field, newField: Field): Field 
   if (existingField.options && newField.options) {
     // For select fields, merge options arrays
     if (Array.isArray(existingField.options) && Array.isArray(newField.options)) {
-      const existingOptions = existingField.options as any[]
-      const newOptions = newField.options as any[]
+      const existingOptions = existingField.options as unknown[]
+      const newOptions = newField.options as unknown[]
       
       // Create a map of existing options by value to avoid duplicates
       const optionsMap = new Map()

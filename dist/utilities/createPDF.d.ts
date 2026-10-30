@@ -26,5 +26,5 @@ type createPDFProps = {
     studentName: string;
     templateImage: string;
 };
-export declare const createPDF: ({ authorName, certificateNumber, completionDate, courseTitle, description, fontFamily, studentName, templateImage, }: createPDFProps) => Promise<Uint8Array>;
+export declare const createPDF: ({ authorName, completionDate, courseTitle, description, studentName, templateImage, }: createPDFProps) => Promise<Uint8Array>;
 export {};

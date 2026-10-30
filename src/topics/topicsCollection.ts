@@ -36,7 +36,6 @@ export const topicsCollection: (props?: Props) => CollectionConfig<'topics'> = (
     lessonsCollectionSlug = 'lessons',
     mediaCollectionSlug = 'media',
     overrides,
-    quizzesCollectionSlug = 'quizzes',
   } = props || {}
   const fieldsOverride = overrides?.fields
 

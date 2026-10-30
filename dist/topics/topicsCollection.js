@@ -9,7 +9,7 @@ import { videoProgression } from '../fields/videoProgression.js';
  * @param props - Configuration properties for the topics collection
  * @returns CollectionConfig object for topics
  */ export const topicsCollection = (props)=>{
-    const { coursesCollectionSlug = 'courses', lessonsCollectionSlug = 'lessons', mediaCollectionSlug = 'media', overrides, quizzesCollectionSlug = 'quizzes' } = props || {};
+    const { coursesCollectionSlug = 'courses', lessonsCollectionSlug = 'lessons', mediaCollectionSlug = 'media', overrides } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the topics collection

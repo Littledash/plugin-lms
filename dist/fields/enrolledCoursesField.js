@@ -2,7 +2,7 @@
  * Creates a relationship field for enrolled courses
  * @param props - Configuration overrides for the field
  * @returns A configured relationship field for enrolled courses
- */ export const enrolledCoursesField = ({ coursesCollectionSlug, overrides, studentsCollectionSlug })=>{
+ */ export const enrolledCoursesField = ({ coursesCollectionSlug, overrides })=>{
     const field = {
         name: 'enrolledCourses',
         type: 'join',

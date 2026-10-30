@@ -7,7 +7,7 @@ export const sanitizePluginConfig = ({ pluginConfig })=>{
     };
     if (typeof config.students === 'undefined' || typeof config.students === 'boolean' && config.students === true) {
         config.students = {
-            studentsFields: ({ defaultFields })=>defaultStudentFields()
+            studentsFields: ()=>defaultStudentFields()
         };
     } else {
         const studentFields = typeof pluginConfig.students === 'object' && typeof pluginConfig.students.studentsFields === 'function' && pluginConfig.students.studentsFields({
@@ -16,12 +16,12 @@ export const sanitizePluginConfig = ({ pluginConfig })=>{
         config.students = {
             slug: 'users',
             ...config.students,
-            studentsFields: ({ defaultFields })=>studentFields
+            studentsFields: ()=>studentFields
         };
     }
     if (typeof config.addresses === 'undefined' || typeof config.addresses === 'boolean' && config.addresses === true) {
         config.addresses = {
-            addressFields: ({ defaultFields })=>defaultAddressFields()
+            addressFields: ()=>defaultAddressFields()
         };
     } else {
         const addressFields = typeof pluginConfig.addresses === 'object' && typeof pluginConfig.addresses.addressFields === 'function' && pluginConfig.addresses.addressFields({
@@ -29,7 +29,7 @@ export const sanitizePluginConfig = ({ pluginConfig })=>{
         }) || defaultAddressFields();
         config.addresses = {
             ...config.addresses,
-            addressFields: ({ defaultFields })=>addressFields
+            addressFields: ()=>addressFields
         };
     }
     if (typeof config.endpoints === 'undefined' || typeof config.endpoints === 'boolean' && config.endpoints === true) {

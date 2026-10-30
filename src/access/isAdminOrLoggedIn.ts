@@ -15,7 +15,6 @@ export const isAdminOrLoggedIn: Access = ({ req: { user } }: AccessArgs<User>) =
 }
 
 export const isAdminOrLoggedInFieldLevel: FieldAccess<{ id: string }, User> = ({
-  id,
   req: { user },
 }) => {
   if (checkRole(['admin'], user)) {return true}

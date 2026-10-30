@@ -17,7 +17,6 @@ type Props = {
 export const enrolledCoursesField: (props: Props) => JoinField = ({
   coursesCollectionSlug,
   overrides,
-  studentsCollectionSlug,
 }) => {
   const field: JoinField = {
     name: 'enrolledCourses',

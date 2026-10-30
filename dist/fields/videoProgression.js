@@ -16,7 +16,7 @@
                 name: 'displayTiming',
                 type: 'select',
                 admin: {
-                    description: 'Before completed sub-steps: The video will be shown and must be fully watched before the user can access the lesson\’s associated steps | After completed sub-steps:  The video will be visible after the user has completed the lesson’\s associated steps. The full video must be watched in order to complete the lesson.'
+                    description: 'Before completed sub-steps: The video will be shown and must be fully watched before the user can access the lesson’s associated steps | After completed sub-steps: The video will be visible after the user has completed the lesson’s associated steps. The full video must be watched in order to complete the lesson.'
                 },
                 defaultValue: 'before',
                 options: [

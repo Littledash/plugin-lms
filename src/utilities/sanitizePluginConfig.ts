@@ -1,4 +1,3 @@
-import type { Field } from 'payload'
 
 import type { LMSPluginConfig, SanitizedLMSPluginConfig } from '../types.js'
 
@@ -20,7 +19,7 @@ export const sanitizePluginConfig = ({ pluginConfig }: Props): SanitizedLMSPlugi
     (typeof config.students === 'boolean' && config.students === true)
   ) {
     config.students = {
-      studentsFields: ({ defaultFields }: { defaultFields: Field[] }) => defaultStudentFields(),
+      studentsFields: () => defaultStudentFields(),
     }
   } else {
     const studentFields =
@@ -32,7 +31,7 @@ export const sanitizePluginConfig = ({ pluginConfig }: Props): SanitizedLMSPlugi
     config.students = {
       slug: 'users',
       ...config.students,
-      studentsFields: ({ defaultFields }: { defaultFields: Field[] }) => studentFields,
+      studentsFields: () => studentFields,
     }
   }
 
@@ -41,7 +40,7 @@ export const sanitizePluginConfig = ({ pluginConfig }: Props): SanitizedLMSPlugi
     (typeof config.addresses === 'boolean' && config.addresses === true)
   ) {
     config.addresses = {
-      addressFields: ({ defaultFields }: { defaultFields: Field[] }) => defaultAddressFields(),
+      addressFields: () => defaultAddressFields(),
     }
   } else {
     const addressFields =
@@ -54,7 +53,7 @@ export const sanitizePluginConfig = ({ pluginConfig }: Props): SanitizedLMSPlugi
 
     config.addresses = {
       ...config.addresses,
-      addressFields: ({ defaultFields }: { defaultFields: Field[] }) => addressFields,
+      addressFields: () => addressFields,
     }
   }
 
