@@ -89,6 +89,9 @@ export type TagsConfig = {
 export type DocumentsConfig = {
     documentsCollection?: CollectionOverride;
 };
+export type CourseFilesConfig = {
+    courseFilesCollection?: CollectionOverride;
+};
 export type CertificateConfig = {
     certificatesCollection?: CollectionOverride;
 };
@@ -108,6 +111,7 @@ export type CollectionSlugMap = {
     categories: string;
     certificates: string;
     coupons: string;
+    courseFiles: string;
     courses: string;
     documents: string;
     groups: string;
@@ -204,6 +208,14 @@ export type LMSPluginConfig = {
          */
         userSlug: string;
     }) => Promise<Record<string, unknown>> | Record<string, unknown>;
+    /**
+     * Protected uploads for lesson materials (`course-files`). A lesson's downloadable files are
+     * stored here and unlock with the lesson: enrollment, release, order and access expiry apply.
+     * When turned off, lessons fall back to the media collection, which is usually public.
+     *
+     * @default true
+     */
+    courseFiles?: boolean | CourseFilesConfig;
     /**
      * Enable courses collection.
      *

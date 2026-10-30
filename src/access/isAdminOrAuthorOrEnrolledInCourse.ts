@@ -257,3 +257,48 @@ export const isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel: FieldAccess = asyn
   }
   return false
 }
+
+const openFileIdsCache = new WeakMap<PayloadRequest, Promise<ID[]>>()
+
+/**
+ * IDs of the course files the logged-in user can open right now: the downloadable files of
+ * lessons they can open (enrolled, access not expired, released, and earlier lessons done in
+ * linear courses). Cached per request.
+ */
+export const getOpenCourseFileIds = (req: PayloadRequest): Promise<ID[]> => {
+  let fileIds = openFileIdsCache.get(req)
+  if (!fileIds) {
+    fileIds = (async () => {
+      const lessonIds = await lessonIdsOnEnrolledCourses(req)
+      if (lessonIds.length === 0) {return []}
+      const { docs: lessons } = await req.payload.find({
+        collection: asSlug(getSlugs(req).lessons),
+        depth: 0,
+        pagination: false,
+        req,
+        where: { id: { in: lessonIds } },
+      })
+      const open: ID[] = []
+      for (const lesson of lessons as LMSDoc[]) {
+        const files = toIds(lesson.lessonSettings?.downloadableFiles)
+        if (files.length > 0 && (await lessonIsAvailable(req, lesson))) {
+          open.push(...files)
+        }
+      }
+      return open
+    })()
+    openFileIdsCache.set(req, fileIds)
+  }
+  return fileIds
+}
+
+/**
+ * Course files: admins and authors, or students who can open a lesson that offers the file.
+ * Applies to single reads, lists and file downloads.
+ */
+export const isAdminOrAuthorOrCanOpenCourseFile: Access = async ({ req }) => {
+  if (!req.user) {return false}
+  if (checkRole(['admin', 'author'], req.user)) {return true}
+  const fileIds = await getOpenCourseFileIds(req)
+  return fileIds.length > 0 ? { id: { in: fileIds } } : false
+}

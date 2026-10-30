@@ -9,6 +9,8 @@ import type { FieldsOverride } from '../types.js';
  */
 type Props = {
     categoriesCollectionSlug?: string;
+    /** Where downloadable files are stored (default: 'course-files'). */
+    courseFilesCollectionSlug?: string;
     coursesCollectionSlug?: string;
     mediaCollectionSlug?: string;
     overrides?: {

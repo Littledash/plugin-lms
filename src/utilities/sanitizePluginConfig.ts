@@ -105,6 +105,11 @@ export const sanitizePluginConfig = ({ pluginConfig }: Props): SanitizedLMSPlugi
     if (typeof config.documents === 'undefined') {
       config.documents = true
     }
+
+    // Lesson downloads are paid content, so they are protected unless turned off
+    if (typeof config.courseFiles === 'undefined') {
+      config.courseFiles = true
+    }
     
     
   return config as SanitizedLMSPluginConfig

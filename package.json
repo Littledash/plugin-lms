@@ -94,6 +94,11 @@
       "types": "./dist/exports/documents.d.ts",
       "default": "./dist/exports/documents.js"
     },
+    "./course-files": {
+      "import": "./dist/exports/courseFiles.js",
+      "types": "./dist/exports/courseFiles.d.ts",
+      "default": "./dist/exports/courseFiles.js"
+    },
     "./topics": {
       "import": "./dist/exports/topics.js",
       "types": "./dist/exports/topics.d.ts",

@@ -153,6 +153,7 @@ export default buildConfig({
         studentsCollection: studentCollection,
       },
       // Drafts on, as in the consuming site
+      courseFiles: { courseFilesCollection: { upload: { staticDir: path.resolve(dirname, 'course-files') } } },
       courses: { coursesCollection: { versions: { drafts: true } } },
       documents: {
         documentsCollection: {

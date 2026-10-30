@@ -70,6 +70,10 @@ export const sanitizePluginConfig = ({ pluginConfig })=>{
     if (typeof config.documents === 'undefined') {
         config.documents = true;
     }
+    // Lesson downloads are paid content, so they are protected unless turned off
+    if (typeof config.courseFiles === 'undefined') {
+        config.courseFiles = true;
+    }
     return config;
 };
 

@@ -2,6 +2,7 @@ import { anyone } from './anyone.js';
 import { checkRole } from './checkRole.js';
 import { isAdmin } from './isAdmin.js';
 import { isAdminOrAuthor } from './isAdminOrAuthor.js';
+import { isAdminOrAuthorOrCanOpenCourseFile } from './isAdminOrAuthorOrEnrolledInCourse.js';
 import { isAdminOrGroupLeader } from './isAdminOrGroupLeader.js';
 import { isAdminOrLoggedIn } from './isAdminOrLoggedIn.js';
 import { isAdminOrSelf } from './isAdminOrSelf.js';
@@ -62,6 +63,8 @@ const authoredContent = (read)=>({
     certificates: authoredContent(isAdminOrLoggedIn),
     // Lesson and course content fields have their own enrollment checks
     courses: authoredContent(anyone),
+    // Lesson files unlock with their lesson, including downloads
+    courseFiles: authoredContent(isAdminOrAuthorOrCanOpenCourseFile),
     // Private files: the owner and staff only, including downloads
     documents: {
         create: isAdminOrLoggedIn,

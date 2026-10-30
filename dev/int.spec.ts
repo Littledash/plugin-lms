@@ -1725,3 +1725,120 @@ describe('private documents', () => {
   })
 })
 
+describe('course files', () => {
+  const courseFile = async (title = 'Workbook') => {
+    const data = Buffer.from(await (await PDFDocument.create()).save())
+    return (await payload.create({
+      collection: 'course-files',
+      data: { title },
+      file: { name: `workbook-${++counter}.pdf`, data, mimetype: 'application/pdf', size: data.length },
+    })) as unknown as Doc
+  }
+
+  const lessonWithFile = async (file: Doc, accessSettings?: Record<string, unknown>) => {
+    const lesson = await createLesson()
+    await payload.update({
+      id: lesson.id,
+      collection: 'lessons',
+      data: { lessonSettings: { downloadableFiles: [file.id] }, ...(accessSettings ? { accessSettings } : {}) },
+    })
+    return lesson
+  }
+
+  const canOpen = async (user: Doc | null, file: Doc) => {
+    const client = user ? await clientFor(user) : anonymous()
+    const options = user ? {} : { auth: false }
+    const read = await client.GET(`/course-files/${file.id}`, options)
+    const download = await client.GET(`/course-files/file/${file.filename}`, options)
+    return read.status === 200 && download.status === 200
+  }
+
+  it('enrolled students can open and download a lesson file; others cannot', async () => {
+    const file = await courseFile()
+    const course = await createCourse({ accessMode: 'buy now', lessons: [{ lesson: (await lessonWithFile(file)).id }] })
+    const student = await createUser()
+    await enroll(student, course)
+
+    expect(await canOpen(student, file)).toBe(true)
+    expect(await canOpen(await createUser(), file)).toBe(false)
+    expect(await canOpen(null, file)).toBe(false)
+    expect(await canOpen(await createUser(['author']), file)).toBe(true)
+  })
+
+  it('lists only the files a student can open', async () => {
+    const mine = await courseFile('Mine')
+    await courseFile('Someone else')
+    const course = await createCourse({ lessons: [{ lesson: (await lessonWithFile(mine)).id }] })
+    const student = await createUser()
+    await enroll(student, course)
+
+    const list = await (await (await clientFor(student)).GET('/course-files')).json()
+    expect(list.docs.map((doc: Doc) => doc.id)).toEqual([mine.id])
+  })
+
+  it('a file stays locked until its lesson is released', async () => {
+    const file = await courseFile()
+    const lesson = await lessonWithFile(file, {
+      lessonReleaseDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      lessonReleaseSchedule: 'specificDate',
+    })
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    const student = await createUser()
+    await enroll(student, course)
+
+    expect(await canOpen(student, file)).toBe(false)
+  })
+
+  it('in a linear course a later lesson file unlocks once the earlier lesson is done', async () => {
+    const first = await createLesson()
+    const file = await courseFile()
+    const second = await lessonWithFile(file)
+    const course = await createCourse({ lessons: [{ lesson: first.id }, { lesson: second.id }] })
+    const student = await createUser()
+    await enroll(student, course)
+
+    expect(await canOpen(student, file)).toBe(false)
+    await post(await clientFor(student), 'complete-lesson', { courseId: course.id, lessonId: first.id })
+    expect(await canOpen(student, file)).toBe(true)
+  })
+
+  it('a file locks again when course access expires', async () => {
+    const file = await courseFile()
+    const course = await createCourse({ lessons: [{ lesson: (await lessonWithFile(file)).id }] })
+    await payload.update({ id: course.id, collection: 'courses', data: { courseSettings: { accessExpirationDays: 30 } } })
+    const student = await createUser()
+    await enroll(student, course)
+    await setEnrolledAt(student.id, course.id, daysAgo(40))
+
+    expect(await canOpen(student, file)).toBe(false)
+  })
+
+  it('group members can open the files of their group course', async () => {
+    const file = await courseFile()
+    const course = await createCourse({ accessMode: 'buy now', lessons: [{ lesson: (await lessonWithFile(file)).id }] })
+    const coupon = (await payload.create({ collection: 'coupons', data: {} })) as unknown as Doc
+    await enrollUser({
+      courseId: course.id,
+      group: { companyName: 'Files Co', couponId: coupon.id, isLeader: true, totalSeats: 3 },
+      req: { payload } as never,
+      userId: (await createUser()).id,
+    })
+    const member = await createUser()
+    await enrollUser({
+      courseId: course.id,
+      group: { couponId: coupon.id, isLeader: false },
+      req: { payload } as never,
+      userId: member.id,
+    })
+
+    expect(await canOpen(member, file)).toBe(true)
+  })
+
+  it('students cannot upload course files', async () => {
+    const response = await (await clientFor(await createUser())).POST('/course-files', {
+      body: JSON.stringify({ title: 'Nope' }),
+    })
+    expect(response.status).toBe(403)
+  })
+})
+

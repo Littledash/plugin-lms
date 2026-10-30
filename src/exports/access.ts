@@ -4,6 +4,8 @@ export { isAdmin, isAdminFieldLevel } from '../access/isAdmin.js'
 export { isAdminOrAuthor, isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
 export {
   getEnrolledCourseIds,
+  getOpenCourseFileIds,
+  isAdminOrAuthorOrCanOpenCourseFile,
   isAdminOrAuthorOrEnrolledInCourse,
   isAdminOrAuthorOrEnrolledInCourseFieldLevel,
   isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel,

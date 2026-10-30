@@ -2,7 +2,7 @@ export { anyone } from '../access/anyone.js';
 export { checkRole } from '../access/checkRole.js';
 export { isAdmin, isAdminFieldLevel } from '../access/isAdmin.js';
 export { isAdminOrAuthor, isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
-export { getEnrolledCourseIds, isAdminOrAuthorOrEnrolledInCourse, isAdminOrAuthorOrEnrolledInCourseFieldLevel, isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel, isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
+export { getEnrolledCourseIds, getOpenCourseFileIds, isAdminOrAuthorOrCanOpenCourseFile, isAdminOrAuthorOrEnrolledInCourse, isAdminOrAuthorOrEnrolledInCourseFieldLevel, isAdminOrAuthorOrEnrolledInQuizCourseFieldLevel, isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 export { isAdminOrAuthorOrStudent, isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js';
 export { isAdminOrGroupLeader } from '../access/isAdminOrGroupLeader.js';
 export { isAdminOrLoggedIn, isAdminOrLoggedInFieldLevel } from '../access/isAdminOrLoggedIn.js';

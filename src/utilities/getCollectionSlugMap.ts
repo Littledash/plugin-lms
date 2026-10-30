@@ -5,6 +5,7 @@ export const defaultCollectionSlugMap: CollectionSlugMap = {
   categories: 'categories',
   certificates: 'certificates',
   coupons: 'coupons',
+  courseFiles: 'course-files',
   courses: 'courses',
   documents: 'documents',
   groups: 'groups',
@@ -92,6 +93,13 @@ export const getCollectionSlugMap = ({ sanitizedPluginConfig }: Props): Collecti
     sanitizedPluginConfig.categories.categoriesCollection?.slug
   ) {
     collectionSlugsMap.categories = sanitizedPluginConfig.categories.categoriesCollection.slug
+  }
+
+  if (
+    typeof sanitizedPluginConfig.courseFiles === 'object' &&
+    sanitizedPluginConfig.courseFiles.courseFilesCollection?.slug
+  ) {
+    collectionSlugsMap.courseFiles = sanitizedPluginConfig.courseFiles.courseFilesCollection.slug
   }
 
   if (

@@ -53,6 +53,17 @@ export declare const defaultAccess: {
         unlock?: Access;
         update?: Access;
     };
+    courseFiles: {
+        admin?: ({ req }: {
+            req: import("payload").PayloadRequest;
+        }) => boolean | Promise<boolean>;
+        create?: Access;
+        delete?: Access;
+        read?: Access;
+        readVersions?: Access;
+        unlock?: Access;
+        update?: Access;
+    };
     documents: {
         create: Access;
         delete: (args: import("payload").AccessArgs<import("payload").User>) => boolean;

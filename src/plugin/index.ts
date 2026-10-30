@@ -5,6 +5,7 @@ import type { LMSPluginConfig, SanitizedLMSPluginConfig } from '../types.js'
 import { addressesCollection } from '../addresses/addressesCollection.js'
 import { categoriesCollection } from '../categoires/categoriesCollection.js'
 import { certificatesCollection } from '../certificates/certificatesCollection.js'
+import { courseFilesCollection } from '../courseFiles/courseFilesCollection.js'
 import { coursesCollection } from '../courses/coursesCollection.js'
 import { documentsCollection } from '../documents/documentsCollection.js'
 import { addUserToGroupHandler } from '../endpoints/add-user-to-group.js'
@@ -148,6 +149,10 @@ export const lmsPlugin =
 
       const lessons = lessonsCollection({
         categoriesCollectionSlug: collectionSlugMap.categories,
+        // Without the course files collection, lesson files fall back to media
+        courseFilesCollectionSlug: sanitizedPluginConfig.courseFiles
+          ? collectionSlugMap.courseFiles
+          : collectionSlugMap.media,
         coursesCollectionSlug: collectionSlugMap.courses,
         mediaCollectionSlug: collectionSlugMap.media,
         overrides: collectionOverrides,
@@ -197,6 +202,15 @@ export const lmsPlugin =
         overrides: collectionOverrides,
       })
       incomingConfig.collections.push(categories)
+    }
+
+    if (sanitizedPluginConfig.courseFiles) {
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.courseFiles === 'object'
+          ? sanitizedPluginConfig.courseFiles.courseFilesCollection
+          : undefined
+
+      incomingConfig.collections.push(courseFilesCollection({ overrides: collectionOverrides }))
     }
 
     if (sanitizedPluginConfig.documents) {

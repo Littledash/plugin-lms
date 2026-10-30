@@ -1,0 +1,41 @@
+import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
+/**
+ * Files that come with paid lessons, such as workbooks and handouts. A file is readable, and
+ * downloadable, only by students who can currently open a lesson offering it, and by admins and
+ * authors. Public images belong in the media collection instead.
+ */ export const courseFilesCollection = (props)=>{
+    const { overrides } = props || {};
+    const fieldsOverride = overrides?.fields;
+    const defaultFields = [
+        {
+            name: 'title',
+            type: 'text'
+        }
+    ];
+    const fields = fieldsOverride && typeof fieldsOverride === 'function' ? fieldsOverride({
+        defaultFields
+    }) : defaultFields;
+    const baseConfig = {
+        slug: 'course-files',
+        timestamps: true,
+        // Only staff upload here; Payload still refuses executables and other restricted types
+        upload: true,
+        ...overrides,
+        access: withDefaultAccess(defaultAccess.courseFiles, overrides?.access),
+        admin: {
+            defaultColumns: [
+                'filename',
+                'title',
+                'updatedAt'
+            ],
+            useAsTitle: 'filename',
+            ...overrides?.admin
+        },
+        fields
+    };
+    return {
+        ...baseConfig
+    };
+};
+
+//# sourceMappingURL=courseFilesCollection.js.map

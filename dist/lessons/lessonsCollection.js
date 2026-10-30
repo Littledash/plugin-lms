@@ -9,7 +9,7 @@ import { videoProgression } from '../fields/videoProgression.js';
  * @param props - Configuration properties for the lessons collection
  * @returns CollectionConfig object for lessons
  */ export const lessonsCollection = (props)=>{
-    const { categoriesCollectionSlug = 'categories', coursesCollectionSlug = 'courses', mediaCollectionSlug = 'media', overrides, quizzesCollectionSlug = 'quizzes', studentsCollectionSlug = 'users' } = props || {};
+    const { categoriesCollectionSlug = 'categories', courseFilesCollectionSlug = 'course-files', coursesCollectionSlug = 'courses', mediaCollectionSlug = 'media', overrides, quizzesCollectionSlug = 'quizzes', studentsCollectionSlug = 'users' } = props || {};
     const fieldsOverride = overrides?.fields;
     /**
    * Default fields for the lessons collection
@@ -88,7 +88,8 @@ import { videoProgression } from '../fields/videoProgression.js';
                                 description: 'The downloadable files of the lesson'
                             },
                             hasMany: true,
-                            relationTo: mediaCollectionSlug
+                            // Protected files that unlock with the lesson, not public media
+                            relationTo: courseFilesCollectionSlug
                         },
                         embeddedVideo({
                             mediaCollectionSlug,

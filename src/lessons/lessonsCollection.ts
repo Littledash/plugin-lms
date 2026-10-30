@@ -15,6 +15,8 @@ import { videoProgression } from '../fields/videoProgression.js'
  */
 type Props = {
   categoriesCollectionSlug?: string
+  /** Where downloadable files are stored (default: 'course-files'). */
+  courseFilesCollectionSlug?: string
   coursesCollectionSlug?: string
   mediaCollectionSlug?: string
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
@@ -32,6 +34,7 @@ type Props = {
 export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> = (props) => {
   const {
     categoriesCollectionSlug = 'categories',
+    courseFilesCollectionSlug = 'course-files',
     coursesCollectionSlug = 'courses',
     mediaCollectionSlug = 'media',
     overrides,
@@ -119,7 +122,8 @@ export const lessonsCollection: (props?: Props) => CollectionConfig<'lessons'> =
                   'The downloadable files of the lesson',
               },
               hasMany: true,
-              relationTo: mediaCollectionSlug,
+              // Protected files that unlock with the lesson, not public media
+              relationTo: courseFilesCollectionSlug,
             },
             embeddedVideo({
               mediaCollectionSlug,
