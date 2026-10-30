@@ -71,8 +71,15 @@ Move them with a one-off script:
    `payload.db.findOne`, so they are not resolved against the new collection).
 3. For each media file: download its bytes, create a `course-files` document with the same file
    name and title, and remember the new ID.
-4. Save the lesson with the new IDs.
-5. Once every lesson is moved and checked, delete the old media files so they are no longer public.
+4. Write the new IDs to the lesson **without saving it through Payload**. Lessons have drafts, and
+   `payload.update` builds from the newest version, so it can publish a pending draft. Use
+   `payload.db.updateOne` for the lesson and update every saved version as well (for example with
+   `payload.db.updateVersion`), so restoring an old version cannot bring the media IDs back.
+5. Read each lesson back at depth 1 and check its downloads resolve.
+6. Make it safe to re-run: reuse an existing course file with the same file name, and move a media
+   file shared by several lessons (or used elsewhere, such as by a product) only once.
+7. Once every lesson is moved and checked, delete the old media files that nothing else uses, so
+   they are no longer public.
 
 Run it straight after deploying: until it finishes, lessons show no downloadable files.
 
