@@ -57,7 +57,7 @@ therefore sets every operation on its collections:
 | --- | --- | --- |
 | courses, lessons, topics, categories, tags | admins and authors | anyone (content fields need enrollment) |
 | quizzes, questions, certificates | admins and authors | logged-in users (answer fields hidden) |
-| documents (private uploads, certificate PDFs) | create: logged-in users, who always own what they upload; update and delete: admins | admins, authors and the owner, including file downloads |
+| documents (private uploads, certificate PDFs; PDF, images and Word `.docx` by default) | create: logged-in users, who always own what they upload; update and delete: admins | admins, authors and the owner, including file downloads |
 | groups | create and delete: admins; update: admins and group leaders | group members |
 | addresses | create: logged-in users; update and delete: admins and the owner (`customer`). `customer` is set to the logged-in user; only admins can choose or change it | admins and the owner |
 | students | create: anyone; update: admins and the user; delete: admins | admins and the user |
@@ -95,7 +95,10 @@ Also check:
   else that must not be public there too, such as files sent through site forms, rather than in a
   media collection that anyone can read and list. With a storage adapter such as S3, add
   `documents` to its collections and leave `disablePayloadAccessControl` off so downloads are
-  checked. Do not let ordinary users `create`, `update` or `delete` media.
+  checked. File types are checked against each file's contents. To accept more, override
+  `upload.mimeTypes` starting from `DEFAULT_DOCUMENT_MIME_TYPES` (`@littledash/plugin-lms/documents`).
+  Old `.doc` files are left out on purpose: they are detected as a generic Office container that
+  also admits spreadsheets, presentations and files carrying macros. Do not let ordinary users `create`, `update` or `delete` media.
 
 ## Known limits
 

@@ -1,6 +1,15 @@
 import { checkRole } from '../access/checkRole.js';
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 /**
+ * Accepted file types, checked against the file's contents rather than its name. Word is `.docx`
+ * only: older `.doc` files are detected as a generic Office container that also covers
+ * spreadsheets, presentations and macro-carrying files, so they are left out.
+ */ export const DEFAULT_DOCUMENT_MIME_TYPES = [
+    'application/pdf',
+    'image/*',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+];
+/**
  * Only admins choose the owner. Anyone else always owns what they upload, so a document cannot be
  * filed under another user. Server code with no user on the request (the LMS services) keeps the
  * owner it passes.
@@ -47,10 +56,7 @@ import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
         slug: 'documents',
         timestamps: true,
         upload: {
-            mimeTypes: [
-                'application/pdf',
-                'image/*'
-            ]
+            mimeTypes: DEFAULT_DOCUMENT_MIME_TYPES
         },
         ...overrides,
         access: withDefaultAccess(defaultAccess.documents, overrides?.access),

@@ -1,1 +1,1 @@
-{"version":3,"sources":["../../src/exports/documents.ts"],"sourcesContent":["export { documentsCollection } from '../documents/documentsCollection.js'\n"],"names":["documentsCollection"],"mappings":"AAAA,SAASA,mBAAmB,QAAQ,sCAAqC"}
+{"version":3,"sources":["../../src/exports/documents.ts"],"sourcesContent":["export { DEFAULT_DOCUMENT_MIME_TYPES, documentsCollection } from '../documents/documentsCollection.js'\n"],"names":["DEFAULT_DOCUMENT_MIME_TYPES","documentsCollection"],"mappings":"AAAA,SAASA,2BAA2B,EAAEC,mBAAmB,QAAQ,sCAAqC"}

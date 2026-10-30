@@ -12,6 +12,7 @@ import type { CollectionOverride } from '../src/types.js'
 import { anyone } from '../src/access/anyone.js'
 import { isAdmin, isAdminFieldLevel } from '../src/access/isAdmin.js'
 import { isAdminOrSelf } from '../src/access/isAdminOrSelf.js'
+import { DEFAULT_DOCUMENT_MIME_TYPES } from '../src/documents/documentsCollection.js'
 import { lmsPlugin } from '../src/index.js'
 import { devUser } from './helpers/credentials.js'
 import { testEmailAdapter } from './helpers/testEmailAdapter.js'
@@ -155,7 +156,7 @@ export default buildConfig({
       courses: { coursesCollection: { versions: { drafts: true } } },
       documents: {
         documentsCollection: {
-          upload: { mimeTypes: ['application/pdf', 'image/*'], staticDir: path.resolve(dirname, 'documents') },
+          upload: { mimeTypes: DEFAULT_DOCUMENT_MIME_TYPES, staticDir: path.resolve(dirname, 'documents') },
         },
       },
       lessons: true,

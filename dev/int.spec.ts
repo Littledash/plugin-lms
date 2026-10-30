@@ -22,6 +22,7 @@ import {
   renderCertificatePDF,
 } from '../src/exports/services.js'
 import { NextRESTClient } from './helpers/NextRESTClient.js'
+import { docx, zip } from './helpers/zip.js'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Doc = { [key: string]: any; id: string }
@@ -1687,6 +1688,28 @@ describe('private documents', () => {
     const document = await upload(victim, student)
 
     expect(String(document.owner?.id ?? document.owner)).toBe(student.id)
+  })
+
+  const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
+  const uploadFile = async (data: Buffer, name: string, mimetype: string) =>
+    payload.create({
+      collection: 'documents',
+      data: { owner: (await createUser()).id },
+      file: { name, data, mimetype, size: data.length },
+    })
+
+  it('accepts Word documents', async () => {
+    const document = (await uploadFile(docx(), 'letter.docx', DOCX_MIME)) as unknown as Doc
+    expect(document.mimeType).toBe(DOCX_MIME)
+  })
+
+  it.each([
+    ['a zip archive renamed to .docx', zip({ 'notes.txt': 'hello' })],
+    // The start of an old Office container (.doc, .xls, .ppt and macro files share it)
+    ['an old-style Office file renamed to .docx', Buffer.concat([Buffer.from('d0cf11e0a1b11ae1', 'hex'), Buffer.alloc(504)])],
+  ])('rejects %s', async (_label, data) => {
+    await expect(uploadFile(data, 'letter.docx', DOCX_MIME)).rejects.toThrow(/invalid/i)
   })
 
   it('students cannot edit or delete documents, even their own', async () => {
