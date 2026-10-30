@@ -41,6 +41,25 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
                 }
             },
             {
+                name: 'renewals',
+                type: 'array',
+                admin: {
+                    description: 'Purchases applied to this course. A purchase is only ever applied once.',
+                    readOnly: true
+                },
+                fields: [
+                    {
+                        name: 'key',
+                        type: 'text',
+                        required: true
+                    },
+                    {
+                        name: 'renewedAt',
+                        type: 'date'
+                    }
+                ]
+            },
+            {
                 name: 'completed',
                 type: 'checkbox',
                 defaultValue: false

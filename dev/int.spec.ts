@@ -1490,7 +1490,12 @@ describe('access renewal', () => {
     const client = await clientFor(user)
     expect((await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })).status).toBe(403)
 
-    const result = await enrollUser({ courseId: course.id, renew: true, req: { payload } as never, userId: user.id })
+    const result = await enrollUser({
+      courseId: course.id,
+      renewal: { key: 'order-1' },
+      req: { payload } as never,
+      userId: user.id,
+    })
 
     expect(result.status).toBe('renewed')
     const progress = await progressFor(user.id, course.id)
@@ -1506,13 +1511,52 @@ describe('access renewal', () => {
     const enrolledAt = daysAgo(10)
     await setEnrolledAt(user.id, course.id, enrolledAt)
 
-    await enrollUser({ courseId: course.id, renew: true, req: { payload } as never, userId: user.id })
+    await enrollUser({ courseId: course.id, renewal: { key: 'order-2' }, req: { payload } as never, userId: user.id })
 
     const progress = await progressFor(user.id, course.id)
     expect(Date.parse(progress.accessFrom)).toBe(Date.parse(enrolledAt) + 30 * DAY)
   })
 
-  it('enrolling again without renew, including over HTTP, does not extend access', async () => {
+  it('applies a purchase key once, however many times fulfilment runs', async () => {
+    const { course } = await expiringCourse(30)
+    const user = await createUser()
+    await enroll(user, course)
+    await setEnrolledAt(user.id, course.id, daysAgo(40))
+    const renew = (key: string) =>
+      enrollUser({ courseId: course.id, renewal: { key }, req: { payload } as never, userId: user.id })
+
+    expect((await renew('order-9')).status).toBe('renewed')
+    const once = (await progressFor(user.id, course.id)).accessFrom
+    // A webhook retry, or the browser confirmation running after the webhook
+    expect((await renew('order-9')).status).toBe('already-renewed')
+    expect((await renew('order-9')).status).toBe('already-renewed')
+    expect((await progressFor(user.id, course.id)).accessFrom).toBe(once)
+
+    // A different purchase stacks another period
+    expect((await renew('order-10')).status).toBe('renewed')
+    expect(Date.parse((await progressFor(user.id, course.id)).accessFrom)).toBe(Date.parse(once) + 30 * DAY)
+  })
+
+  it('a retried first purchase with its key never becomes a renewal', async () => {
+    const { course } = await expiringCourse(30)
+    const user = await createUser()
+    const purchase = () =>
+      enrollUser({ courseId: course.id, renewal: { key: 'order-first' }, req: { payload } as never, userId: user.id })
+
+    expect((await purchase()).status).toBe('enrolled')
+    expect((await purchase()).status).toBe('already-renewed')
+    expect((await progressFor(user.id, course.id)).accessFrom ?? null).toBeNull()
+  })
+
+  it.each(['', '   ', 'x'.repeat(201)])('rejects an unusable purchase key %#', async (key) => {
+    const { course } = await expiringCourse(30)
+    const user = await createUser()
+    await expect(
+      enrollUser({ courseId: course.id, renewal: { key }, req: { payload } as never, userId: user.id }),
+    ).rejects.toMatchObject({ status: 400 })
+  })
+
+  it('enrolling again without a renewal, including over HTTP, does not extend access', async () => {
     const { course } = await expiringCourse(30)
     await payload.update({ id: course.id, collection: 'courses', data: { enrollment: { accessMode: 'open' } } })
     const user = await createUser()

@@ -69,25 +69,34 @@ const fulfilOrder = async ({ req, session }: { req: PayloadRequest; session: Str
 | `enrolled` | The user was added to the course and their progress initialised. |
 | `already-enrolled` | Nothing to do; progress is created if it was missing. |
 | `already-completed` | The user already finished this course. |
-| `renewed` | Only with `renew: true`: the user already had the course and a new access period started. |
+| `renewed` | Only with `renewal`: the user already had the course and a new access period started. |
+| `already-renewed` | Only with `renewal`: this purchase key was already applied, so nothing changed. |
 
 It is safe to call twice, so webhook retries do not double-enroll.
 
 ## Renewals
 
 When a course has **Access expiration days**, a student's access runs for that many days from
-enrollment. Calling `enrollUser` again does not extend it. For a repeat purchase, pass `renew: true`:
+enrollment. Calling `enrollUser` again does not extend it. For a purchase, pass `renewal` with a key
+that identifies the purchase, such as the order id:
 
 ```typescript
-await enrollUser({ req, userId: order.customer, courseId, renew: true })
+await enrollUser({ req, userId: order.customer, courseId, renewal: { key: String(order.id) } })
 ```
 
 - Renewed after expiry, access runs for a full period from now.
 - Renewed early, the new period is added to the end of the current one, so no paid days are lost.
 - The enrollment date is kept, so lessons already released by their delay stay released.
 
-Make renewal idempotent per order (for example, skip orders already marked fulfilled): a retried
-webhook that renews twice adds two periods.
+Each key is applied once. A webhook retry, or the browser confirmation and the webhook both
+fulfilling the same order, returns `already-renewed` and changes nothing; a new order (a new key)
+adds another period. Passing the key on a first purchase is safe too: the student is enrolled and
+the key is recorded, so a retry can never count as a renewal. Keys are stored on the student's
+progress for that course (`coursesProgress.renewals`).
+
+Two calls with the same key at the same instant are separated by the database transaction: on
+MongoDB one of them fails with a write conflict, and retrying it returns `already-renewed`. This
+relies on transactions, which MongoDB only supports on a replica set.
 
 ## 3. Group purchases
 

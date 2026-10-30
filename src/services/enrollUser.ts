@@ -3,6 +3,7 @@ import type { PayloadRequest, Where } from 'payload'
 import { renewAccess } from './lessonAccess.js'
 import {
   asSlug,
+  type CourseProgressEntry,
   ensureCourseProgress,
   findDoc,
   getCoursesProgress,
@@ -32,16 +33,18 @@ type EnrollUserArgs = {
   group?: GroupEnrollment
   /**
    * Start a new access period when the user already has this course, for example when an
-   * expired student buys it again. Only pass it for a verified purchase.
+   * expired student buys it again. Only pass it for a verified purchase. `key` identifies the
+   * purchase (an order id): a second call with the same key does nothing, so webhook retries and
+   * several fulfilment paths cannot add extra periods.
    */
-  renew?: boolean
+  renewal?: { key: string }
   req: PayloadRequest
   userId: ID
 }
 
 export type EnrollUserResult = {
   groupId?: ID
-  status: 'already-completed' | 'already-enrolled' | 'enrolled' | 'renewed'
+  status: 'already-completed' | 'already-enrolled' | 'already-renewed' | 'enrolled' | 'renewed'
 }
 
 const findExistingGroup = async (
@@ -169,6 +172,22 @@ const enrollGroup = async ({
   return group.id
 }
 
+const MAX_RENEWAL_KEY_LENGTH = 200
+
+const requireRenewalKey = (key: unknown): string => {
+  if (typeof key !== 'string' || key.trim() === '' || key.length > MAX_RENEWAL_KEY_LENGTH) {
+    throw new LMSError('renewal.key must be a non-empty string identifying the purchase.', 400)
+  }
+  return key
+}
+
+const hasRenewal = (progress: CourseProgressEntry, key: string) =>
+  (progress.renewals ?? []).some((entry) => entry.key === key)
+
+const recordRenewal = (progress: CourseProgressEntry, key: string) => {
+  progress.renewals = [...(progress.renewals ?? []), { key, renewedAt: new Date().toISOString() }]
+}
+
 /**
  * Enrolls a user in a course, optionally through a group purchase.
  *
@@ -178,11 +197,12 @@ const enrollGroup = async ({
 export const enrollUser = ({
   courseId,
   group,
-  renew = false,
+  renewal,
   req,
   userId,
 }: EnrollUserArgs): Promise<EnrollUserResult> =>
   withTransaction(req, async () => {
+    const renewalKey = renewal === undefined ? undefined : requireRenewalKey(renewal.key)
     const slugs = getSlugs(req)
     const user = await findDoc(req, slugs.students, userId, 'User')
     // The group step may update the course, so read it again afterwards
@@ -195,14 +215,7 @@ export const enrollUser = ({
 
     const coursesProgress = getCoursesProgress(user)
     const hadProgress = coursesProgress.some((progress) => sameId(progress.course, course.id))
-    const saveProgress = async ({ renewing = false } = {}) => {
-      if (hadProgress && !renewing) {
-        return
-      }
-      const progress = ensureCourseProgress(coursesProgress, course.id)
-      if (renewing) {
-        renewAccess(course, progress)
-      }
+    const saveProgress = async () => {
       await req.payload.update({
         id: user.id,
         collection: asSlug(slugs.students),
@@ -213,13 +226,22 @@ export const enrollUser = ({
 
     const isEnrolled = includesId(toIds(course.enrolledStudents), user.id)
     const hasCompleted = includesId(toIds(course.courseCompletedStudents), user.id)
-    if ((isEnrolled || hasCompleted) && renew) {
-      await saveProgress({ renewing: true })
+    if ((isEnrolled || hasCompleted) && renewalKey !== undefined) {
+      const progress = ensureCourseProgress(coursesProgress, course.id)
+      if (hasRenewal(progress, renewalKey)) {
+        return { groupId, status: 'already-renewed' }
+      }
+      renewAccess(course, progress)
+      recordRenewal(progress, renewalKey)
+      await saveProgress()
       req.payload.logger.info(`User ${user.id} renewed access to course ${toId(course)}`)
       return { groupId, status: 'renewed' }
     }
     if (isEnrolled) {
-      await saveProgress()
+      if (!hadProgress) {
+        ensureCourseProgress(coursesProgress, course.id)
+        await saveProgress()
+      }
       return { groupId, status: 'already-enrolled' }
     }
     if (hasCompleted) {
@@ -232,7 +254,14 @@ export const enrollUser = ({
       data: { enrolledStudents: [...toIds(course.enrolledStudents), user.id] },
       req,
     })
-    await saveProgress()
+    const progress = ensureCourseProgress(coursesProgress, course.id)
+    // A retry of this purchase must not later count as a renewal
+    if (renewalKey !== undefined) {
+      recordRenewal(progress, renewalKey)
+    }
+    if (!hadProgress || renewalKey !== undefined) {
+      await saveProgress()
+    }
 
     req.payload.logger.info(`User ${user.id} enrolled in course ${toId(course)}`)
     return { groupId, status: 'enrolled' }

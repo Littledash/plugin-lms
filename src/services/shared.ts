@@ -37,6 +37,8 @@ export type CourseProgressEntry = {
   course: ID
   /** When this student was enrolled. Missing on enrollments from before 2.0. */
   enrolledAt?: null | string
+  /** Purchases already applied to this course, by key, so a retried renewal is a no-op. */
+  renewals?: { key: string; renewedAt: string }[]
 }
 
 /**

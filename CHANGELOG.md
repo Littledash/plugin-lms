@@ -19,7 +19,8 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - Quiz `attemptLimit` field and `quizzes.attemptCooldownSeconds` option.
 - A per-user rate limit on `/api/lms/*` (`rateLimit`, default 60 calls per 60 seconds).
 - Group seat limits; group leaders cannot edit seats or membership directly.
-- `enrollUser({ renew: true })` renews expired or expiring access for a repeat purchase
+- `enrollUser({ renewal: { key } })` renews expired or expiring access for a purchase, at most once
+  per key (an order id), so retried webhooks and duplicate fulfilment cannot add extra periods
   (`coursesProgress.accessFrom`); enrolling again without it never extends access.
 - Members added to a group by a leader are dated on the day they join.
 - Passing a quiz completes its lessons (and the course) once all of a lesson's quizzes are passed.

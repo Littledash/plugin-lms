@@ -5,6 +5,7 @@ import { lmsHandler, requireId } from './handler.js';
 const messages = {
     'already-completed': 'You have already completed this course.',
     'already-enrolled': 'You are already enrolled in this course.',
+    'already-renewed': 'This purchase has already been applied.',
     enrolled: 'Successfully enrolled in course.',
     renewed: 'Your access has been renewed.'
 };

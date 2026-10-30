@@ -101,9 +101,10 @@ Also check:
   creates the progress row, or from `accessFrom` once access has been renewed. Enrollments from
   before that field have no date, so they do not expire and an "enrollment" lesson delay does not
   hold them. A lesson's delay field is stored as `lessonRelaseDays`.
-- Only a renewal extends access: `enrollUser({ renew: true })`, which your server should call for a
-  verified repeat purchase. Enrolling again without it, including through the self-enroll endpoint,
-  never moves the dates, so students cannot extend their own access.
+- Only a renewal extends access: `enrollUser({ renewal: { key: orderId } })`, called by your server
+  for a verified purchase and applied at most once per key. Enrolling again without it, including
+  through the self-enroll endpoint, never moves the dates, so students cannot extend their own
+  access.
 - Members a leader adds to a group get an enrollment date for each of the group's courses when they
   are added.
 - Each user can call the LMS endpoints 60 times a minute (`rateLimit` on the plugin). That slows a
