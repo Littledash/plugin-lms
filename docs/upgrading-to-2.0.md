@@ -66,7 +66,7 @@ otherwise creates a new group.
 
 | Endpoint | Change |
 | --- | --- |
-| `generate-certificate` | `certificate` is always the media document. 1.x returned a `find` result (`{ docs }`) when the PDF already existed. |
+| `generate-certificate` | `certificate` is always the private document holding the PDF. 1.x returned a `find` result (`{ docs }`) when the PDF already existed. |
 | `add-user-to-group` | The user being added is sent as `memberId`. |
 | `enroll` | Response includes `status`: `enrolled`, `already-enrolled` or `already-completed`. |
 | `fetch-progress` | `enrolledCourses` and `completedCourses` are now populated (1.x always returned empty arrays). `completionPercentage` counts required lessons only. |
@@ -103,10 +103,19 @@ If you override these fields, your overrides replace the plugin's `access`, so s
 
 ### Certificate files
 
-Awards have a new `file` field holding the generated PDF. New PDFs get a random file name instead of
-`certificate-<courseId>-<certificateId>-<userId>.pdf`. The first request for a 1.x PDF copies it to
-a random name, deletes the old file, and links the award. If the file lives in remote storage and
-cannot be read from disk, it is only linked and the old URL remains until you replace that file.
+Certificate PDFs move to a new private **documents** collection (on by default; turn it off with
+`documents: false` only if you also stop generating certificates). Each PDF is owned by the
+student and readable only by them and staff.
+
+- Awards have a new `document` field. `certificates[].file` (a media upload) is legacy.
+- `generate-certificate` and `generateCertificate` return the private document (`certificate` and
+  `document`; `media` is kept as an alias).
+- The first request for a certificate stored by an older version creates the private PDF and
+  **deletes the public media copies**. Links to them, for example in emails already sent, stop
+  working.
+- Email the PDF as an attachment with `renderCertificatePDF` instead of linking to it. See
+  [Certificates](./how-to/certificates.md#email-the-certificate-when-it-is-awarded).
+- With a storage adapter (S3 and others), add `documents` to its collections.
 
 ### New limits
 
@@ -128,7 +137,9 @@ cannot be read from disk, it is only linked and the old URL remains until you re
 2. Update `@littledash/plugin-lms` to 2.0.
 3. Replace every server-side `fetch` to `/api/lms/*` that sends `userId` with the matching service.
 4. Remove any hook that calls `complete-course` when `courseCompletedStudents` changes.
-5. Update `generate-certificate` callers to read `certificate` as the media document. Read the PDF from `certificates[].file` instead of building its file name.
+5. Update `generate-certificate` callers to read `certificate` as the private document, read PDFs
+   from `certificates[].document`, attach PDFs to emails with `renderCertificatePDF`, and add
+   `documents` to your storage adapter.
 6. Make sure the students collection has `update` access limited to admins and the user themselves.
 7. Run your test suite, then check the data issues above (API-key user in course and group lists,
    group seat counts).

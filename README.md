@@ -309,7 +309,7 @@ exceeded). The endpoints enforce the course rules on the server:
 | `POST /lms/complete-lesson` | User is enrolled and access has not expired; the lesson is in the course, released, and (in linear courses) its earlier lessons are done; every quiz on the lesson is passed. |
 | `POST /lms/submit-quiz` | Same enrollment, expiry, release and order rules for the quiz's lesson. Answers are graded server-side; answer fields are hidden from students. The quiz's attempt limit and the attempt cooldown apply (`429`). A pass completes lessons whose quizzes are all passed. |
 | `POST /lms/complete-course` | User is enrolled, access has not expired, and every required lesson is completed. |
-| `POST /lms/generate-certificate` | The user has been awarded that certificate for that course. Returns the media document as `certificate`. |
+| `POST /lms/generate-certificate` | The user has been awarded that certificate for that course. Returns the private document holding the PDF as `certificate` (readable only by that student and staff). |
 | `POST /lms/add-user-to-group` | Requester is an admin or a leader of the group, and the group has a free seat. Send the user being added as `memberId`. |
 | `GET /lms/fetch-progress` | Returns the logged-in user's progress. |
 

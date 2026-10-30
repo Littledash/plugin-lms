@@ -25,7 +25,11 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - Members added to a group by a leader are dated on the day they join.
 - Passing a quiz completes its lessons (and the course) once all of a lesson's quizzes are passed.
 - Secure default access on every plugin collection; overrides merge per operation.
-- `certificates[].file` links each award to its PDF, stored under a random file name.
+- A private `documents` upload collection (on by default): each file is readable only by its
+  owner and staff, including downloads. Certificate PDFs are stored there, linked from
+  `certificates[].document`, dated with the completion date. Public copies in media from older
+  versions are deleted when a certificate is first requested.
+- `renderCertificatePDF` returns a certificate's PDF bytes for email attachments.
 - Integration tests and client tests for the React provider and admin field components.
 
 ### Fixed

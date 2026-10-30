@@ -57,6 +57,7 @@ therefore sets every operation on its collections:
 | --- | --- | --- |
 | courses, lessons, topics, categories, tags | admins and authors | anyone (content fields need enrollment) |
 | quizzes, questions, certificates | admins and authors | logged-in users (answer fields hidden) |
+| documents (private uploads, certificate PDFs) | create: logged-in users, who always own what they upload; update and delete: admins | admins, authors and the owner, including file downloads |
 | groups | create and delete: admins; update: admins and group leaders | group members |
 | addresses | create: logged-in users; update and delete: admins and the owner (`customer`). `customer` is set to the logged-in user; only admins can choose or change it | admins and the owner |
 | students | create: anyone; update: admins and the user; delete: admins | admins and the user |
@@ -90,10 +91,11 @@ Also check:
 - **API keys.** If you enabled `useAPIKey` only so your server could call the LMS endpoints, switch
   to the services and consider removing the key.
 - **Logging.** The plugin logs document IDs, not user details. Keep it that way in your own hooks.
-- **Media access.** Certificate PDFs are stored in your media collection. New PDFs get a random file
-  name and are linked from the award (`certificates[].file`), so their URLs cannot be guessed, but
-  anyone with the URL can download them if media is publicly readable. Do not let ordinary users
-  `create`, `update` or `delete` media.
+- **Private files.** Certificate PDFs are stored in the private documents collection. Put anything
+  else that must not be public there too, such as files sent through site forms, rather than in a
+  media collection that anyone can read and list. With a storage adapter such as S3, add
+  `documents` to its collections and leave `disablePayloadAccessControl` off so downloads are
+  checked. Do not let ordinary users `create`, `update` or `delete` media.
 
 ## Known limits
 
