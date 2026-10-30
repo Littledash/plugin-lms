@@ -69,8 +69,25 @@ const fulfilOrder = async ({ req, session }: { req: PayloadRequest; session: Str
 | `enrolled` | The user was added to the course and their progress initialised. |
 | `already-enrolled` | Nothing to do; progress is created if it was missing. |
 | `already-completed` | The user already finished this course. |
+| `renewed` | Only with `renew: true`: the user already had the course and a new access period started. |
 
 It is safe to call twice, so webhook retries do not double-enroll.
+
+## Renewals
+
+When a course has **Access expiration days**, a student's access runs for that many days from
+enrollment. Calling `enrollUser` again does not extend it. For a repeat purchase, pass `renew: true`:
+
+```typescript
+await enrollUser({ req, userId: order.customer, courseId, renew: true })
+```
+
+- Renewed after expiry, access runs for a full period from now.
+- Renewed early, the new period is added to the end of the current one, so no paid days are lost.
+- The enrollment date is kept, so lessons already released by their delay stay released.
+
+Make renewal idempotent per order (for example, skip orders already marked fulfilled): a retried
+webhook that renews twice adds two periods.
 
 ## 3. Group purchases
 

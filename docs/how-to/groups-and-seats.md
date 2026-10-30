@@ -59,7 +59,9 @@ const { addUserToGroup } = useLMS()
 await addUserToGroup(groupId, memberId, 'student')
 ```
 
-The endpoint checks that the requester is an admin or a leader of that group.
+The endpoint checks that the requester is an admin or a leader of that group. The member gets an
+enrollment date for each course the group bought on the day they are added, so access expiry and
+lesson release delays count from when they joined.
 
 ## Seat limits
 

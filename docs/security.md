@@ -98,9 +98,14 @@ Also check:
 ## Known limits
 
 - `accessExpirationDays` counts from `coursesProgress.enrolledAt`, which is recorded when `enrollUser`
-  creates the progress row. Enrollments from before that field have no date, so they do not expire
-  and an "enrollment" lesson delay does not hold them. A lesson's delay field is stored as
-  `lessonRelaseDays`.
+  creates the progress row, or from `accessFrom` once access has been renewed. Enrollments from
+  before that field have no date, so they do not expire and an "enrollment" lesson delay does not
+  hold them. A lesson's delay field is stored as `lessonRelaseDays`.
+- Only a renewal extends access: `enrollUser({ renew: true })`, which your server should call for a
+  verified repeat purchase. Enrolling again without it, including through the self-enroll endpoint,
+  never moves the dates, so students cannot extend their own access.
+- Members a leader adds to a group get an enrollment date for each of the group's courses when they
+  are added.
 - Each user can call the LMS endpoints 60 times a minute (`rateLimit` on the plugin). That slows a
   script; it does not stop one. A quiz score still reveals how many answers were right. Use
   `attemptLimit` on assessments that matter. The limit is counted in this server process, so run one

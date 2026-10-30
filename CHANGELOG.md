@@ -19,6 +19,9 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - Quiz `attemptLimit` field and `quizzes.attemptCooldownSeconds` option.
 - A per-user rate limit on `/api/lms/*` (`rateLimit`, default 60 calls per 60 seconds).
 - Group seat limits; group leaders cannot edit seats or membership directly.
+- `enrollUser({ renew: true })` renews expired or expiring access for a repeat purchase
+  (`coursesProgress.accessFrom`); enrolling again without it never extends access.
+- Members added to a group by a leader are dated on the day they join.
 - Passing a quiz completes its lessons (and the course) once all of a lesson's quizzes are passed.
 - Secure default access on every plugin collection; overrides merge per operation.
 - `certificates[].file` links each award to its PDF, stored under a random file name.
@@ -26,6 +29,11 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 
 ### Fixed
 
+- The provider's progress cache is tied to the logged-in user and removed on logout, so one
+  student's progress never shows for another on a shared browser.
+- The endpoint rate limiter forgets idle users instead of keeping every user in memory.
+- The provider recorded `undefined` for enrolled and completed courses: it expected `{ id }`
+  objects but `fetch-progress` returns ids.
 - Free enrollment in paid courses; completion and certificates without doing the lessons; acting
   on other users with `userId`.
 - Users could edit their own progress, certificates and roles; quiz answers were readable.
