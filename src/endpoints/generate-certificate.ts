@@ -5,14 +5,14 @@ import { lmsHandler, requireId } from './handler.js'
 
 export const generateCertificateHandler = (_args?: Record<string, unknown>): Endpoint['handler'] =>
   lmsHandler(async ({ data, req, userId }) => {
-    const { media, status } = await generateCertificate({
+    const { document, status } = await generateCertificate({
       certificateId: requireId(data, 'certificateId'),
       courseId: requireId(data, 'courseId'),
       req,
       userId,
     })
     return Response.json({
-      certificate: media,
+      certificate: document,
       message: 'Successfully generated certificate.',
       status,
       success: true,

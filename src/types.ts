@@ -97,6 +97,10 @@ export type TagsConfig = {
   tagsCollection?: CollectionOverride
 }
 
+export type DocumentsConfig = {
+  documentsCollection?: CollectionOverride
+}
+
 export type CertificateConfig = {
   certificatesCollection?: CollectionOverride
 }
@@ -121,6 +125,7 @@ export type CollectionSlugMap = {
   certificates: string
   coupons: string
   courses: string
+  documents: string
   groups: string
   lessons: string
   media: string
@@ -235,6 +240,13 @@ export type LMSPluginConfig = {
   currencies?: CurrenciesConfig
 
   /**
+   * Private uploads collection (`documents`). Generated certificates are stored here, readable only
+   * by the student and staff. Sites can use it for any upload that must not be public.
+   *
+   * @default true
+   */
+  documents?: boolean | DocumentsConfig
+  /**
  * An array of endpoints to be bootstrapped to Payload's API in order to support the LMS. All API paths are relative to `/api/lms`.
  */
     endpoints?: Endpoint[]
@@ -284,6 +296,7 @@ export type LMSPluginConfig = {
        */
       userSlug: string
     }) => Promise<Record<string, unknown>> | Record<string, unknown>
+
   /**
    * Enable groups collection.
    *
@@ -291,7 +304,7 @@ export type LMSPluginConfig = {
    */
   groups?: boolean | GroupsConfig
 
-  /**
+    /**
    * Enable lessons collection.
    *
    * @default true
@@ -305,14 +318,14 @@ export type LMSPluginConfig = {
    */
   questions?: boolean | QuestionsConfig
 
-    /**
+  /**
    * Enable quizzes collection.
    *
    * @default true
    */
   quizzes?: boolean | QuizzesConfig
 
-  /**
+    /**
    * How many calls to `/api/lms/*` one logged-in user may make in a window. `max: 0` disables it.
    *
    * @default { max: 60, windowSeconds: 60 }
@@ -345,7 +358,7 @@ export type LMSPluginConfig = {
       userSlug: string
     }) => Promise<Record<string, unknown>> | Record<string, unknown>
 
-    /**
+  /**
    * Enable tags collection.
    *
    * @default true

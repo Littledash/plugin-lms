@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/documents.ts"],"sourcesContent":["export { documentsCollection } from '../documents/documentsCollection.js'\n"],"names":["documentsCollection"],"mappings":"AAAA,SAASA,mBAAmB,QAAQ,sCAAqC"}

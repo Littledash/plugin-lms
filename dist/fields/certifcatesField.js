@@ -3,7 +3,7 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
  * Creates an array field for certificates with certificate and completed date
  * @param props - Configuration overrides for the field
  * @returns A configured array field for certificates
- */ export const certificatesField = ({ certificatesCollectionSlug = 'certificates', coursesCollectionSlug = 'courses', mediaCollectionSlug = 'media', overrides })=>{
+ */ export const certificatesField = ({ certificatesCollectionSlug = 'certificates', coursesCollectionSlug = 'courses', documentsCollectionSlug = 'documents', mediaCollectionSlug = 'media', overrides })=>{
     const field = {
         name: 'certificates',
         type: 'array',
@@ -14,10 +14,21 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
         },
         fields: [
             {
-                // Set when the PDF is generated; its file name is random so it cannot be guessed
+                // The certificate PDF, stored privately: only the student and staff can open it
+                name: 'document',
+                type: 'upload',
+                admin: {
+                    readOnly: true
+                },
+                relationTo: documentsCollectionSlug
+            },
+            {
+                // Before private documents, the PDF was kept in the public media collection. The plugin
+                // moves it to `document` (and deletes the public copy) the next time it is requested.
                 name: 'file',
                 type: 'upload',
                 admin: {
+                    description: 'Legacy public copy of the PDF. Replaced by Document.',
                     readOnly: true
                 },
                 relationTo: mediaCollectionSlug

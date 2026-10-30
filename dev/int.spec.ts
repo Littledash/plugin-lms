@@ -9,6 +9,7 @@ import type { Payload } from 'payload'
 
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import { getPayload } from 'payload'
+import { PDFDocument } from 'pdf-lib'
 
 import { isAdminOrAuthorOrEnrolledInCourse } from '../src/access/isAdminOrAuthorOrEnrolledInCourse.js'
 import {
@@ -18,6 +19,7 @@ import {
   generateCertificate,
   getCertificateFileName,
   LMSError,
+  renderCertificatePDF,
 } from '../src/exports/services.js'
 import { NextRESTClient } from './helpers/NextRESTClient.js'
 
@@ -504,7 +506,7 @@ describe('generate-certificate endpoint', () => {
       userId: user.id,
     })
     expect(second.status).toBe('existing')
-    expect(String(second.media.id)).toBe(String(first.body.certificate.id))
+    expect(String(second.document.id)).toBe(String(first.body.certificate.id))
   })
 })
 
@@ -775,17 +777,20 @@ describe('collection access defaults', () => {
     await enroll(user, course)
     await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
 
-    const { media } = await generateCertificate({
+    const { document } = await generateCertificate({
       certificateId: certificate.id,
       courseId: course.id,
       req: { payload } as never,
       userId: user.id,
     })
 
-    expect(media.filename).not.toContain(String(user.id))
-    expect(media.filename).toMatch(/^certificate-[0-9a-f-]{36}\.pdf$/)
+    expect(document.filename).not.toContain(String(user.id))
+    expect(document.filename).toMatch(/^certificate-[0-9a-f-]{36}\.pdf$/)
+    expect(String(document.owner?.id ?? document.owner)).toBe(user.id)
     const award = (await getDoc('users', user.id)).certificates[0]
-    expect(String(award.file)).toBe(String(media.id))
+    expect(String(award.document)).toBe(String(document.id))
+    // Nothing is left in the public media collection
+    expect((await payload.find({ collection: 'media', where: { mimeType: { equals: 'application/pdf' } } })).docs).toHaveLength(0)
   })
 })
 
@@ -1219,41 +1224,85 @@ describe('service edge cases', () => {
     )
   })
 
-  it('links a certificate PDF generated under the 1.x file name', async () => {
+  const awardedUser = async () => {
     const certificate = (await payload.create({ collection: 'certificates', data: { title: 'Legacy' } })) as unknown as Doc
     const lesson = await createLesson()
     const course = await createCourse({ certificate: certificate.id, lessons: [{ lesson: lesson.id }] })
     const user = await createUser()
     await enroll(user, course)
     await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+    return { certificate, course, user }
+  }
 
-    const legacyName = getCertificateFileName({ certificateId: certificate.id, courseId: course.id, userId: user.id })
+  const publicPDF = async (name: string) => {
     const pdf = Buffer.from('%PDF-1.4 legacy')
-    const legacy = (await payload.create({
+    return (await payload.create({
       collection: 'media',
       data: {},
-      file: { name: legacyName, data: pdf, mimetype: 'application/pdf', size: pdf.length },
+      file: { name, data: pdf, mimetype: 'application/pdf', size: pdf.length },
     })) as unknown as Doc
+  }
 
-    const { media, status } = await generateCertificate({
+  it('moves a 1.x certificate into private documents and deletes the public copy', async () => {
+    const { certificate, course, user } = await awardedUser()
+    const legacyName = getCertificateFileName({ certificateId: certificate.id, courseId: course.id, userId: user.id })
+    await publicPDF(legacyName)
+
+    const { document, status } = await generateCertificate({
       certificateId: certificate.id,
       courseId: course.id,
       req: { payload } as never,
       userId: user.id,
     })
 
-    expect(status).toBe('existing')
-    expect(String(media.id)).not.toBe(String(legacy.id))
-    expect(media.filename).toMatch(/^certificate-[0-9a-f-]{36}\.pdf$/)
-    expect(String((await getDoc('users', user.id)).certificates[0].file)).toBe(String(media.id))
-    expect(
-      (
-        await payload.find({
-          collection: 'media',
-          where: { filename: { equals: legacyName } },
-        })
-      ).docs,
-    ).toHaveLength(0)
+    expect(status).toBe('created')
+    expect(String(document.owner?.id ?? document.owner)).toBe(user.id)
+    expect(String((await getDoc('users', user.id)).certificates[0].document)).toBe(String(document.id))
+    expect((await payload.find({ collection: 'media', where: { filename: { equals: legacyName } } })).docs).toHaveLength(0)
+  })
+
+  it('moves a certificate linked from the media collection and clears the old link', async () => {
+    const { certificate, course, user } = await awardedUser()
+    const old = await publicPDF('certificate-public.pdf')
+    const saved = await getDoc('users', user.id)
+    await payload.update({
+      id: user.id,
+      collection: 'users',
+      data: { certificates: saved.certificates.map((entry: Doc) => ({ ...entry, file: old.id })) },
+    })
+
+    const { document } = await generateCertificate({
+      certificateId: certificate.id,
+      courseId: course.id,
+      req: { payload } as never,
+      userId: user.id,
+    })
+
+    const award = (await getDoc('users', user.id)).certificates[0]
+    expect(String(award.document)).toBe(String(document.id))
+    expect(award.file ?? null).toBeNull()
+    expect(await payload.findByID({ id: old.id, collection: 'media', disableErrors: true })).toBeNull()
+  })
+
+  it('renders an awarded certificate as a PDF attachment without storing it', async () => {
+    const { certificate, course, user } = await awardedUser()
+
+    const pdf = await renderCertificatePDF({
+      certificateId: certificate.id,
+      courseId: course.id,
+      req: { payload } as never,
+      userId: user.id,
+    })
+
+    expect(pdf.mimeType).toBe('application/pdf')
+    expect(pdf.data.subarray(0, 5).toString()).toBe('%PDF-')
+    expect(pdf.filename).toBe(`Certificate - ${course.title}.pdf`)
+    expect((await payload.find({ collection: 'documents', where: { owner: { equals: user.id } } })).docs).toHaveLength(0)
+
+    const stranger = await createUser()
+    await expect(
+      renderCertificatePDF({ certificateId: certificate.id, courseId: course.id, req: { payload } as never, userId: stranger.id }),
+    ).rejects.toMatchObject({ status: 403 })
   })
 
   it('refuses to generate a certificate for a user without a full name', async () => {
@@ -1593,3 +1642,63 @@ describe('access renewal', () => {
     expect(Math.abs(Date.parse(progress.enrolledAt) - Date.now())).toBeLessThan(60_000)
   })
 })
+
+describe('private documents', () => {
+  const upload = async (owner: Doc, as?: Doc) => {
+    // A real PDF: uploads are checked against the allowed file types by content
+    const data = Buffer.from(await (await PDFDocument.create()).save())
+    return (await payload.create({
+      collection: 'documents',
+      data: { owner: owner.id, title: 'Private' },
+      file: { name: `private-${++counter}.pdf`, data, mimetype: 'application/pdf', size: data.length },
+      ...(as ? { overrideAccess: false, user: as } : {}),
+    })) as unknown as Doc
+  }
+
+  it('only the owner and staff can read a document or download its file', async () => {
+    const owner = await createUser()
+    const document = await upload(owner)
+    const ownerClient = await clientFor(owner)
+    const stranger = await clientFor(await createUser())
+    const author = await clientFor(await createUser(['author']))
+
+    expect((await ownerClient.GET(`/documents/${document.id}`)).status).toBe(200)
+    expect((await ownerClient.GET(`/documents/file/${document.filename}`)).status).toBe(200)
+    expect((await author.GET(`/documents/${document.id}`)).status).toBe(200)
+
+    expect([403, 404]).toContain((await stranger.GET(`/documents/${document.id}`)).status)
+    expect([403, 404]).toContain((await stranger.GET(`/documents/file/${document.filename}`)).status)
+    expect((await (await stranger.GET('/documents')).json()).docs ?? []).toHaveLength(0)
+  })
+
+  it('anonymous visitors cannot list or download documents', async () => {
+    const document = await upload(await createUser())
+    const visitor = anonymous()
+
+    const list = await visitor.GET('/documents', { auth: false })
+    expect(list.status === 403 || ((await list.json()).docs ?? []).length === 0).toBe(true)
+    expect([401, 403, 404]).toContain((await visitor.GET(`/documents/file/${document.filename}`, { auth: false })).status)
+  })
+
+  it('a student always owns what they upload, whatever owner they send', async () => {
+    const student = await createUser()
+    const victim = await createUser()
+
+    const document = await upload(victim, student)
+
+    expect(String(document.owner?.id ?? document.owner)).toBe(student.id)
+  })
+
+  it('students cannot edit or delete documents, even their own', async () => {
+    const owner = await createUser()
+    const document = await upload(owner)
+    const client = await clientFor(owner)
+
+    await client.PATCH(`/documents/${document.id}`, { body: JSON.stringify({ title: 'Changed' }) })
+    await client.DELETE(`/documents/${document.id}`)
+
+    const saved = (await payload.findByID({ id: document.id, collection: 'documents', disableErrors: true })) as Doc | null
+    expect(saved?.title).toBe('Private')
+  })
+})
+

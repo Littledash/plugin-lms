@@ -23,6 +23,24 @@ import { isMemberOfGroup } from './isMemberOfGroup.js';
             }
         };
     };
+/**
+ * Admins and authors, or the user the document belongs to through `field`.
+ */ export const isAdminOrAuthorOrOwner = (field)=>({ req: { user } })=>{
+        if (!user) {
+            return false;
+        }
+        if (checkRole([
+            'admin',
+            'author'
+        ], user)) {
+            return true;
+        }
+        return {
+            [field]: {
+                equals: user.id
+            }
+        };
+    };
 const authoredContent = (read)=>({
         create: isAdminOrAuthor,
         delete: isAdminOrAuthor,
@@ -44,6 +62,13 @@ const authoredContent = (read)=>({
     certificates: authoredContent(isAdminOrLoggedIn),
     // Lesson and course content fields have their own enrollment checks
     courses: authoredContent(anyone),
+    // Private files: the owner and staff only, including downloads
+    documents: {
+        create: isAdminOrLoggedIn,
+        delete: isAdmin,
+        read: isAdminOrAuthorOrOwner('owner'),
+        update: isAdmin
+    },
     groups: {
         create: isAdmin,
         delete: isAdmin,

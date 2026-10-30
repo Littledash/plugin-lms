@@ -6,6 +6,7 @@ import { addressesCollection } from '../addresses/addressesCollection.js'
 import { categoriesCollection } from '../categoires/categoriesCollection.js'
 import { certificatesCollection } from '../certificates/certificatesCollection.js'
 import { coursesCollection } from '../courses/coursesCollection.js'
+import { documentsCollection } from '../documents/documentsCollection.js'
 import { addUserToGroupHandler } from '../endpoints/add-user-to-group.js'
 import { completeCourseHandler } from '../endpoints/complete-course.js'
 import { completeLessonHandler } from '../endpoints/complete-lesson.js'
@@ -196,6 +197,20 @@ export const lmsPlugin =
         overrides: collectionOverrides,
       })
       incomingConfig.collections.push(categories)
+    }
+
+    if (sanitizedPluginConfig.documents) {
+      const collectionOverrides =
+        typeof sanitizedPluginConfig.documents === 'object'
+          ? sanitizedPluginConfig.documents.documentsCollection
+          : undefined
+
+      incomingConfig.collections.push(
+        documentsCollection({
+          overrides: collectionOverrides,
+          studentsCollectionSlug: collectionSlugMap.students,
+        }),
+      )
     }
 
     if (sanitizedPluginConfig.tags) {

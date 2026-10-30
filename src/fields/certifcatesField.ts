@@ -8,6 +8,7 @@ import { isAdminFieldLevel } from '../access/isAdmin.js'
 type Props = {
   certificatesCollectionSlug?: string
   coursesCollectionSlug?: string
+  documentsCollectionSlug?: string
   mediaCollectionSlug?: string
   overrides?: Partial<ArrayField>
 }
@@ -20,6 +21,7 @@ type Props = {
 export const certificatesField: (props: Props) => ArrayField = ({
   certificatesCollectionSlug = 'certificates',
   coursesCollectionSlug = 'courses',
+  documentsCollectionSlug = 'documents',
   mediaCollectionSlug = 'media',
   overrides,
 }) => {
@@ -33,10 +35,21 @@ export const certificatesField: (props: Props) => ArrayField = ({
     },
     fields: [
       {
-        // Set when the PDF is generated; its file name is random so it cannot be guessed
+        // The certificate PDF, stored privately: only the student and staff can open it
+        name: 'document',
+        type: 'upload',
+        admin: {
+          readOnly: true,
+        },
+        relationTo: documentsCollectionSlug,
+      },
+      {
+        // Before private documents, the PDF was kept in the public media collection. The plugin
+        // moves it to `document` (and deletes the public copy) the next time it is requested.
         name: 'file',
         type: 'upload',
         admin: {
+          description: 'Legacy public copy of the PDF. Replaced by Document.',
           readOnly: true,
         },
         relationTo: mediaCollectionSlug,

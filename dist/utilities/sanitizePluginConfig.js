@@ -66,6 +66,10 @@ export const sanitizePluginConfig = ({ pluginConfig })=>{
     if (typeof config.topics === 'undefined') {
         config.topics = true;
     }
+    // Certificates are stored here, so it is on unless turned off
+    if (typeof config.documents === 'undefined') {
+        config.documents = true;
+    }
     return config;
 };
 

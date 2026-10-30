@@ -1,7 +1,9 @@
+import type { Field } from 'payload';
+
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
-import { buildConfig, Field } from 'payload'
+import { buildConfig } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
@@ -151,6 +153,11 @@ export default buildConfig({
       },
       // Drafts on, as in the consuming site
       courses: { coursesCollection: { versions: { drafts: true } } },
+      documents: {
+        documentsCollection: {
+          upload: { mimeTypes: ['application/pdf', 'image/*'], staticDir: path.resolve(dirname, 'documents') },
+        },
+      },
       lessons: true,
       // Tests retry quizzes back-to-back; the cooldown test raises this at runtime
       categories: true,

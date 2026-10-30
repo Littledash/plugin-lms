@@ -89,6 +89,11 @@
       "types": "./dist/exports/tags.d.ts",
       "default": "./dist/exports/tags.js"
     },
+    "./documents": {
+      "import": "./dist/exports/documents.js",
+      "types": "./dist/exports/documents.d.ts",
+      "default": "./dist/exports/documents.js"
+    },
     "./topics": {
       "import": "./dist/exports/topics.js",
       "types": "./dist/exports/topics.d.ts",

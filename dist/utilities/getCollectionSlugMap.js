@@ -4,6 +4,7 @@ export const defaultCollectionSlugMap = {
     certificates: 'certificates',
     coupons: 'coupons',
     courses: 'courses',
+    documents: 'documents',
     groups: 'groups',
     lessons: 'lessons',
     media: 'media',
@@ -52,6 +53,9 @@ export const defaultCollectionSlugMap = {
     }
     if (typeof sanitizedPluginConfig.categories === 'object' && sanitizedPluginConfig.categories.categoriesCollection?.slug) {
         collectionSlugsMap.categories = sanitizedPluginConfig.categories.categoriesCollection.slug;
+    }
+    if (typeof sanitizedPluginConfig.documents === 'object' && sanitizedPluginConfig.documents.documentsCollection?.slug) {
+        collectionSlugsMap.documents = sanitizedPluginConfig.documents.documentsCollection.slug;
     }
     if (typeof sanitizedPluginConfig.tags === 'object' && sanitizedPluginConfig.tags.tagsCollection?.slug) {
         collectionSlugsMap.tags = sanitizedPluginConfig.tags.tagsCollection.slug;
