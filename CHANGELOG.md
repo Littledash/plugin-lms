@@ -62,6 +62,8 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
   the admin still shows a select, but the field is text so those words are not GraphQL enum names.
   Regenerate the admin import map after upgrading so the select renders.
 
-### Known issues
+### Dependencies
 
-- Dependencies: 84 audit findings down to 1 (dev-only, no fix available); 0 in production.
+- 0 production audit findings. One dev-only finding remains (`deepmerge` under Jest, no fixed
+  release). `happy-dom` (via `@payloadcms/richtext-lexical`) is overridden to `^21.0.4` for its
+  advisories; Lexical's headless HTML conversion was checked against it.

@@ -300,14 +300,15 @@ export function CourseList() {
 ### Endpoints and Security
 
 Every `/api/lms/*` endpoint acts on the **logged-in user only**. A `userId` in the request body
-is rejected with `400`. The endpoints enforce the course rules on the server:
+is rejected with `400`, and each user may make 60 calls a minute (`rateLimit`, `429` when
+exceeded). The endpoints enforce the course rules on the server:
 
 | Endpoint | Rules |
 | --- | --- |
-| `POST /lms/enroll` | Only `open` or `free` courses. Paid (`buy now`, `recurring`, `closed`) and group enrollments return `403`. |
-| `POST /lms/complete-lesson` | User is enrolled, the lesson is in the course, and every quiz on the lesson is passed. |
-| `POST /lms/submit-quiz` | User is enrolled and the quiz belongs to a lesson in the course. Answers are graded server-side; answer fields are hidden from students. The quiz's attempt limit and the attempt cooldown apply (`429`). |
-| `POST /lms/complete-course` | Every required lesson is completed. |
+| `POST /lms/enroll` | Only published `open` or `free` courses. Paid (`buy now`, `recurring`, `closed`) and group enrollments return `403`. |
+| `POST /lms/complete-lesson` | User is enrolled and access has not expired; the lesson is in the course, released, and (in linear courses) its earlier lessons are done; every quiz on the lesson is passed. |
+| `POST /lms/submit-quiz` | Same enrollment, expiry, release and order rules for the quiz's lesson. Answers are graded server-side; answer fields are hidden from students. The quiz's attempt limit and the attempt cooldown apply (`429`). A pass completes lessons whose quizzes are all passed. |
+| `POST /lms/complete-course` | User is enrolled, access has not expired, and every required lesson is completed. |
 | `POST /lms/generate-certificate` | The user has been awarded that certificate for that course. Returns the media document as `certificate`. |
 | `POST /lms/add-user-to-group` | Requester is an admin or a leader of the group, and the group has a free seat. Send the user being added as `memberId`. |
 | `GET /lms/fetch-progress` | Returns the logged-in user's progress. |
