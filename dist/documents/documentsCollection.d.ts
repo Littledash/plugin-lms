@@ -7,9 +7,12 @@ type Props = {
     studentsCollectionSlug?: string;
 };
 /**
- * Accepted file types, checked against the file's contents rather than its name. Word is `.docx`
- * only: older `.doc` files are detected as a generic Office container that also covers
- * spreadsheets, presentations and macro-carrying files, so they are left out.
+ * Accepted file types, checked against the file's contents rather than its name.
+ *
+ * Images are listed one by one instead of `image/*` so SVG is excluded: anyone logged in can upload
+ * here, and an SVG can carry script that runs when staff open the file. Word is `.docx` only:
+ * older `.doc` files are detected as a generic Office container that also covers spreadsheets,
+ * presentations and macro-carrying files.
  */
 export declare const DEFAULT_DOCUMENT_MIME_TYPES: string[];
 /**

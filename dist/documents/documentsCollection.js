@@ -1,12 +1,21 @@
 import { checkRole } from '../access/checkRole.js';
 import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
 /**
- * Accepted file types, checked against the file's contents rather than its name. Word is `.docx`
- * only: older `.doc` files are detected as a generic Office container that also covers
- * spreadsheets, presentations and macro-carrying files, so they are left out.
+ * Accepted file types, checked against the file's contents rather than its name.
+ *
+ * Images are listed one by one instead of `image/*` so SVG is excluded: anyone logged in can upload
+ * here, and an SVG can carry script that runs when staff open the file. Word is `.docx` only:
+ * older `.doc` files are detected as a generic Office container that also covers spreadsheets,
+ * presentations and macro-carrying files.
  */ export const DEFAULT_DOCUMENT_MIME_TYPES = [
     'application/pdf',
-    'image/*',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+    // Photos from iPhones
+    'image/heic',
+    'image/heif',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 ];
 /**

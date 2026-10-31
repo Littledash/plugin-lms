@@ -10,6 +10,7 @@ import type { Payload } from 'payload'
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import { getPayload } from 'payload'
 import { PDFDocument } from 'pdf-lib'
+import sharp from 'sharp'
 
 import { isAdminOrAuthorOrEnrolledInCourse } from '../src/access/isAdminOrAuthorOrEnrolledInCourse.js'
 import {
@@ -1702,6 +1703,17 @@ describe('private documents', () => {
   it('accepts Word documents', async () => {
     const document = (await uploadFile(docx(), 'letter.docx', DOCX_MIME)) as unknown as Doc
     expect(document.mimeType).toBe(DOCX_MIME)
+  })
+
+  it('accepts photos', async () => {
+    const png = await sharp({ create: { background: '#ffffff', channels: 3, height: 1, width: 1 } }).png().toBuffer()
+    const document = (await uploadFile(png, 'photo.png', 'image/png')) as unknown as Doc
+    expect(document.mimeType).toBe('image/png')
+  })
+
+  it('rejects SVG, even without script, because students can upload here', async () => {
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1"/></svg>')
+    await expect(uploadFile(svg, 'drawing.svg', 'image/svg+xml')).rejects.toThrow(/invalid|not allowed/i)
   })
 
   it.each([
