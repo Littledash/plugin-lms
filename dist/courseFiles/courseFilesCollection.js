@@ -9,7 +9,10 @@ import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
     const defaultFields = [
         {
             name: 'title',
-            type: 'text'
+            type: 'text',
+            admin: {
+                description: 'A name for the download that students will understand, such as "Week 1 workbook".'
+            }
         }
     ];
     const fields = fieldsOverride && typeof fieldsOverride === 'function' ? fieldsOverride({
@@ -28,6 +31,7 @@ import { defaultAccess, withDefaultAccess } from '../access/defaultAccess.js';
                 'title',
                 'updatedAt'
             ],
+            description: 'Downloads for lessons, such as workbooks and handouts. Students can open a file only while they can open a lesson that offers it. Images for public pages go in Media, and files that belong to one person go in Documents.',
             useAsTitle: 'filename',
             ...overrides?.admin
         },

@@ -53,12 +53,17 @@ export const documentsCollection: (props?: Props) => CollectionConfig = (props) 
     {
       name: 'title',
       type: 'text',
+      admin: {
+        description:
+          'A name staff will recognise, such as "Certificate - Course - Student name".',
+      },
     },
     {
       name: 'owner',
       type: 'relationship',
       admin: {
-        description: 'The user this document belongs to. Only they and admins can read it.',
+        description:
+          'The person this document belongs to. Only they, admins and authors can open it. Set when it is uploaded: a user who uploads a file always owns it, and only admins can change the owner.',
         position: 'sidebar',
       },
       hooks: {
@@ -84,6 +89,8 @@ export const documentsCollection: (props?: Props) => CollectionConfig = (props) 
     access: withDefaultAccess(defaultAccess.documents, overrides?.access),
     admin: {
       defaultColumns: ['filename', 'title', 'owner', 'createdAt'],
+      description:
+        'Private files that belong to one person, such as certificates and files sent through site forms. Only the owner and staff can open them. Lesson handouts go in Course Files, and images for public pages go in Media. Accepts PDF, JPEG, PNG, WebP, GIF, HEIC and Word (.docx).',
       useAsTitle: 'filename',
       ...overrides?.admin,
     },

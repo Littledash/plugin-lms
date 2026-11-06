@@ -34,6 +34,8 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 - A protected `course-files` upload collection (on by default) for lesson downloads. A file is
   readable and downloadable only by staff and by students who can open a lesson offering it now
   (enrollment, expiry, release and order apply). `downloadableFiles` points here instead of media.
+- Admin descriptions on `documents` and `course-files` and their fields say what belongs in each
+  and who can open it. Override them with `overrides.admin.description` or `overrides.fields`.
 - Integration tests and client tests for the React provider and admin field components.
 
 ### Fixed

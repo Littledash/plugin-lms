@@ -21,6 +21,10 @@ export const courseFilesCollection: (props?: Props) => CollectionConfig = (props
     {
       name: 'title',
       type: 'text',
+      admin: {
+        description:
+          'A name for the download that students will understand, such as "Week 1 workbook".',
+      },
     },
   ]
 
@@ -38,6 +42,8 @@ export const courseFilesCollection: (props?: Props) => CollectionConfig = (props
     access: withDefaultAccess(defaultAccess.courseFiles, overrides?.access),
     admin: {
       defaultColumns: ['filename', 'title', 'updatedAt'],
+      description:
+        'Downloads for lessons, such as workbooks and handouts. Students can open a file only while they can open a lesson that offers it. Images for public pages go in Media, and files that belong to one person go in Documents.',
       useAsTitle: 'filename',
       ...overrides?.admin,
     },
