@@ -4,7 +4,7 @@ import { useField, useFormFields } from '@payloadcms/ui';
 import './index.scss';
 import { FormattedInput } from './FormattedInput.js';
 export const PriceInput = (args)=>{
-    const { currenciesConfig, field: { label }, path } = args;
+    const { currenciesConfig, field: { admin, label }, path } = args;
     const { setValue, value } = useField({
         path
     });
@@ -13,8 +13,10 @@ export const PriceInput = (args)=>{
     const currency = useFormFields(([fields])=>fields[currencyPath]);
     return /*#__PURE__*/ _jsx(FormattedInput, {
         currency: currency?.value,
+        description: typeof admin?.description === 'string' ? admin.description : undefined,
         label: label,
         onChange: (value)=>setValue(value),
+        path: path,
         supportedCurrencies: currenciesConfig?.supportedCurrencies,
         value: value || 0
     });

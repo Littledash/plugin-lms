@@ -51,6 +51,9 @@ import { pricesField } from '../fields/pricesField.js';
                 {
                     name: 'lesson',
                     type: 'relationship',
+                    admin: {
+                        description: 'A lesson in this course. Drag rows to change the order.'
+                    },
                     relationTo: lessonsCollectionSlug,
                     required: true
                 },
@@ -200,6 +203,9 @@ import { pricesField } from '../fields/pricesField.js';
                                 {
                                     name: 'course',
                                     type: 'relationship',
+                                    admin: {
+                                        description: 'The course the student must have done first.'
+                                    },
                                     relationTo: 'courses',
                                     required: true
                                 },

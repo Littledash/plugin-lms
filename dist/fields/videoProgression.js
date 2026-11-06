@@ -7,10 +7,6 @@
     const field = {
         name: 'videoProgression',
         type: 'group',
-        admin: {
-            ...overrides?.admin,
-            hideGutter: true
-        },
         fields: [
             {
                 name: 'displayTiming',
@@ -49,7 +45,12 @@
             }
         ],
         interfaceName: 'VideoProgression',
-        ...overrides
+        ...overrides,
+        admin: {
+            description: 'How the video affects progress through the lesson.',
+            ...overrides?.admin,
+            hideGutter: true
+        }
     };
     return field;
 };

@@ -65,7 +65,8 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       name: 'points',
       type: 'number',
       admin: {
-        description: 'Points awarded for correct answer',
+        description:
+          'Not used in the quiz score yet: the score is the percentage of questions answered correctly.',
         step: 0.1,
       },
       defaultValue: 1,
@@ -75,12 +76,17 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
     {
       name: 'questionType',
       type: 'select',
+      admin: {
+        description:
+          'Only Multiple Choice, Single Choice and True/False are marked automatically. Any other type always counts as wrong, so a quiz that includes one cannot reach 100%.',
+      },
       options: availableQuestionTypes,
       required: true,
     },
     {
       name: 'question',
       type: 'text',
+      admin: { description: 'The question as students see it.' },
       required: true,
     },
     {
@@ -89,14 +95,31 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       admin: {
         condition: (_, siblingData) =>
           ['multipleChoice', 'singleChoice', 'sorting'].includes(siblingData.questionType),
+        description: 'The answers students choose from.',
       },
       fields: [
-        { name: 'label', type: 'text', required: true },
-        { name: 'isCorrect', type: 'checkbox', access: answerAccess },
+        {
+          name: 'label',
+          type: 'text',
+          admin: { description: 'The answer text students see.' },
+          required: true,
+        },
+        {
+          name: 'isCorrect',
+          type: 'checkbox',
+          access: answerAccess,
+          admin: {
+            description:
+              'Tick the right answer. Only one counts: if several are ticked, the first ticked choice is the answer. Hidden from students.',
+          },
+        },
         {
           name: 'order',
           type: 'number',
-          admin: { condition: (_, siblingData) => siblingData.questionType === 'sorting' },
+          admin: {
+            condition: (_, siblingData) => siblingData.questionType === 'sorting',
+            description: 'Where this choice belongs in the correct order, starting at 1.',
+          },
         },
       ],
     },
@@ -112,6 +135,7 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
           },
         },
         condition: (_, siblingData) => siblingData.questionType === 'trueFalse',
+        description: 'The right answer. Both accepts either. Hidden from students.',
       },
       validate: (value: unknown) => {
         if (value == null || value === '') {
@@ -126,8 +150,16 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       access: answerAccess,
       admin: {
         condition: (_, siblingData) => siblingData.questionType === 'fillInBlank',
+        description: 'Answers to accept. Hidden from students.',
       },
-      fields: [{ name: 'answer', type: 'text', required: true }],
+      fields: [
+        {
+          name: 'answer',
+          type: 'text',
+          admin: { description: 'An accepted answer.' },
+          required: true,
+        },
+      ],
     },
     {
       name: 'assessmentCriteria',
@@ -135,10 +167,21 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       access: answerAccess,
       admin: {
         condition: (_, siblingData) => siblingData.questionType === 'assessment',
+        description: 'What a marker looks for, with points for each. Hidden from students.',
       },
       fields: [
-        { name: 'criterion', type: 'text', required: true },
-        { name: 'points', type: 'number', required: true },
+        {
+          name: 'criterion',
+          type: 'text',
+          admin: { description: 'One thing a good answer includes.' },
+          required: true,
+        },
+        {
+          name: 'points',
+          type: 'number',
+          admin: { description: 'Points for meeting this criterion.' },
+          required: true,
+        },
       ],
     },
     {
@@ -146,6 +189,8 @@ export const questionsCollection: (props?: Props) => CollectionConfig<'questions
       type: 'number',
       admin: {
         condition: (_, siblingData) => siblingData.questionType === 'essay',
+        description:
+          'The most characters an answer may have. Your quiz form must apply it: it is not checked when answers are submitted.',
       },
       defaultValue: 500,
     },

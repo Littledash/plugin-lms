@@ -24,6 +24,7 @@ import { formatSlugHook } from '../ui/SlugInput/formatSlug.js';
         label: 'Slug',
         ...slugOverrides || {},
         admin: {
+            description: `The web address name, made from the ${fieldToUse}. Unlock it to type your own.`,
             position: 'sidebar',
             ...slugOverrides?.admin || {},
             components: {

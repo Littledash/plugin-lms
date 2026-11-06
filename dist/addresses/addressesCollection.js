@@ -35,6 +35,9 @@ export const addressesCollection = (props)=>{
                 create: isAdminFieldLevel,
                 update: isAdminFieldLevel
             },
+            admin: {
+                description: 'The person this address belongs to. Set to whoever saves it; only admins can choose someone else.'
+            },
             label: 'Student',
             relationTo: studentsCollectionSlug
         },
@@ -43,6 +46,9 @@ export const addressesCollection = (props)=>{
                 return {
                     name: 'country',
                     type: 'select',
+                    admin: {
+                        description: 'The country of the address.'
+                    },
                     label: 'Country',
                     options: supportedCountries || defaultCountries,
                     required: true,

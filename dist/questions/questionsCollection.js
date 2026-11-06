@@ -68,7 +68,7 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
             name: 'points',
             type: 'number',
             admin: {
-                description: 'Points awarded for correct answer',
+                description: 'Not used in the quiz score yet: the score is the percentage of questions answered correctly.',
                 step: 0.1
             },
             defaultValue: 1,
@@ -78,12 +78,18 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
         {
             name: 'questionType',
             type: 'select',
+            admin: {
+                description: 'Only Multiple Choice, Single Choice and True/False are marked automatically. Any other type always counts as wrong, so a quiz that includes one cannot reach 100%.'
+            },
             options: availableQuestionTypes,
             required: true
         },
         {
             name: 'question',
             type: 'text',
+            admin: {
+                description: 'The question as students see it.'
+            },
             required: true
         },
         {
@@ -94,24 +100,32 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
                         'multipleChoice',
                         'singleChoice',
                         'sorting'
-                    ].includes(siblingData.questionType)
+                    ].includes(siblingData.questionType),
+                description: 'The answers students choose from.'
             },
             fields: [
                 {
                     name: 'label',
                     type: 'text',
+                    admin: {
+                        description: 'The answer text students see.'
+                    },
                     required: true
                 },
                 {
                     name: 'isCorrect',
                     type: 'checkbox',
-                    access: answerAccess
+                    access: answerAccess,
+                    admin: {
+                        description: 'Tick the right answer. Only one counts: if several are ticked, the first ticked choice is the answer. Hidden from students.'
+                    }
                 },
                 {
                     name: 'order',
                     type: 'number',
                     admin: {
-                        condition: (_, siblingData)=>siblingData.questionType === 'sorting'
+                        condition: (_, siblingData)=>siblingData.questionType === 'sorting',
+                        description: 'Where this choice belongs in the correct order, starting at 1.'
                     }
                 }
             ]
@@ -127,7 +141,8 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
                         path: '@littledash/plugin-lms/ui/TrueFalseAnswer#TrueFalseAnswer'
                     }
                 },
-                condition: (_, siblingData)=>siblingData.questionType === 'trueFalse'
+                condition: (_, siblingData)=>siblingData.questionType === 'trueFalse',
+                description: 'The right answer. Both accepts either. Hidden from students.'
             },
             validate: (value)=>{
                 if (value == null || value === '') {
@@ -141,12 +156,16 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
             type: 'array',
             access: answerAccess,
             admin: {
-                condition: (_, siblingData)=>siblingData.questionType === 'fillInBlank'
+                condition: (_, siblingData)=>siblingData.questionType === 'fillInBlank',
+                description: 'Answers to accept. Hidden from students.'
             },
             fields: [
                 {
                     name: 'answer',
                     type: 'text',
+                    admin: {
+                        description: 'An accepted answer.'
+                    },
                     required: true
                 }
             ]
@@ -156,17 +175,24 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
             type: 'array',
             access: answerAccess,
             admin: {
-                condition: (_, siblingData)=>siblingData.questionType === 'assessment'
+                condition: (_, siblingData)=>siblingData.questionType === 'assessment',
+                description: 'What a marker looks for, with points for each. Hidden from students.'
             },
             fields: [
                 {
                     name: 'criterion',
                     type: 'text',
+                    admin: {
+                        description: 'One thing a good answer includes.'
+                    },
                     required: true
                 },
                 {
                     name: 'points',
                     type: 'number',
+                    admin: {
+                        description: 'Points for meeting this criterion.'
+                    },
                     required: true
                 }
             ]
@@ -175,7 +201,8 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
             name: 'maxLength',
             type: 'number',
             admin: {
-                condition: (_, siblingData)=>siblingData.questionType === 'essay'
+                condition: (_, siblingData)=>siblingData.questionType === 'essay',
+                description: 'The most characters an answer may have. Your quiz form must apply it: it is not checked when answers are submitted.'
             },
             defaultValue: 500
         },

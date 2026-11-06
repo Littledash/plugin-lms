@@ -71,6 +71,7 @@ export const SlugInput = ({ checkboxFieldPath: checkboxFieldPathFromProps, field
                 ]
             }),
             /*#__PURE__*/ _jsx(TextInput, {
+                description: field.admin?.description,
                 onChange: setValue,
                 path: path || field.name,
                 readOnly: Boolean(readOnly),

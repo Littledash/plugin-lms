@@ -18,10 +18,6 @@ export const videoProgression: (props?: Props) => GroupField = (props) => {
   const field: GroupField = {
     name: 'videoProgression',
     type: 'group',
-    admin: {
-      ...overrides?.admin,
-      hideGutter: true,
-    },
     fields: [
       {
         name: 'displayTiming',
@@ -56,6 +52,11 @@ export const videoProgression: (props?: Props) => GroupField = (props) => {
     ],
     interfaceName: 'VideoProgression',
     ...overrides,
+    admin: {
+      description: 'How the video affects progress through the lesson.',
+      ...overrides?.admin,
+      hideGutter: true,
+    },
   }
 
   return field

@@ -21,6 +21,7 @@
         options,
         ...overrides,
         admin: {
+            description: 'The currency this price is in.',
             readOnly: currenciesConfig.supportedCurrencies.length === 1,
             ...overrides?.admin
         }

@@ -1,11 +1,11 @@
 'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { FieldLabel } from '@payloadcms/ui';
+import { FieldDescription, FieldLabel } from '@payloadcms/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AUD } from '../../currencies/index.js';
 import { convertFromBaseValue, convertToBaseValue } from './utilities.js';
 const baseClass = 'formattedPrice';
-export const FormattedInput = ({ id, currency: currencyFromProps, disabled = false, label, onChange: onChangeFromProps, placeholder = '0.00', supportedCurrencies, value })=>{
+export const FormattedInput = ({ id, currency: currencyFromProps, description, disabled = false, label, onChange: onChangeFromProps, path, placeholder = '0.00', supportedCurrencies, value })=>{
     const [displayValue, setDisplayValue] = useState('');
     const inputRef = useRef(null);
     const isFirstRender = useRef(true);
@@ -108,6 +108,10 @@ export const FormattedInput = ({ id, currency: currencyFromProps, disabled = fal
                         value: displayValue
                     })
                 ]
+            }),
+            description && /*#__PURE__*/ _jsx(FieldDescription, {
+                description: description,
+                path: path ?? ''
             })
         ]
     });

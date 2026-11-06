@@ -18,6 +18,7 @@
                 },
                 ...overrides?.admin?.components
             },
+            description: 'The price, typed as you would write it, such as 49.95. Saved in cents.',
             ...overrides?.admin
         }
     };

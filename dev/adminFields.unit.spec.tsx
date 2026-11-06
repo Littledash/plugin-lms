@@ -26,6 +26,7 @@ await jest.unstable_mockModule('@payloadcms/ui', () => ({
   Button: ({ children, onClick }: { children: React.ReactNode; onClick: React.MouseEventHandler }) => (
     <button onClick={onClick} type="button">{children}</button>
   ),
+  FieldDescription: ({ description }: { description?: React.ReactNode }) => <p>{description}</p>,
   FieldLabel: ({ label }: { label?: React.ReactNode }) => <span>{label}</span>,
   SelectInput: ({
     label,
@@ -56,20 +57,25 @@ await jest.unstable_mockModule('@payloadcms/ui', () => ({
     </select>
   ),
   TextInput: ({
+    description,
     onChange,
     readOnly,
     value,
   }: {
+    description?: React.ReactNode
     onChange: (value: string) => void
     readOnly?: boolean
     value?: string
   }) => (
-    <input
-      aria-label="slug"
-      onChange={(event) => onChange(event.target.value)}
-      readOnly={readOnly}
-      value={value ?? ''}
-    />
+    <>
+      <input
+        aria-label="slug"
+        onChange={(event) => onChange(event.target.value)}
+        readOnly={readOnly}
+        value={value ?? ''}
+      />
+      {description ? <p>{description}</p> : null}
+    </>
   ),
   useField: () => hooks,
   useForm: () => ({ dispatchFields: hooks.dispatchFields }),
@@ -177,6 +183,30 @@ describe('admin field components', () => {
     fireEvent.blur(input)
     expect(setValue).toHaveBeenCalledWith(1050)
     expect((input as HTMLInputElement).value).toBe('10.50')
+  })
+
+  it('shows the field descriptions on the price and slug inputs', async () => {
+    hooks.value = 2500
+    hooks.fields = { 'prices.0.currency': { value: 'AUD' }, slugLock: { value: false } }
+
+    render(
+      <>
+        <PriceInput
+          currenciesConfig={currencies}
+          field={{ name: 'amount', admin: { description: 'Typed as 49.95' }, label: 'Amount' }}
+          path="prices.0.amount"
+        />
+        <SlugInput
+          checkboxFieldPath="slugLock"
+          field={{ name: 'slug', admin: { description: 'The web address name' }, label: 'Slug' }}
+          fieldToUse="title"
+          path="slug"
+        />
+      </>,
+    )
+
+    expect(await screen.findByText('Typed as 49.95')).toBeTruthy()
+    expect(screen.getByText('The web address name')).toBeTruthy()
   })
 
   it('rejects letters in a price', async () => {

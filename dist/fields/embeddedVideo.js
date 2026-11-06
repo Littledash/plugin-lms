@@ -16,7 +16,7 @@
                 name: 'embed',
                 type: 'checkbox',
                 admin: {
-                    description: 'Embeds a Vimeo iframe.'
+                    description: 'Show a video on this page.'
                 }
             },
             {
@@ -34,7 +34,8 @@
                 name: 'platform',
                 type: 'select',
                 admin: {
-                    condition: (data, { embed })=>Boolean(embed)
+                    condition: (data, { embed })=>Boolean(embed),
+                    description: 'Where the video is hosted. Vimeo and YouTube need the video URL; Internal videos are supplied by the site and need no URL.'
                 },
                 defaultValue: 'vimeo',
                 options: [
@@ -56,7 +57,8 @@
                 name: 'videoURL',
                 type: 'text',
                 admin: {
-                    condition: (data, { embed, platform })=>Boolean(embed) && Boolean(platform !== 'internal')
+                    condition: (data, { embed, platform })=>Boolean(embed) && Boolean(platform !== 'internal'),
+                    description: 'The link to the video page, such as https://vimeo.com/123456789.'
                 },
                 label: 'Video URL',
                 localized: true,

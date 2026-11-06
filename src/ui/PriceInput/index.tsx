@@ -17,7 +17,7 @@ type Props = {
 export const PriceInput: React.FC<Props> = (args) => {
   const {
     currenciesConfig,
-    field: { label },
+    field: { admin, label },
     path,
   } = args
 
@@ -30,8 +30,10 @@ export const PriceInput: React.FC<Props> = (args) => {
   return (
     <FormattedInput
       currency={currency?.value as string}
+      description={typeof admin?.description === 'string' ? admin.description : undefined}
       label={label}
       onChange={(value) => setValue(value)}
+      path={path}
       supportedCurrencies={currenciesConfig?.supportedCurrencies}
       value={value || 0}
     />

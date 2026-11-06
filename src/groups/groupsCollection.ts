@@ -36,22 +36,34 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
     {
       name: 'title',
       type: 'text',
+      admin: {
+        description:
+          'Usually the company or team name. Members never join a group by its name: two groups can share one.',
+      },
       required: true,
     },
 
     {
       name: 'description',
       type: 'richText',
+      admin: { description: 'Optional notes about the group.' },
     },
     ...slugField(),
     {
       name: 'purchasedCourses',
       type: 'array',
       access: adminOnlyWrite,
+      admin: {
+        description:
+          'One row per course the group has bought, with its seats. Filled in by purchases; only admins can change it.',
+      },
       fields: [
         {
           name: 'seatManagement',
           type: 'group',
+          admin: {
+            description: 'Every member, leader or student, uses one seat on each of these courses.',
+          },
           fields: [
             {
               name: 'seatsTotal',
@@ -63,7 +75,10 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
             {
               name: 'seatsUsed',
               type: 'number',
-              admin: { readOnly: true },
+              admin: {
+                description: 'Seats taken. Counted by the LMS as members join; nobody can join once it reaches the total.',
+                readOnly: true,
+              },
               defaultValue: 0,
             },
             {
@@ -200,6 +215,10 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
     {
       name: 'studentLimit',
       type: 'number',
+      admin: {
+        description:
+          'Not used. Seat limits are set per course in Purchased Courses. Kept for groups from older versions.',
+      },
     },
     // {
     //   name: 'materials',

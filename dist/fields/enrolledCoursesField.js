@@ -11,6 +11,7 @@
         ...overrides,
         admin: {
             allowCreate: false,
+            description: 'Courses this student is enrolled in. Change enrollments on the course, or through a purchase.',
             ...overrides?.admin
         }
     };

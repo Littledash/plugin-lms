@@ -11,6 +11,7 @@
         ...overrides,
         admin: {
             allowCreate: false,
+            description: 'Courses this student has completed. Filled in by the LMS when they finish a course.',
             ...overrides?.admin
         }
     };

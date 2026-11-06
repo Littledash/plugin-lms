@@ -37,7 +37,11 @@ export const currencyField: (props: Props) => SelectField = ({ currenciesConfig,
     ...(defaultValue && { defaultValue }),
     options,
     ...overrides,
-    admin: { readOnly: currenciesConfig.supportedCurrencies.length === 1, ...overrides?.admin },
+    admin: {
+      description: 'The currency this price is in.',
+      readOnly: currenciesConfig.supportedCurrencies.length === 1,
+      ...overrides?.admin,
+    },
   }
 
   return field

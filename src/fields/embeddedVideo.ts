@@ -28,7 +28,7 @@ export const embeddedVideo: (props?: Props) => GroupField = (props) => {
         name: 'embed',
         type: 'checkbox',
         admin: {
-          description: 'Embeds a Vimeo iframe.',
+          description: 'Show a video on this page.',
         },
       },
       {
@@ -47,6 +47,8 @@ export const embeddedVideo: (props?: Props) => GroupField = (props) => {
         type: 'select',
         admin: {
           condition: (data, { embed }) => Boolean(embed),
+          description:
+            'Where the video is hosted. Vimeo and YouTube need the video URL; Internal videos are supplied by the site and need no URL.',
         },
         defaultValue: 'vimeo',
         options: [
@@ -70,6 +72,7 @@ export const embeddedVideo: (props?: Props) => GroupField = (props) => {
         admin: {
           condition: (data, { embed, platform }) =>
             Boolean(embed) && Boolean(platform !== 'internal'),
+          description: 'The link to the video page, such as https://vimeo.com/123456789.',
         },
         label: 'Video URL',
         localized: true,

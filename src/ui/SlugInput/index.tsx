@@ -78,6 +78,7 @@ export const SlugInput: React.FC<SlugComponentProps> = ({
       </div>
 
       <TextInput
+        description={field.admin?.description}
         onChange={setValue}
         path={path || field.name}
         readOnly={Boolean(readOnly)}

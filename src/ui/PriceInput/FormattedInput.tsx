@@ -2,7 +2,7 @@
 
 import type { StaticLabel } from 'payload'
 
-import { FieldLabel } from '@payloadcms/ui'
+import { FieldDescription, FieldLabel } from '@payloadcms/ui'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { Currency } from '../../types.js'
@@ -12,11 +12,13 @@ import { convertFromBaseValue, convertToBaseValue } from './utilities.js'
 
 interface Props {
   currency: string
+  description?: string
   disabled?: boolean
   error?: string
   id?: string
   label?: StaticLabel
   onChange: (value: number) => void
+  path?: string
   placeholder?: string
   supportedCurrencies: Currency[]
   value: number
@@ -27,9 +29,11 @@ const baseClass = 'formattedPrice'
 export const FormattedInput: React.FC<Props> = ({
   id,
   currency: currencyFromProps,
+  description,
   disabled = false,
   label,
   onChange: onChangeFromProps,
+  path,
   placeholder = '0.00',
   supportedCurrencies,
   value,
@@ -128,6 +132,7 @@ export const FormattedInput: React.FC<Props> = ({
           value={displayValue}
         />
       </div>
+      {description && <FieldDescription description={description} path={path ?? ''} />}
     </div>
   )
 }

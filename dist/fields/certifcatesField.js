@@ -18,6 +18,7 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
                 name: 'document',
                 type: 'upload',
                 admin: {
+                    description: 'The certificate PDF. Private: only the student and staff can open it.',
                     readOnly: true
                 },
                 relationTo: documentsCollectionSlug
@@ -38,7 +39,8 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
                 type: 'relationship',
                 admin: {
                     allowCreate: false,
-                    allowEdit: false
+                    allowEdit: false,
+                    description: 'The certificate design that was awarded.'
                 },
                 relationTo: certificatesCollectionSlug || 'certificates',
                 required: true
@@ -66,6 +68,7 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
         ],
         ...overrides,
         admin: {
+            description: 'Certificates the student has earned, added by the LMS when they complete a course. Only admins can change them.',
             ...overrides?.admin
         }
     };

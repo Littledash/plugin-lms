@@ -39,6 +39,7 @@ export const certificatesField: (props: Props) => ArrayField = ({
         name: 'document',
         type: 'upload',
         admin: {
+          description: 'The certificate PDF. Private: only the student and staff can open it.',
           readOnly: true,
         },
         relationTo: documentsCollectionSlug,
@@ -60,6 +61,7 @@ export const certificatesField: (props: Props) => ArrayField = ({
         admin: {
           allowCreate: false,
           allowEdit: false,
+          description: 'The certificate design that was awarded.',
         },
         relationTo: certificatesCollectionSlug || 'certificates',
         required: true,
@@ -87,6 +89,8 @@ export const certificatesField: (props: Props) => ArrayField = ({
     ],
     ...overrides,
     admin: {
+      description:
+        'Certificates the student has earned, added by the LMS when they complete a course. Only admins can change them.',
       ...overrides?.admin,
     },
   }
