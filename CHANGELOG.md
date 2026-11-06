@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.2
+
+### Changed
+
+- `addresses.customer` is indexed, since addresses are looked up by their owner.
+
 ## 2.0.1
 
 ### Changed

@@ -663,6 +663,13 @@ describe('fetch-progress endpoint', () => {
 })
 
 describe('field access', () => {
+  it('indexes the fields documents are looked up by', () => {
+    const fieldNamed = (collection: 'addresses' | 'documents' | 'lessons', name: string) =>
+      payload.collections[collection].config.flattenedFields.find((field) => field.name === name)
+    expect(fieldNamed('addresses', 'customer')).toHaveProperty('index', true)
+    expect(fieldNamed('documents', 'owner')).toHaveProperty('index', true)
+  })
+
   it('loads only a summary of a course linked from another document', async () => {
     const student = await createUser()
     const course = await createCourse()

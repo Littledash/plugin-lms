@@ -55,6 +55,8 @@ export const addressesCollection: (props: Props) => CollectionConfig = (props) =
         description:
           'The person this address belongs to. Set to whoever saves it; only admins can choose someone else.',
       },
+      // Addresses are looked up by their owner
+      index: true,
       label: 'Student',
       relationTo: studentsCollectionSlug,
     },
