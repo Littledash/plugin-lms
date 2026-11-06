@@ -67,49 +67,67 @@ export interface Config {
   }
   blocks: {}
   collections: {
-    users: User
     posts: Post
+    coupons: Coupon
     media: Media
+    users: User
+    addresses: Address
     certificates: Certificate
     courses: Course
+    groups: Group
     lessons: Lesson
     topics: Topic
     quizzes: Quiz
     categories: Category
+    'course-files': CourseFile
+    documents: Document
     tags: Tag
     questions: Question
+    'payload-kv': PayloadKv
     'payload-locked-documents': PayloadLockedDocument
     'payload-preferences': PayloadPreference
     'payload-migrations': PayloadMigration
   }
-  collectionsJoins: {}
+  collectionsJoins: {
+    users: {
+      enrolledCourses: 'courses'
+      completedCourses: 'courses'
+    }
+  }
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>
     posts: PostsSelect<false> | PostsSelect<true>
+    coupons: CouponsSelect<false> | CouponsSelect<true>
     media: MediaSelect<false> | MediaSelect<true>
+    users: UsersSelect<false> | UsersSelect<true>
+    addresses: AddressesSelect<false> | AddressesSelect<true>
     certificates: CertificatesSelect<false> | CertificatesSelect<true>
     courses: CoursesSelect<false> | CoursesSelect<true>
+    groups: GroupsSelect<false> | GroupsSelect<true>
     lessons: LessonsSelect<false> | LessonsSelect<true>
     topics: TopicsSelect<false> | TopicsSelect<true>
     quizzes: QuizzesSelect<false> | QuizzesSelect<true>
     categories: CategoriesSelect<false> | CategoriesSelect<true>
+    'course-files': CourseFilesSelect<false> | CourseFilesSelect<true>
+    documents: DocumentsSelect<false> | DocumentsSelect<true>
     tags: TagsSelect<false> | TagsSelect<true>
     questions: QuestionsSelect<false> | QuestionsSelect<true>
+    'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>
     'payload-locked-documents':
-      | PayloadLockedDocumentsSelect<false>
-      | PayloadLockedDocumentsSelect<true>
+      PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>
   }
   db: {
     defaultIDType: string
   }
+  fallbackLocale: null
   globals: {}
   globalsSelect: {}
   locale: null
-  user: User & {
-    collection: 'users'
+  widgets: {
+    collections: CollectionsWidget
   }
+  user: User
   jobs: {
     tasks: unknown
     workflows: unknown
@@ -135,34 +153,171 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: string
+  updatedAt: string
+  createdAt: string
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: string
+  updatedAt: string
+  createdAt: string
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: string
+  updatedAt: string
+  createdAt: string
+  url?: string | null
+  thumbnailURL?: string | null
+  filename?: string | null
+  mimeType?: string | null
+  filesize?: number | null
+  width?: number | null
+  height?: number | null
+  focalX?: number | null
+  focalY?: number | null
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: string
-  name?: string | null
-  roles: ('admin' | 'public' | 'author' | 'student' | 'contributor' | 'editor' | 'subscriber')[]
-  firstName: string
-  lastName: string
-  fullName?: string | null
-  enrolledCourses?: (string | Course)[] | null
-  completedCourses?: (string | Course)[] | null
+  /**
+   * Courses this student is enrolled in. Change enrollments on the course, or through a purchase.
+   */
+  enrolledCourses?: {
+    docs?: (string | Course)[]
+    hasNextPage?: boolean
+    totalDocs?: number
+  }
+  /**
+   * Courses this student has completed. Filled in by the LMS when they finish a course.
+   */
+  completedCourses?: {
+    docs?: (string | Course)[]
+    hasNextPage?: boolean
+    totalDocs?: number
+  }
+  /**
+   * Certificates the student has earned, added by the LMS when they complete a course. Only admins can change them.
+   */
+  certificates?:
+    | {
+        /**
+         * The certificate PDF. Private: only the student and staff can open it.
+         */
+        document?: (string | null) | Document
+        /**
+         * Legacy public copy of the PDF. Replaced by Document.
+         */
+        file?: (string | null) | Media
+        /**
+         * The certificate design that was awarded.
+         */
+        certificate: string | Certificate
+        /**
+         * The date when the certificate was completed
+         */
+        completedDate: string
+        /**
+         * The course that the certificate is for
+         */
+        course: string | Course
+        id?: string | null
+      }[]
+    | null
+  /**
+   * One entry per course the student is enrolled in: enrollment and access dates, finished lessons and quiz results. Only admins can change it; the LMS updates it as the student works through the course.
+   */
   coursesProgress?:
     | {
+        /**
+         * The course this progress is for.
+         */
         course: string | Course
+        /**
+         * When the student was enrolled. Lesson release delays count from this date, and access expiry too unless the access was renewed.
+         */
         enrolledAt?: string | null
+        /**
+         * Set when access is renewed by a purchase. Access expiry counts from this date instead of the enrollment date.
+         */
+        accessFrom?: string | null
+        /**
+         * Purchases applied to this course. A purchase is only ever applied once.
+         */
+        renewals?:
+          | {
+              /**
+               * Identifies the purchase, usually its order ID.
+               */
+              key: string
+              /**
+               * When this purchase renewed access.
+               */
+              renewedAt?: string | null
+              id?: string | null
+            }[]
+          | null
+        /**
+         * Ticked when the student finishes every lesson and passes every quiz in the course. Set by the LMS; tick it by hand only to mark a course complete without the work.
+         */
         completed?: boolean | null
+        /**
+         * When the course was completed. Certificates are dated with this.
+         */
         completedAt?: string | null
+        /**
+         * Lessons the student has finished in this course, with when.
+         */
         completedLessons?:
           | {
+              /**
+               * The finished lesson.
+               */
               lesson: string | Lesson
+              /**
+               * When the student finished the lesson.
+               */
               completedAt: string
               id?: string | null
             }[]
           | null
+        /**
+         * Quizzes the student has attempted in this course, passed or not, with their best score.
+         */
         completedQuizzes?:
           | {
+              /**
+               * The quiz attempted.
+               */
               quiz: string | Quiz
+              /**
+               * Best score so far: the percentage of questions answered correctly. It passes at the quiz's minimum score.
+               */
               score: number
+              /**
+               * How many times the student has submitted this quiz. Counts toward the quiz's attempt limit.
+               */
+              attempts?: number | null
+              /**
+               * When the latest attempt was submitted. The retry wait counts from this.
+               */
+              lastAttemptAt?: string | null
+              /**
+               * When the best score was achieved.
+               */
               completedAt: string
               id?: string | null
             }[]
@@ -170,12 +325,11 @@ export interface User {
         id?: string | null
       }[]
     | null
-  billingAddress?: BillingAddress
-  shippingAddress?: ShippingAddress
-  /**
-   * The certificates the student has earned
-   */
-  certificates?: (string | Certificate)[] | null
+  name?: string | null
+  roles: ('admin' | 'author' | 'student' | 'leader' | 'public')[]
+  firstName: string
+  lastName: string
+  fullName?: string | null
   updatedAt: string
   createdAt: string
   email: string
@@ -183,6 +337,7 @@ export interface User {
   resetPasswordExpiration?: string | null
   salt?: string | null
   hash?: string | null
+  resetPasswordRequestedAt?: string | null
   loginAttempts?: number | null
   lockUntil?: string | null
   sessions?:
@@ -193,6 +348,7 @@ export interface User {
       }[]
     | null
   password?: string | null
+  collection: 'users'
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -211,11 +367,11 @@ export interface Course {
   /**
    * The description of the course
    */
-  description: {
+  description?: {
     root: {
       type: string
       children: {
-        type: string
+        type: any
         version: number
         [k: string]: unknown
       }[]
@@ -225,15 +381,23 @@ export interface Course {
       version: number
     }
     [k: string]: unknown
-  }
+  } | null
   /**
-   * The lessons that are part of the course
+   * The lessons that are part of the course in specific order
    */
-  lessons?: (string | Lesson)[] | null
-  /**
-   * The featured image of the course
-   */
-  featuredImage?: (string | null) | Media
+  lessons?:
+    | {
+        /**
+         * A lesson in this course. Drag rows to change the order.
+         */
+        lesson: string | Lesson
+        /**
+         * Check if this lesson is optional
+         */
+        isOptional?: boolean | null
+        id?: string | null
+      }[]
+    | null
   enrollment: {
     /**
      * Controls how students gain access to the course
@@ -244,7 +408,13 @@ export interface Course {
      */
     prices?:
       | {
+          /**
+           * The price, typed as you would write it, such as 49.95. Saved in cents.
+           */
           amount?: number | null
+          /**
+           * The currency this price is in.
+           */
           currency?: 'AUD' | null
           id?: string | null
         }[]
@@ -262,7 +432,7 @@ export interface Course {
       root: {
         type: string
         children: {
-          type: string
+          type: any
           version: number
           [k: string]: unknown
         }[]
@@ -293,9 +463,34 @@ export interface Course {
   }
   accessSettings?: {
     /**
-     * Courses that a student must complete before enrolling in this course.
+     * Courses that a student must complete before enrolling in this course with completion criteria.
      */
-    prerequisiteCourses?: (string | Course)[] | null
+    prerequisiteCourses?:
+      | {
+          /**
+           * The course the student must have done first.
+           */
+          course: string | Course
+          /**
+           * What is required to satisfy this prerequisite
+           */
+          completionRequirement?:
+            ('complete' | 'passQuiz' | 'minimumScore' | 'specificLessons') | null
+          /**
+           * Minimum score required (0-100)
+           */
+          minimumScore?: number | null
+          /**
+           * Specific lessons that must be completed
+           */
+          requiredLessons?: (string | Lesson)[] | null
+          /**
+           * Whether this prerequisite is optional
+           */
+          isOptional?: boolean | null
+          id?: string | null
+        }[]
+      | null
     /**
      * The points that are required to access this course
      */
@@ -321,12 +516,18 @@ export interface Course {
      */
     navigationMode: 'linear' | 'free'
   }
-  courseStudents?: {
-    /**
-     * The students enrolled in the course
-     */
-    students?: (string | User)[] | null
-  }
+  /**
+   * Controls the students enrolled in the course
+   */
+  enrolledStudents?: (string | User)[] | null
+  /**
+   * The students completed the course
+   */
+  courseCompletedStudents?: (string | User)[] | null
+  /**
+   * Controls the groups enrolled in the course
+   */
+  courseEnrolledGroups?: (string | Group)[] | null
   /**
    * The authors of the course
    */
@@ -339,8 +540,13 @@ export interface Course {
    * The tags that are part of the course
    */
   tags?: (string | Tag)[] | null
+  /**
+   * The featured image of the course
+   */
+  featuredImage?: (string | null) | Media
   updatedAt: string
   createdAt: string
+  _status?: ('draft' | 'published') | null
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -363,7 +569,7 @@ export interface Lesson {
     root: {
       type: string
       children: {
-        type: string
+        type: any
         version: number
         [k: string]: unknown
       }[]
@@ -390,7 +596,7 @@ export interface Lesson {
       root: {
         type: string
         children: {
-          type: string
+          type: any
           version: number
           [k: string]: unknown
         }[]
@@ -401,6 +607,10 @@ export interface Lesson {
       }
       [k: string]: unknown
     } | null
+    /**
+     * The downloadable files of the lesson
+     */
+    downloadableFiles?: (string | CourseFile)[] | null
     lessonVideo?: EmbeddedVideo
     videoProgression?: VideoProgression
   }
@@ -434,11 +644,17 @@ export interface Lesson {
   createdAt: string
 }
 /**
+ * Downloads for lessons, such as workbooks and handouts. Students can open a file only while they can open a lesson that offers it. Images for public pages go in Media, and files that belong to one person go in Documents.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
+ * via the `definition` "course-files".
  */
-export interface Media {
+export interface CourseFile {
   id: string
+  /**
+   * A name for the download that students will understand, such as "Week 1 workbook".
+   */
+  title?: string | null
   updatedAt: string
   createdAt: string
   url?: string | null
@@ -459,23 +675,31 @@ export interface Media {
  */
 export interface EmbeddedVideo {
   /**
-   * Embeds a Vimeo iframe.
+   * Show a video on this page.
    */
   embed?: boolean | null
   /**
    * Maximum upload file size: 4MB. Recommended file size for images is <500KB.
    */
   poster?: (string | null) | Media
+  /**
+   * Where the video is hosted. Vimeo and YouTube need the video URL; Internal videos are supplied by the site and need no URL.
+   */
   platform?: ('vimeo' | 'internal' | 'youtube') | null
+  /**
+   * The link to the video page, such as https://vimeo.com/123456789.
+   */
   videoURL?: string | null
 }
 /**
+ * How the video affects progress through the lesson.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "VideoProgression".
  */
 export interface VideoProgression {
   /**
-   * Before completed sub-steps: The video will be shown and must be fully watched before the user can access the lesson’s associated steps | After completed sub-steps:  The video will be visible after the user has completed the lesson’s associated steps. The full video must be watched in order to complete the lesson.
+   * Before completed sub-steps: The video will be shown and must be fully watched before the user can access the lesson’s associated steps | After completed sub-steps: The video will be visible after the user has completed the lesson’s associated steps. The full video must be watched in order to complete the lesson.
    */
   displayTiming: 'before' | 'after'
   /**
@@ -497,6 +721,9 @@ export interface Category {
    * The title of the category
    */
   title: string
+  /**
+   * The web address name, made from the title. Unlock it to type your own.
+   */
   slug?: string | null
   slugLock?: boolean | null
   updatedAt: string
@@ -519,11 +746,11 @@ export interface Quiz {
   /**
    * The description of the quiz
    */
-  description: {
+  description?: {
     root: {
       type: string
       children: {
-        type: string
+        type: any
         version: number
         [k: string]: unknown
       }[]
@@ -533,16 +760,27 @@ export interface Quiz {
       version: number
     }
     [k: string]: unknown
-  }
+  } | null
+  /**
+   * The questions in this quiz
+   */
+  questions?: (string | Question)[] | null
+  /**
+   * Minimum score required (0-100) to pass the quiz
+   */
+  minimumScore?: number | null
+  /**
+   * Maximum attempts per student. Leave empty for unlimited.
+   */
+  attemptLimit?: number | null
+  /**
+   * The authors of the quiz
+   */
+  authors?: (string | User)[] | null
   /**
    * The featured image of the quiz
    */
   featuredImage?: (string | null) | Media
-  /**
-   * The questions in this quiz
-   */
-  questions: (string | Question)[]
-  authors?: (string | User)[] | null
   updatedAt: string
   createdAt: string
 }
@@ -557,41 +795,73 @@ export interface Question {
    */
   title: string
   /**
-   * Points awarded for correct answer
+   * Not used in the quiz score yet: the score is the percentage of marked questions answered correctly.
    */
   points: number
+  /**
+   * Essay, Assessment and Free Choice answers need a person to judge them, so they are not marked and do not count toward the score. Every other type is marked automatically.
+   */
   questionType:
-    | 'multipleChoice'
-    | 'trueFalse'
-    | 'sorting'
-    | 'fillInBlank'
-    | 'assessment'
-    | 'essay'
-    | 'freeChoice'
-    | 'singleChoice'
+    'multipleChoice' | 'singleChoice' | 'trueFalse' | 'sorting' | 'essay' | 'fillInBlank'
+  /**
+   * The question as students see it.
+   */
   question: string
+  /**
+   * The answers students choose from.
+   */
   choices?:
     | {
+        /**
+         * The answer text students see.
+         */
         label: string
+        /**
+         * Tick the right answer. For Multiple Choice, tick every right answer: students must pick exactly those. Not used for Sorting. Hidden from students.
+         */
         isCorrect?: boolean | null
+        /**
+         * Where this choice belongs in the correct order, starting at 1. Left empty, the order of the list is used.
+         */
         order?: number | null
         id?: string | null
       }[]
     | null
+  /**
+   * The right answer. Both accepts either. Hidden from students.
+   */
   correctAnswer?: string | null
+  /**
+   * Answers to accept. Capital letters and extra spaces are ignored. Hidden from students.
+   */
   correctAnswers?:
     | {
+        /**
+         * An accepted answer.
+         */
         answer: string
         id?: string | null
       }[]
     | null
+  /**
+   * What a person marking looks for, with points for each. Not marked automatically. Hidden from students.
+   */
   assessmentCriteria?:
     | {
+        /**
+         * One thing a good answer includes.
+         */
         criterion: string
+        /**
+         * Points for meeting this criterion.
+         */
         points: number
         id?: string | null
       }[]
     | null
+  /**
+   * The most characters an answer may have. Your quiz form must apply it: it is not checked when answers are submitted.
+   */
   maxLength?: number | null
   /**
    * The authors of the question
@@ -617,7 +887,7 @@ export interface Certificate {
     root: {
       type: string
       children: {
-        type: string
+        type: any
         version: number
         [k: string]: unknown
       }[]
@@ -631,7 +901,7 @@ export interface Certificate {
   /**
    * The certificate template image
    */
-  template: string | Media
+  template?: (string | null) | Media
   /**
    * The courses this certificate is for
    */
@@ -653,6 +923,83 @@ export interface Certificate {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "groups".
+ */
+export interface Group {
+  id: string
+  /**
+   * Usually the company or team name. Members never join a group by its name: two groups can share one.
+   */
+  title: string
+  /**
+   * Optional notes about the group.
+   */
+  description?: {
+    root: {
+      type: string
+      children: {
+        type: any
+        version: number
+        [k: string]: unknown
+      }[]
+      direction: ('ltr' | 'rtl') | null
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | ''
+      indent: number
+      version: number
+    }
+    [k: string]: unknown
+  } | null
+  /**
+   * The web address name, made from the title. Unlock it to type your own.
+   */
+  slug?: string | null
+  slugLock?: boolean | null
+  /**
+   * One row per course the group has bought, with its seats. Filled in by purchases; only admins can change it.
+   */
+  purchasedCourses?:
+    | {
+        /**
+         * Every member, leader or student, uses one seat on each of these courses.
+         */
+        seatManagement: {
+          /**
+           * Total seats purchased for this group
+           */
+          seatsTotal: number
+          /**
+           * Seats taken. Counted by the LMS as members join; nobody can join once it reaches the total.
+           */
+          seatsUsed?: number | null
+          /**
+           * The course that is associated with the group
+           */
+          course?: (string | null) | Course
+          /**
+           * The coupon that is associated with the group
+           */
+          coupon?: (string | null) | Coupon
+        }
+        id?: string | null
+      }[]
+    | null
+  /**
+   * The users that are part of the group
+   */
+  students?: (string | User)[] | null
+  /**
+   * The leaders of the group
+   */
+  leaders?: (string | User)[] | null
+  /**
+   * Not used. Seat limits are set per course in Purchased Courses. Kept for groups from older versions.
+   */
+  studentLimit?: number | null
+  updatedAt: string
+  createdAt: string
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "tags".
  */
 export interface Tag {
@@ -661,543 +1008,96 @@ export interface Tag {
    * The title of the tag
    */
   title: string
+  /**
+   * The web address name, made from the title. Unlock it to type your own.
+   */
   slug?: string | null
   slugLock?: boolean | null
   updatedAt: string
   createdAt: string
 }
 /**
+ * Private files that belong to one person, such as certificates and files sent through site forms. Only the owner and staff can open them. Lesson handouts go in Course Files, and images for public pages go in Media. Accepts PDF, JPEG, PNG, WebP, GIF, HEIC and Word (.docx).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "BillingAddress".
+ * via the `definition` "documents".
  */
-export interface BillingAddress {
-  firstName?: string | null
-  lastName?: string | null
-  company?: string | null
-  addressLineOne?: string | null
-  addressLineTwo?: string | null
-  city?: string | null
-  state?: string | null
-  postcode?: string | null
-  country?:
-    | (
-        | 'AF'
-        | 'AX'
-        | 'AL'
-        | 'DZ'
-        | 'AS'
-        | 'AD'
-        | 'AO'
-        | 'AI'
-        | 'AQ'
-        | 'AG'
-        | 'AR'
-        | 'AM'
-        | 'AW'
-        | 'AU'
-        | 'AT'
-        | 'AZ'
-        | 'BS'
-        | 'BH'
-        | 'BD'
-        | 'BB'
-        | 'BY'
-        | 'BE'
-        | 'BZ'
-        | 'BJ'
-        | 'BM'
-        | 'BT'
-        | 'BO'
-        | 'BA'
-        | 'BW'
-        | 'BV'
-        | 'BR'
-        | 'IO'
-        | 'BN'
-        | 'BG'
-        | 'BF'
-        | 'BI'
-        | 'KH'
-        | 'CM'
-        | 'CA'
-        | 'CV'
-        | 'KY'
-        | 'CF'
-        | 'TD'
-        | 'CL'
-        | 'CN'
-        | 'CX'
-        | 'CC'
-        | 'CO'
-        | 'KM'
-        | 'CG'
-        | 'CD'
-        | 'CK'
-        | 'CR'
-        | 'CI'
-        | 'HR'
-        | 'CU'
-        | 'CY'
-        | 'CZ'
-        | 'DK'
-        | 'DJ'
-        | 'DM'
-        | 'DO'
-        | 'EC'
-        | 'EG'
-        | 'SV'
-        | 'GQ'
-        | 'ER'
-        | 'EE'
-        | 'ET'
-        | 'FK'
-        | 'FO'
-        | 'FJ'
-        | 'FI'
-        | 'FR'
-        | 'GF'
-        | 'PF'
-        | 'TF'
-        | 'GA'
-        | 'GM'
-        | 'GE'
-        | 'DE'
-        | 'GH'
-        | 'GI'
-        | 'GR'
-        | 'GL'
-        | 'GD'
-        | 'GP'
-        | 'GU'
-        | 'GT'
-        | 'GG'
-        | 'GN'
-        | 'GW'
-        | 'GY'
-        | 'HT'
-        | 'HM'
-        | 'VA'
-        | 'HN'
-        | 'HK'
-        | 'HU'
-        | 'IS'
-        | 'IN'
-        | 'ID'
-        | 'IR'
-        | 'IQ'
-        | 'IE'
-        | 'IM'
-        | 'IL'
-        | 'IT'
-        | 'JM'
-        | 'JP'
-        | 'JE'
-        | 'JO'
-        | 'KZ'
-        | 'KE'
-        | 'KI'
-        | 'KP'
-        | 'KR'
-        | 'XK'
-        | 'KW'
-        | 'KG'
-        | 'LA'
-        | 'LV'
-        | 'LB'
-        | 'LS'
-        | 'LR'
-        | 'LY'
-        | 'LI'
-        | 'LT'
-        | 'LU'
-        | 'MO'
-        | 'MK'
-        | 'MG'
-        | 'MW'
-        | 'MY'
-        | 'MV'
-        | 'ML'
-        | 'MT'
-        | 'MH'
-        | 'MQ'
-        | 'MR'
-        | 'MU'
-        | 'YT'
-        | 'MX'
-        | 'FM'
-        | 'MD'
-        | 'MC'
-        | 'MN'
-        | 'ME'
-        | 'MS'
-        | 'MA'
-        | 'MZ'
-        | 'MM'
-        | 'NA'
-        | 'NR'
-        | 'NP'
-        | 'NL'
-        | 'AN'
-        | 'NC'
-        | 'NZ'
-        | 'NI'
-        | 'NE'
-        | 'NG'
-        | 'NU'
-        | 'NF'
-        | 'MP'
-        | 'NO'
-        | 'OM'
-        | 'PK'
-        | 'PW'
-        | 'PS'
-        | 'PA'
-        | 'PG'
-        | 'PY'
-        | 'PE'
-        | 'PH'
-        | 'PN'
-        | 'PL'
-        | 'PT'
-        | 'PR'
-        | 'QA'
-        | 'RE'
-        | 'RO'
-        | 'RU'
-        | 'RW'
-        | 'SH'
-        | 'KN'
-        | 'LC'
-        | 'PM'
-        | 'VC'
-        | 'WS'
-        | 'SM'
-        | 'ST'
-        | 'SA'
-        | 'SN'
-        | 'RS'
-        | 'SC'
-        | 'SL'
-        | 'SG'
-        | 'SK'
-        | 'SI'
-        | 'SB'
-        | 'SO'
-        | 'ZA'
-        | 'GS'
-        | 'ES'
-        | 'LK'
-        | 'SD'
-        | 'SR'
-        | 'SJ'
-        | 'SZ'
-        | 'SE'
-        | 'CH'
-        | 'SY'
-        | 'TW'
-        | 'TJ'
-        | 'TZ'
-        | 'TH'
-        | 'TL'
-        | 'TG'
-        | 'TK'
-        | 'TO'
-        | 'TT'
-        | 'TN'
-        | 'TR'
-        | 'TM'
-        | 'TC'
-        | 'TV'
-        | 'UG'
-        | 'UA'
-        | 'AE'
-        | 'GB'
-        | 'US'
-        | 'UM'
-        | 'UY'
-        | 'UZ'
-        | 'VU'
-        | 'VE'
-        | 'VN'
-        | 'VG'
-        | 'VI'
-        | 'WF'
-        | 'EH'
-        | 'YE'
-        | 'ZM'
-        | 'ZW'
-      )
-    | null
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ShippingAddress".
- */
-export interface ShippingAddress {
-  firstName?: string | null
-  lastName?: string | null
-  company?: string | null
-  addressLineOne?: string | null
-  addressLineTwo?: string | null
-  city?: string | null
-  state?: string | null
-  postcode?: string | null
-  country?:
-    | (
-        | 'AF'
-        | 'AX'
-        | 'AL'
-        | 'DZ'
-        | 'AS'
-        | 'AD'
-        | 'AO'
-        | 'AI'
-        | 'AQ'
-        | 'AG'
-        | 'AR'
-        | 'AM'
-        | 'AW'
-        | 'AU'
-        | 'AT'
-        | 'AZ'
-        | 'BS'
-        | 'BH'
-        | 'BD'
-        | 'BB'
-        | 'BY'
-        | 'BE'
-        | 'BZ'
-        | 'BJ'
-        | 'BM'
-        | 'BT'
-        | 'BO'
-        | 'BA'
-        | 'BW'
-        | 'BV'
-        | 'BR'
-        | 'IO'
-        | 'BN'
-        | 'BG'
-        | 'BF'
-        | 'BI'
-        | 'KH'
-        | 'CM'
-        | 'CA'
-        | 'CV'
-        | 'KY'
-        | 'CF'
-        | 'TD'
-        | 'CL'
-        | 'CN'
-        | 'CX'
-        | 'CC'
-        | 'CO'
-        | 'KM'
-        | 'CG'
-        | 'CD'
-        | 'CK'
-        | 'CR'
-        | 'CI'
-        | 'HR'
-        | 'CU'
-        | 'CY'
-        | 'CZ'
-        | 'DK'
-        | 'DJ'
-        | 'DM'
-        | 'DO'
-        | 'EC'
-        | 'EG'
-        | 'SV'
-        | 'GQ'
-        | 'ER'
-        | 'EE'
-        | 'ET'
-        | 'FK'
-        | 'FO'
-        | 'FJ'
-        | 'FI'
-        | 'FR'
-        | 'GF'
-        | 'PF'
-        | 'TF'
-        | 'GA'
-        | 'GM'
-        | 'GE'
-        | 'DE'
-        | 'GH'
-        | 'GI'
-        | 'GR'
-        | 'GL'
-        | 'GD'
-        | 'GP'
-        | 'GU'
-        | 'GT'
-        | 'GG'
-        | 'GN'
-        | 'GW'
-        | 'GY'
-        | 'HT'
-        | 'HM'
-        | 'VA'
-        | 'HN'
-        | 'HK'
-        | 'HU'
-        | 'IS'
-        | 'IN'
-        | 'ID'
-        | 'IR'
-        | 'IQ'
-        | 'IE'
-        | 'IM'
-        | 'IL'
-        | 'IT'
-        | 'JM'
-        | 'JP'
-        | 'JE'
-        | 'JO'
-        | 'KZ'
-        | 'KE'
-        | 'KI'
-        | 'KP'
-        | 'KR'
-        | 'XK'
-        | 'KW'
-        | 'KG'
-        | 'LA'
-        | 'LV'
-        | 'LB'
-        | 'LS'
-        | 'LR'
-        | 'LY'
-        | 'LI'
-        | 'LT'
-        | 'LU'
-        | 'MO'
-        | 'MK'
-        | 'MG'
-        | 'MW'
-        | 'MY'
-        | 'MV'
-        | 'ML'
-        | 'MT'
-        | 'MH'
-        | 'MQ'
-        | 'MR'
-        | 'MU'
-        | 'YT'
-        | 'MX'
-        | 'FM'
-        | 'MD'
-        | 'MC'
-        | 'MN'
-        | 'ME'
-        | 'MS'
-        | 'MA'
-        | 'MZ'
-        | 'MM'
-        | 'NA'
-        | 'NR'
-        | 'NP'
-        | 'NL'
-        | 'AN'
-        | 'NC'
-        | 'NZ'
-        | 'NI'
-        | 'NE'
-        | 'NG'
-        | 'NU'
-        | 'NF'
-        | 'MP'
-        | 'NO'
-        | 'OM'
-        | 'PK'
-        | 'PW'
-        | 'PS'
-        | 'PA'
-        | 'PG'
-        | 'PY'
-        | 'PE'
-        | 'PH'
-        | 'PN'
-        | 'PL'
-        | 'PT'
-        | 'PR'
-        | 'QA'
-        | 'RE'
-        | 'RO'
-        | 'RU'
-        | 'RW'
-        | 'SH'
-        | 'KN'
-        | 'LC'
-        | 'PM'
-        | 'VC'
-        | 'WS'
-        | 'SM'
-        | 'ST'
-        | 'SA'
-        | 'SN'
-        | 'RS'
-        | 'SC'
-        | 'SL'
-        | 'SG'
-        | 'SK'
-        | 'SI'
-        | 'SB'
-        | 'SO'
-        | 'ZA'
-        | 'GS'
-        | 'ES'
-        | 'LK'
-        | 'SD'
-        | 'SR'
-        | 'SJ'
-        | 'SZ'
-        | 'SE'
-        | 'CH'
-        | 'SY'
-        | 'TW'
-        | 'TJ'
-        | 'TZ'
-        | 'TH'
-        | 'TL'
-        | 'TG'
-        | 'TK'
-        | 'TO'
-        | 'TT'
-        | 'TN'
-        | 'TR'
-        | 'TM'
-        | 'TC'
-        | 'TV'
-        | 'UG'
-        | 'UA'
-        | 'AE'
-        | 'GB'
-        | 'US'
-        | 'UM'
-        | 'UY'
-        | 'UZ'
-        | 'VU'
-        | 'VE'
-        | 'VN'
-        | 'VG'
-        | 'VI'
-        | 'WF'
-        | 'EH'
-        | 'YE'
-        | 'ZM'
-        | 'ZW'
-      )
-    | null
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "posts".
- */
-export interface Post {
+export interface Document {
   id: string
+  /**
+   * A name staff will recognise, such as "Certificate - Course - Student name".
+   */
+  title?: string | null
+  /**
+   * The person this document belongs to. Only they, admins and authors can open it. Set when it is uploaded: a user who uploads a file always owns it, and only admins can change the owner.
+   */
+  owner?: (string | null) | User
+  updatedAt: string
+  createdAt: string
+  url?: string | null
+  thumbnailURL?: string | null
+  filename?: string | null
+  mimeType?: string | null
+  filesize?: number | null
+  width?: number | null
+  height?: number | null
+  focalX?: number | null
+  focalY?: number | null
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "addresses".
+ */
+export interface Address {
+  id: string
+  /**
+   * The person this address belongs to. Set to whoever saves it; only admins can choose someone else.
+   */
+  customer?: (string | null) | User
+  /**
+   * Optional, such as Mr, Ms or Dr.
+   */
+  title?: string | null
+  /**
+   * First name of the person at this address.
+   */
+  firstName?: string | null
+  /**
+   * Last name of the person at this address.
+   */
+  lastName?: string | null
+  /**
+   * Optional business or organisation name.
+   */
+  company?: string | null
+  /**
+   * Street number and name.
+   */
+  addressLine1?: string | null
+  /**
+   * Optional unit, suite, floor or building.
+   */
+  addressLine2?: string | null
+  /**
+   * City or suburb.
+   */
+  city?: string | null
+  /**
+   * State, territory or region.
+   */
+  state?: string | null
+  /**
+   * Postcode or ZIP code.
+   */
+  postalCode?: string | null
+  /**
+   * The country of the address.
+   */
+  country?: string | null
+  /**
+   * A contact number for this address, including the area code.
+   */
+  phone?: string | null
   updatedAt: string
   createdAt: string
 }
@@ -1222,7 +1122,7 @@ export interface Topic {
     root: {
       type: string
       children: {
-        type: string
+        type: any
         version: number
         [k: string]: unknown
       }[]
@@ -1246,7 +1146,7 @@ export interface Topic {
     root: {
       type: string
       children: {
-        type: string
+        type: any
         version: number
         [k: string]: unknown
       }[]
@@ -1270,22 +1170,47 @@ export interface Topic {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv".
+ */
+export interface PayloadKv {
+  id: string
+  key: string
+  data:
+    | {
+        [k: string]: unknown
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
   id: string
   document?:
     | ({
-        relationTo: 'users'
-        value: string | User
-      } | null)
-    | ({
         relationTo: 'posts'
         value: string | Post
       } | null)
     | ({
+        relationTo: 'coupons'
+        value: string | Coupon
+      } | null)
+    | ({
         relationTo: 'media'
         value: string | Media
+      } | null)
+    | ({
+        relationTo: 'users'
+        value: string | User
+      } | null)
+    | ({
+        relationTo: 'addresses'
+        value: string | Address
       } | null)
     | ({
         relationTo: 'certificates'
@@ -1294,6 +1219,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'courses'
         value: string | Course
+      } | null)
+    | ({
+        relationTo: 'groups'
+        value: string | Group
       } | null)
     | ({
         relationTo: 'lessons'
@@ -1310,6 +1239,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'categories'
         value: string | Category
+      } | null)
+    | ({
+        relationTo: 'course-files'
+        value: string | CourseFile
+      } | null)
+    | ({
+        relationTo: 'documents'
+        value: string | Document
       } | null)
     | ({
         relationTo: 'tags'
@@ -1363,95 +1300,17 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
- */
-export interface UsersSelect<T extends boolean = true> {
-  name?: T
-  roles?: T
-  firstName?: T
-  lastName?: T
-  fullName?: T
-  enrolledCourses?: T
-  completedCourses?: T
-  coursesProgress?:
-    | T
-    | {
-        course?: T
-        enrolledAt?: T
-        completed?: T
-        completedAt?: T
-        completedLessons?:
-          | T
-          | {
-              lesson?: T
-              completedAt?: T
-              id?: T
-            }
-        completedQuizzes?:
-          | T
-          | {
-              quiz?: T
-              score?: T
-              completedAt?: T
-              id?: T
-            }
-        id?: T
-      }
-  billingAddress?: T | BillingAddressSelect<T>
-  shippingAddress?: T | ShippingAddressSelect<T>
-  certificates?: T
-  updatedAt?: T
-  createdAt?: T
-  email?: T
-  resetPasswordToken?: T
-  resetPasswordExpiration?: T
-  salt?: T
-  hash?: T
-  loginAttempts?: T
-  lockUntil?: T
-  sessions?:
-    | T
-    | {
-        id?: T
-        createdAt?: T
-        expiresAt?: T
-      }
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "BillingAddress_select".
- */
-export interface BillingAddressSelect<T extends boolean = true> {
-  firstName?: T
-  lastName?: T
-  company?: T
-  addressLineOne?: T
-  addressLineTwo?: T
-  city?: T
-  state?: T
-  postcode?: T
-  country?: T
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ShippingAddress_select".
- */
-export interface ShippingAddressSelect<T extends boolean = true> {
-  firstName?: T
-  lastName?: T
-  company?: T
-  addressLineOne?: T
-  addressLineTwo?: T
-  city?: T
-  state?: T
-  postcode?: T
-  country?: T
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
+  updatedAt?: T
+  createdAt?: T
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons_select".
+ */
+export interface CouponsSelect<T extends boolean = true> {
   updatedAt?: T
   createdAt?: T
 }
@@ -1471,6 +1330,100 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T
   focalX?: T
   focalY?: T
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  enrolledCourses?: T
+  completedCourses?: T
+  certificates?:
+    | T
+    | {
+        document?: T
+        file?: T
+        certificate?: T
+        completedDate?: T
+        course?: T
+        id?: T
+      }
+  coursesProgress?:
+    | T
+    | {
+        course?: T
+        enrolledAt?: T
+        accessFrom?: T
+        renewals?:
+          | T
+          | {
+              key?: T
+              renewedAt?: T
+              id?: T
+            }
+        completed?: T
+        completedAt?: T
+        completedLessons?:
+          | T
+          | {
+              lesson?: T
+              completedAt?: T
+              id?: T
+            }
+        completedQuizzes?:
+          | T
+          | {
+              quiz?: T
+              score?: T
+              attempts?: T
+              lastAttemptAt?: T
+              completedAt?: T
+              id?: T
+            }
+        id?: T
+      }
+  name?: T
+  roles?: T
+  firstName?: T
+  lastName?: T
+  fullName?: T
+  updatedAt?: T
+  createdAt?: T
+  email?: T
+  resetPasswordToken?: T
+  resetPasswordExpiration?: T
+  salt?: T
+  hash?: T
+  resetPasswordRequestedAt?: T
+  loginAttempts?: T
+  lockUntil?: T
+  sessions?:
+    | T
+    | {
+        id?: T
+        createdAt?: T
+        expiresAt?: T
+      }
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "addresses_select".
+ */
+export interface AddressesSelect<T extends boolean = true> {
+  customer?: T
+  title?: T
+  firstName?: T
+  lastName?: T
+  company?: T
+  addressLine1?: T
+  addressLine2?: T
+  city?: T
+  state?: T
+  postalCode?: T
+  country?: T
+  phone?: T
+  updatedAt?: T
+  createdAt?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1495,8 +1448,13 @@ export interface CoursesSelect<T extends boolean = true> {
   title?: T
   excerpt?: T
   description?: T
-  lessons?: T
-  featuredImage?: T
+  lessons?:
+    | T
+    | {
+        lesson?: T
+        isOptional?: T
+        id?: T
+      }
   enrollment?:
     | T
     | {
@@ -1525,7 +1483,16 @@ export interface CoursesSelect<T extends boolean = true> {
   accessSettings?:
     | T
     | {
-        prerequisiteCourses?: T
+        prerequisiteCourses?:
+          | T
+          | {
+              course?: T
+              completionRequirement?: T
+              minimumScore?: T
+              requiredLessons?: T
+              isOptional?: T
+              id?: T
+            }
         requiredPoints?: T
         studentLimit?: T
       }
@@ -1540,14 +1507,42 @@ export interface CoursesSelect<T extends boolean = true> {
     | {
         navigationMode?: T
       }
-  courseStudents?:
-    | T
-    | {
-        students?: T
-      }
+  enrolledStudents?: T
+  courseCompletedStudents?: T
+  courseEnrolledGroups?: T
   authors?: T
   categories?: T
   tags?: T
+  featuredImage?: T
+  updatedAt?: T
+  createdAt?: T
+  _status?: T
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "groups_select".
+ */
+export interface GroupsSelect<T extends boolean = true> {
+  title?: T
+  description?: T
+  slug?: T
+  slugLock?: T
+  purchasedCourses?:
+    | T
+    | {
+        seatManagement?:
+          | T
+          | {
+              seatsTotal?: T
+              seatsUsed?: T
+              course?: T
+              coupon?: T
+            }
+        id?: T
+      }
+  students?: T
+  leaders?: T
+  studentLimit?: T
   updatedAt?: T
   createdAt?: T
 }
@@ -1565,6 +1560,7 @@ export interface LessonsSelect<T extends boolean = true> {
     | T
     | {
         lessonMaterials?: T
+        downloadableFiles?: T
         lessonVideo?: T | EmbeddedVideoSelect<T>
         videoProgression?: T | VideoProgressionSelect<T>
       }
@@ -1625,9 +1621,11 @@ export interface QuizzesSelect<T extends boolean = true> {
   title?: T
   excerpt?: T
   description?: T
-  featuredImage?: T
   questions?: T
+  minimumScore?: T
+  attemptLimit?: T
   authors?: T
+  featuredImage?: T
   updatedAt?: T
   createdAt?: T
 }
@@ -1641,6 +1639,43 @@ export interface CategoriesSelect<T extends boolean = true> {
   slugLock?: T
   updatedAt?: T
   createdAt?: T
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "course-files_select".
+ */
+export interface CourseFilesSelect<T extends boolean = true> {
+  title?: T
+  updatedAt?: T
+  createdAt?: T
+  url?: T
+  thumbnailURL?: T
+  filename?: T
+  mimeType?: T
+  filesize?: T
+  width?: T
+  height?: T
+  focalX?: T
+  focalY?: T
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "documents_select".
+ */
+export interface DocumentsSelect<T extends boolean = true> {
+  title?: T
+  owner?: T
+  updatedAt?: T
+  createdAt?: T
+  url?: T
+  thumbnailURL?: T
+  filename?: T
+  mimeType?: T
+  filesize?: T
+  width?: T
+  height?: T
+  focalX?: T
+  focalY?: T
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1691,6 +1726,14 @@ export interface QuestionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-kv_select".
+ */
+export interface PayloadKvSelect<T extends boolean = true> {
+  key?: T
+  data?: T
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
@@ -1720,6 +1763,16 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T
   updatedAt?: T
   createdAt?: T
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown
+  }
+  width: 'full'
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

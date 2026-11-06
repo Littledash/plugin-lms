@@ -167,7 +167,9 @@ export default buildConfig({
       questions: {
         questionTypes: [
           { label: 'Multiple Choice', value: 'multipleChoice' },
+          { label: 'Single Choice', value: 'singleChoice' },
           { label: 'True/False', value: 'trueFalse' },
+          { label: 'Sorting', value: 'sorting' },
           { label: 'Essay', value: 'essay' },
           { label: 'Fill in the Blank', value: 'fillInBlank' },
         ],

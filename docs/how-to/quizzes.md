@@ -2,9 +2,20 @@
 
 ## Set up a quiz
 
-1. Create **Questions**. Supported for grading: `multipleChoice` and `singleChoice` (mark one choice
-   as correct) and `trueFalse` (set **Correct answer**; `both` accepts either). Other types are
-   stored but score zero.
+1. Create **Questions**. How each type is marked:
+
+   | Type | Set up | Correct when the answer is |
+   | --- | --- | --- |
+   | `trueFalse` | **Correct answer** (`both` accepts either) | `'true'` or `'false'`, matching |
+   | `singleChoice` | Tick the right choice | The `id` of a ticked choice |
+   | `multipleChoice` | Tick every right choice | A list of exactly the ticked choice IDs (one ID is enough when one is ticked) |
+   | `sorting` | Give each choice an **Order** (or list them in order) | Every choice ID, in order |
+   | `fillInBlank` | One or more **Correct answers** | Any of them, ignoring case and extra spaces |
+   | `essay`, `assessment`, `freeChoice` | | Not marked: a person has to judge them |
+
+   The score is the percentage of marked questions answered correctly. Unmarked questions are left
+   out, so they never lower it. A quiz with nothing to mark scores 100 when submitted, and a quiz
+   with no questions never blocks its lesson.
 2. Create a **Quiz**, add the questions, and set:
    - **Minimum score** (0–100, default 100) to pass.
    - **Attempt limit** (optional) for the maximum attempts per student.
@@ -13,8 +24,8 @@
 
 ## Take a quiz
 
-Submit answers keyed by question ID. Choice questions take the choice's `id`; true/false questions
-take `'true'` or `'false'`.
+Submit answers keyed by question ID. Each answer is a string, number or boolean, or for multiple
+choice and sorting a list of up to 100 choice IDs.
 
 ```tsx
 const { submitQuiz } = useLMS()
@@ -22,6 +33,8 @@ const { submitQuiz } = useLMS()
 const result = await submitQuiz(courseId, quiz.id, {
   [question1.id]: selectedChoiceId,
   [question2.id]: 'true',
+  [question3.id]: [firstChoiceId, secondChoiceId], // multiple choice or sorting
+  [question4.id]: 'photosynthesis', // fill in the blank
 })
 
 if (result.passed && result.courseCompleted) {

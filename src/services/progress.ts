@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
 import { markCourseCompleted } from './completeCourse.js'
+import { scoreQuiz } from './grading.js'
 import { assertLessonAccessible, lessonBlockReason } from './lessonAccess.js'
 import {
   asSlug,
@@ -25,7 +26,8 @@ import {
 const DEFAULT_MINIMUM_SCORE = 100
 
 /**
- * Whether the user has a passing score on every one of these quizzes.
+ * Whether the user has a passing score on every one of these quizzes. A quiz with no questions has
+ * nothing to pass, so it never blocks a lesson.
  */
 const hasPassedQuizzes = async (
   req: PayloadRequest,
@@ -43,11 +45,14 @@ const hasPassedQuizzes = async (
     req,
     where: { id: { in: quizIds } },
   })
-  return (quizzes as LMSDoc[]).every((quiz) =>
-    progress.completedQuizzes.some(
+  return (quizzes as LMSDoc[]).every(
+    (quiz) =>
+      !Array.isArray(quiz.questions) ||
+      quiz.questions.length === 0 ||
+      progress.completedQuizzes.some(
       (entry) =>
-        sameId(entry.quiz, quiz.id) && entry.score >= (quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE),
-    ),
+          sameId(entry.quiz, quiz.id) && entry.score >= (quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE),
+      ),
   )
 }
 
@@ -165,22 +170,6 @@ const assertCanAttempt = (
   }
 }
 
-const isCorrectAnswer = (question: LMSDoc, submittedAnswer: unknown): boolean => {
-  if (question.questionType === 'trueFalse') {
-    // 'both' accepts either answer
-    return question.correctAnswer === 'both'
-      ? submittedAnswer === 'true' || submittedAnswer === 'false'
-      : submittedAnswer === question.correctAnswer
-  }
-  if (question.questionType === 'multipleChoice' || question.questionType === 'singleChoice') {
-    const correctChoice = (Array.isArray(question.choices) ? question.choices : []).find(
-      (choice: LMSDoc) => choice.isCorrect,
-    )
-    return Boolean(correctChoice) && submittedAnswer === correctChoice.id
-  }
-  return false
-}
-
 /**
  * Grades a quiz attempt and keeps the user's best score. The quiz must belong to a lesson in the
  * course and the user must be enrolled. A pass completes every lesson in the course that contains
@@ -245,10 +234,7 @@ export const submitQuiz = ({
     const questions = (Array.isArray(quiz.questions) ? quiz.questions : []).filter(
       (question: unknown) => question && typeof question === 'object',
     ) as LMSDoc[]
-    const correctAnswers = questions.filter((question) =>
-      isCorrectAnswer(question, answers[String(question.id)]),
-    ).length
-    const score = questions.length > 0 ? (correctAnswers / questions.length) * 100 : 0
+    const { score } = scoreQuiz(questions, answers)
     const minimumScore = quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE
 
     const now = new Date().toISOString()

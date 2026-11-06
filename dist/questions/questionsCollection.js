@@ -68,7 +68,7 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
             name: 'points',
             type: 'number',
             admin: {
-                description: 'Not used in the quiz score yet: the score is the percentage of questions answered correctly.',
+                description: 'Not used in the quiz score yet: the score is the percentage of marked questions answered correctly.',
                 step: 0.1
             },
             defaultValue: 1,
@@ -79,7 +79,7 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
             name: 'questionType',
             type: 'select',
             admin: {
-                description: 'Only Multiple Choice, Single Choice and True/False are marked automatically. Any other type always counts as wrong, so a quiz that includes one cannot reach 100%.'
+                description: 'Essay, Assessment and Free Choice answers need a person to judge them, so they are not marked and do not count toward the score. Every other type is marked automatically.'
             },
             options: availableQuestionTypes,
             required: true
@@ -117,7 +117,7 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
                     type: 'checkbox',
                     access: answerAccess,
                     admin: {
-                        description: 'Tick the right answer. Only one counts: if several are ticked, the first ticked choice is the answer. Hidden from students.'
+                        description: 'Tick the right answer. For Multiple Choice, tick every right answer: students must pick exactly those. Not used for Sorting. Hidden from students.'
                     }
                 },
                 {
@@ -125,7 +125,7 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
                     type: 'number',
                     admin: {
                         condition: (_, siblingData)=>siblingData.questionType === 'sorting',
-                        description: 'Where this choice belongs in the correct order, starting at 1.'
+                        description: 'Where this choice belongs in the correct order, starting at 1. Left empty, the order of the list is used.'
                     }
                 }
             ]
@@ -157,7 +157,7 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
             access: answerAccess,
             admin: {
                 condition: (_, siblingData)=>siblingData.questionType === 'fillInBlank',
-                description: 'Answers to accept. Hidden from students.'
+                description: 'Answers to accept. Capital letters and extra spaces are ignored. Hidden from students.'
             },
             fields: [
                 {
@@ -176,7 +176,7 @@ import { isTrueFalseAnswer } from './trueFalseAnswers.js';
             access: answerAccess,
             admin: {
                 condition: (_, siblingData)=>siblingData.questionType === 'assessment',
-                description: 'What a marker looks for, with points for each. Hidden from students.'
+                description: 'What a person marking looks for, with points for each. Not marked automatically. Hidden from students.'
             },
             fields: [
                 {

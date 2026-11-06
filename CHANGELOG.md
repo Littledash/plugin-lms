@@ -41,6 +41,11 @@ Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the bre
 
 ### Fixed
 
+- Quiz marking: fill in the blank (ignoring case and extra spaces), multiple choice with several
+  correct answers, and sorting are now marked. Essay, assessment and free choice questions are left
+  out of the score instead of counting as wrong. Answers may be lists of up to 100 IDs. Single
+  choice accepts any choice ticked as correct.
+- A quiz with no questions no longer blocks its lesson; it had scored 0 and could never be passed.
 - The provider's progress cache is tied to the logged-in user and removed on logout, so one
   student's progress never shows for another on a shared browser.
 - The endpoint rate limiter forgets idle users instead of keeping every user in memory.

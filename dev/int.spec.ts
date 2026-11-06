@@ -368,6 +368,26 @@ describe('complete-lesson endpoint', () => {
     expect(allowed.body.courseCompleted).toBe(false)
   })
 
+  it('does not let a quiz with no questions block its lesson', async () => {
+    const empty = (await payload.create({
+      collection: 'quizzes',
+      data: { questions: [], title: `Empty quiz ${++counter}` },
+    })) as unknown as Doc
+    const lesson = await createLesson([empty.id])
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }, { lesson: (await createLesson()).id }] })
+    const user = await createUser()
+    await enroll(user, course)
+
+    const { status } = await post(await clientFor(user), 'complete-lesson', {
+      courseId: course.id,
+      lessonId: lesson.id,
+    })
+
+    expect(status).toBe(200)
+    const progress = (await getDoc('users', user.id)).coursesProgress[0]
+    expect(ids(progress.completedLessons.map((entry: Doc) => entry.lesson))).toEqual([lesson.id])
+  })
+
   it('completes the course and awards its certificate after the last required lesson', async () => {
     const certificate = (await payload.create({
       collection: 'certificates',
@@ -431,6 +451,73 @@ describe('submit-quiz endpoint', () => {
 
     const progress = (await getDoc('users', user.id)).coursesProgress[0]
     expect(progress.completedQuizzes[0].score).toBe(100)
+  })
+
+  it('marks list answers for multiple choice and sorting, and leaves essays out of the score', async () => {
+    const create = async (data: Record<string, unknown>) =>
+      (await payload.create({
+        collection: 'questions',
+        data: { points: 1, question: 'Q', title: 'Question', ...data },
+      })) as unknown as Doc
+    const multiple = await create({
+      choices: [
+        { isCorrect: true, label: 'A' },
+        { isCorrect: false, label: 'B' },
+        { isCorrect: true, label: 'C' },
+      ],
+      questionType: 'multipleChoice',
+    })
+    const sorting = await create({
+      choices: [
+        { label: 'Second', order: 2 },
+        { label: 'First', order: 1 },
+      ],
+      questionType: 'sorting',
+    })
+    const blank = await create({ correctAnswers: [{ answer: 'Secure base' }], questionType: 'fillInBlank' })
+    const essay = await create({ questionType: 'essay' })
+    const quiz = (await payload.create({
+      collection: 'quizzes',
+      data: { questions: [multiple.id, sorting.id, blank.id, essay.id], title: `Quiz ${++counter}` },
+    })) as unknown as Doc
+    const lesson = await createLesson([quiz.id])
+    const course = await createCourse({ lessons: [{ lesson: lesson.id }, { lesson: (await createLesson()).id }] })
+    const user = await createUser()
+    await enroll(user, course)
+
+    const [a, , c] = ids(multiple.choices)
+    const [second, first] = ids(sorting.choices)
+    const { body, status } = await post(await clientFor(user), 'submit-quiz', {
+      answers: {
+        [blank.id]: ' secure  BASE ',
+        [essay.id]: 'Anything at all',
+        [multiple.id]: [c, a],
+        [sorting.id]: [first, second],
+      },
+      courseId: course.id,
+      quizId: quiz.id,
+    })
+
+    expect(status).toBe(200)
+    expect(body).toMatchObject({ completedLessonIds: [lesson.id], passed: true, score: 100 })
+  })
+
+  it('refuses answers that are objects, lists of objects, or too long', async () => {
+    const { questionId, quiz } = await createQuiz()
+    const course = await createCourse({ lessons: [{ lesson: (await createLesson([quiz.id])).id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    const client = await clientFor(user)
+
+    for (const answer of [{ id: 'x' }, [{ id: 'x' }], Array.from({ length: 101 }, (_, i) => String(i))]) {
+      const { status } = await post(client, 'submit-quiz', {
+        answers: { [questionId]: answer },
+        courseId: course.id,
+        quizId: quiz.id,
+      })
+      expect(status).toBe(400)
+    }
+    expect((await getDoc('users', user.id)).coursesProgress[0].completedQuizzes).toHaveLength(0)
   })
 })
 

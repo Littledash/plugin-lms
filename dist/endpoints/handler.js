@@ -1,4 +1,5 @@
 import { addDataAndFileToRequest } from 'payload';
+import { MAX_ANSWER_ITEMS } from '../services/grading.js';
 import { LMSError, requireUser } from '../services/shared.js';
 import { assertRateLimit } from './rateLimit.js';
 /**
@@ -64,8 +65,14 @@ const MAX_ANSWERS = 500;
     if (entries.length > MAX_ANSWERS) {
         throw new LMSError('Too many answers.', 400);
     }
-    if (entries.some(([, value])=>value !== null && typeof value === 'object')) {
-        throw new LMSError('Each answer must be a string, number or boolean.', 400);
+    const isScalar = (value)=>value === null || [
+            'boolean',
+            'number',
+            'string'
+        ].includes(typeof value);
+    const isValidAnswer = (value)=>isScalar(value) || Array.isArray(value) && value.length <= MAX_ANSWER_ITEMS && value.every((item)=>typeof item === 'string' || typeof item === 'number');
+    if (entries.some(([, value])=>!isValidAnswer(value))) {
+        throw new LMSError(`Each answer must be a string, number or boolean, or a list of up to ${MAX_ANSWER_ITEMS} strings or numbers.`, 400);
     }
     return answers;
 };

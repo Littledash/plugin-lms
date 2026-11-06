@@ -1,9 +1,11 @@
 import { markCourseCompleted } from './completeCourse.js';
+import { scoreQuiz } from './grading.js';
 import { assertLessonAccessible, lessonBlockReason } from './lessonAccess.js';
 import { asSlug, ensureCourseProgress, findDoc, getCourseLessonIds, getCoursesProgress, getSlugs, hasCompletedRequiredLessons, includesId, isEnrolledInCourse, LMSError, sameId, toId, toIds, withTransaction } from './shared.js';
 const DEFAULT_MINIMUM_SCORE = 100;
 /**
- * Whether the user has a passing score on every one of these quizzes.
+ * Whether the user has a passing score on every one of these quizzes. A quiz with no questions has
+ * nothing to pass, so it never blocks a lesson.
  */ const hasPassedQuizzes = async (req, quizIds, progress)=>{
     if (quizIds.length === 0) {
         return true;
@@ -20,7 +22,7 @@ const DEFAULT_MINIMUM_SCORE = 100;
             }
         }
     });
-    return quizzes.every((quiz)=>progress.completedQuizzes.some((entry)=>sameId(entry.quiz, quiz.id) && entry.score >= (quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE)));
+    return quizzes.every((quiz)=>!Array.isArray(quiz.questions) || quiz.questions.length === 0 || progress.completedQuizzes.some((entry)=>sameId(entry.quiz, quiz.id) && entry.score >= (quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE)));
 };
 const addCompletedLesson = (progress, lessonId)=>{
     if (progress.completedLessons.some((entry)=>sameId(entry.lesson, lessonId))) {
@@ -100,17 +102,6 @@ const assertCanAttempt = (req, quiz, attempt)=>{
         throw new LMSError(`Please wait ${waitSeconds} seconds before trying this quiz again.`, 429);
     }
 };
-const isCorrectAnswer = (question, submittedAnswer)=>{
-    if (question.questionType === 'trueFalse') {
-        // 'both' accepts either answer
-        return question.correctAnswer === 'both' ? submittedAnswer === 'true' || submittedAnswer === 'false' : submittedAnswer === question.correctAnswer;
-    }
-    if (question.questionType === 'multipleChoice' || question.questionType === 'singleChoice') {
-        const correctChoice = (Array.isArray(question.choices) ? question.choices : []).find((choice)=>choice.isCorrect);
-        return Boolean(correctChoice) && submittedAnswer === correctChoice.id;
-    }
-    return false;
-};
 /**
  * Grades a quiz attempt and keeps the user's best score. The quiz must belong to a lesson in the
  * course and the user must be enrolled. A pass completes every lesson in the course that contains
@@ -180,8 +171,7 @@ const isCorrectAnswer = (question, submittedAnswer)=>{
         // Checked before grading so a rejected attempt reveals nothing about the answers
         assertCanAttempt(req, quiz, attempt);
         const questions = (Array.isArray(quiz.questions) ? quiz.questions : []).filter((question)=>question && typeof question === 'object');
-        const correctAnswers = questions.filter((question)=>isCorrectAnswer(question, answers[String(question.id)])).length;
-        const score = questions.length > 0 ? correctAnswers / questions.length * 100 : 0;
+        const { score } = scoreQuiz(questions, answers);
         const minimumScore = quiz.minimumScore ?? DEFAULT_MINIMUM_SCORE;
         const now = new Date().toISOString();
         if (!attempt) {

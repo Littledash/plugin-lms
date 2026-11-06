@@ -1,5 +1,6 @@
 import { addDataAndFileToRequest, type Endpoint, type PayloadRequest } from 'payload'
 
+import { MAX_ANSWER_ITEMS } from '../services/grading.js'
 import { type ID, LMSError, requireUser } from '../services/shared.js'
 import { assertRateLimit } from './rateLimit.js'
 
@@ -73,8 +74,18 @@ export const requireAnswers = (data: Record<string, unknown>): Record<string, un
   if (entries.length > MAX_ANSWERS) {
     throw new LMSError('Too many answers.', 400)
   }
-  if (entries.some(([, value]) => value !== null && typeof value === 'object')) {
-    throw new LMSError('Each answer must be a string, number or boolean.', 400)
+  const isScalar = (value: unknown) =>
+    value === null || ['boolean', 'number', 'string'].includes(typeof value)
+  const isValidAnswer = (value: unknown) =>
+    isScalar(value) ||
+    (Array.isArray(value) &&
+      value.length <= MAX_ANSWER_ITEMS &&
+      value.every((item) => typeof item === 'string' || typeof item === 'number'))
+  if (entries.some(([, value]) => !isValidAnswer(value))) {
+    throw new LMSError(
+      `Each answer must be a string, number or boolean, or a list of up to ${MAX_ANSWER_ITEMS} strings or numbers.`,
+      400,
+    )
   }
   return answers as Record<string, unknown>
 }
