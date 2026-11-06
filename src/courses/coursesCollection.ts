@@ -7,6 +7,7 @@ import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js'
 import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js'
 import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js'
 import { pricesField } from '../fields/pricesField.js'
+import { onlyOwnGroups, onlyOwnStudent } from './ownMembershipOnly.js'
 /**
  * Props interface for configuring the courses collection
  * @property categoriesCollectionSlug - Slug for the categories collection (default: 'categories')
@@ -27,6 +28,31 @@ type Props = {
   overrides?: { fields?: FieldsOverride } & Partial<Omit<CollectionConfig, 'fields'>>
   studentsCollectionSlug?: string
   tagsCollectionSlug?: string
+}
+
+/** Fields a linked course loads by default, where the course has them. */
+const SUMMARY_FIELDS = ['title', 'slug', 'excerpt', 'featuredImage', 'categories']
+
+const summaryOf = (fields: Field[]): Record<string, true> => {
+  const names = new Set<string>()
+  const collect = (list: Field[]) => {
+    for (const field of list) {
+      if ('name' in field) {
+        names.add(field.name)
+      } else if ('fields' in field) {
+        // Rows and collapsibles do not nest their fields' data
+        collect(field.fields)
+      } else if (field.type === 'tabs') {
+        for (const tab of field.tabs) {
+          if (!('name' in tab)) {
+            collect(tab.fields)
+          }
+        }
+      }
+    }
+  }
+  collect(fields)
+  return Object.fromEntries(SUMMARY_FIELDS.filter((name) => names.has(name)).map((name) => [name, true]))
 }
 
 /**
@@ -356,15 +382,16 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
     {
       name: 'enrolledStudents',
       type: 'relationship',
-      access: {
-        read: isAdminOrAuthorFieldLevel,
-      },
       admin: {
         allowCreate: false,
-        description: 'Controls the students enrolled in the course',
+        description:
+          'Students enrolled in the course. Added by purchases and enrollment. Students see only themselves here.',
         position: 'sidebar',
       },
       hasMany: true,
+      hooks: {
+        afterRead: [onlyOwnStudent],
+      },
       relationTo: studentsCollectionSlug,
     },
     {
@@ -372,10 +399,14 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
       type: 'relationship',
       admin: {
         allowCreate: false,
-        description: 'The students completed the course',
+        description:
+          'Students who have completed the course. Added by the LMS. Students see only themselves here.',
         position: 'sidebar',
       },
       hasMany: true,
+      hooks: {
+        afterRead: [onlyOwnStudent],
+      },
       relationTo: studentsCollectionSlug,
     },
     {
@@ -384,10 +415,14 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
       admin: {
         allowCreate: false,
         allowEdit: false,
-        description: 'Controls the groups enrolled in the course', // TODO move ibnto lms  plugin
+        description:
+          'Groups whose members can take the course. Added when a group buys it. Students see only their own groups here.',
         position: 'sidebar',
       },
       hasMany: true,
+      hooks: {
+        afterRead: [onlyOwnGroups],
+      },
       label: 'Course Enrolled Groups',
       relationTo: 'groups',
     },
@@ -450,6 +485,9 @@ export const coursesCollection: (props?: Props) => CollectionConfig<'courses'> =
    */
   const baseConfig: CollectionConfig = {
     slug: 'courses',
+    // A course linked from another document (progress, certificates, groups, lessons, site links)
+    // loads only what a card or link needs, not its lessons, prices or student and group lists.
+    defaultPopulate: summaryOf(fields),
     timestamps: true,
     ...overrides,
     access: withDefaultAccess(defaultAccess.courses, overrides?.access),

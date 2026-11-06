@@ -663,6 +663,78 @@ describe('fetch-progress endpoint', () => {
 })
 
 describe('field access', () => {
+  it('loads only a summary of a course linked from another document', async () => {
+    const student = await createUser()
+    const course = await createCourse()
+    await payload.update({ id: course.id, collection: 'courses', data: { enrolledStudents: [student.id] } })
+    const lesson = await createLesson()
+    await payload.update({ id: lesson.id, collection: 'lessons', data: { course: course.id } })
+
+    const linked = ((await payload.findByID({ id: lesson.id, collection: 'lessons', depth: 1 })) as unknown as Doc)
+      .course as Doc
+
+    expect(linked.id).toBe(course.id)
+    expect(linked.title).toBe(course.title)
+    expect(linked).not.toHaveProperty('enrolledStudents')
+    expect(linked).not.toHaveProperty('lessons')
+    expect(linked).not.toHaveProperty('enrollment')
+  })
+
+  it('shows students only themselves and their own groups in a course\'s member lists', async () => {
+    const first = await createUser()
+    const second = await createUser()
+    const admin = await createUser(['admin'])
+    const ownGroup = (await payload.create({
+      collection: 'groups',
+      data: { students: [first.id], title: `Group ${++counter}` },
+    })) as unknown as Doc
+    const otherGroup = (await payload.create({
+      collection: 'groups',
+      data: { students: [second.id], title: `Group ${++counter}` },
+    })) as unknown as Doc
+    const course = await createCourse()
+    await payload.update({
+      id: course.id,
+      collection: 'courses',
+      data: {
+        courseCompletedStudents: [first.id, second.id],
+        courseEnrolledGroups: [ownGroup.id, otherGroup.id],
+        enrolledStudents: [first.id, second.id],
+      },
+    })
+
+    const read = async (client: NextRESTClient) =>
+      (await (await client.GET(`/courses/${course.id}?depth=0`)).json()) as Doc
+
+    const asStudent = await read(await clientFor(first))
+    expect(ids(asStudent.enrolledStudents)).toStrictEqual([first.id])
+    expect(ids(asStudent.courseCompletedStudents)).toStrictEqual([first.id])
+    expect(ids(asStudent.courseEnrolledGroups)).toStrictEqual([ownGroup.id])
+
+    const asVisitor = await read(anonymous())
+    expect(asVisitor.enrolledStudents).toStrictEqual([])
+    expect(asVisitor.courseCompletedStudents).toStrictEqual([])
+    expect(asVisitor.courseEnrolledGroups).toStrictEqual([])
+
+    const asAdmin = await read(await clientFor(admin))
+    expect(ids(asAdmin.enrolledStudents)).toStrictEqual([first.id, second.id])
+    expect(ids(asAdmin.courseCompletedStudents)).toStrictEqual([first.id, second.id])
+    expect(ids(asAdmin.courseEnrolledGroups)).toStrictEqual([ownGroup.id, otherGroup.id])
+
+    // A student can still find their own courses with a where clause
+    for (const field of ['enrolledStudents', 'courseCompletedStudents']) {
+      const query = await (await clientFor(second)).GET(`/courses?depth=0&where[${field}][equals]=${second.id}`)
+      expect(query.status).toBe(200)
+      expect(ids((await query.json()).docs)).toContain(course.id)
+    }
+
+    // The stored lists are untouched, so the services keep adding to complete lists
+    const stored = await getDoc('courses', course.id)
+    expect(ids(stored.enrolledStudents)).toStrictEqual([first.id, second.id])
+    expect(ids(stored.courseCompletedStudents)).toStrictEqual([first.id, second.id])
+    expect(ids(stored.courseEnrolledGroups)).toStrictEqual([ownGroup.id, otherGroup.id])
+  })
+
   it('users cannot edit their own progress or certificates through the REST API', async () => {
     const user = await createUser()
     const course = await createCourse()

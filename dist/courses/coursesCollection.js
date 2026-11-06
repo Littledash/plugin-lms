@@ -3,6 +3,38 @@ import { isAdminOrAuthorFieldLevel } from '../access/isAdminOrAuthor.js';
 import { isAdminOrAuthorOrEnrolledInThisCourseFieldLevel } from '../access/isAdminOrAuthorOrEnrolledInCourse.js';
 import { isAdminOrAuthorOrStudentFieldLevel } from '../access/isAdminOrAuthorOrStudent.js';
 import { pricesField } from '../fields/pricesField.js';
+import { onlyOwnGroups, onlyOwnStudent } from './ownMembershipOnly.js';
+/** Fields a linked course loads by default, where the course has them. */ const SUMMARY_FIELDS = [
+    'title',
+    'slug',
+    'excerpt',
+    'featuredImage',
+    'categories'
+];
+const summaryOf = (fields)=>{
+    const names = new Set();
+    const collect = (list)=>{
+        for (const field of list){
+            if ('name' in field) {
+                names.add(field.name);
+            } else if ('fields' in field) {
+                // Rows and collapsibles do not nest their fields' data
+                collect(field.fields);
+            } else if (field.type === 'tabs') {
+                for (const tab of field.tabs){
+                    if (!('name' in tab)) {
+                        collect(tab.fields);
+                    }
+                }
+            }
+        }
+    };
+    collect(fields);
+    return Object.fromEntries(SUMMARY_FIELDS.filter((name)=>names.has(name)).map((name)=>[
+            name,
+            true
+        ]));
+};
 /**
  * Creates a courses collection configuration for Payload CMS
  * This collection manages educational courses with various access modes, pricing, and content organization
@@ -343,15 +375,17 @@ import { pricesField } from '../fields/pricesField.js';
         {
             name: 'enrolledStudents',
             type: 'relationship',
-            access: {
-                read: isAdminOrAuthorFieldLevel
-            },
             admin: {
                 allowCreate: false,
-                description: 'Controls the students enrolled in the course',
+                description: 'Students enrolled in the course. Added by purchases and enrollment. Students see only themselves here.',
                 position: 'sidebar'
             },
             hasMany: true,
+            hooks: {
+                afterRead: [
+                    onlyOwnStudent
+                ]
+            },
             relationTo: studentsCollectionSlug
         },
         {
@@ -359,10 +393,15 @@ import { pricesField } from '../fields/pricesField.js';
             type: 'relationship',
             admin: {
                 allowCreate: false,
-                description: 'The students completed the course',
+                description: 'Students who have completed the course. Added by the LMS. Students see only themselves here.',
                 position: 'sidebar'
             },
             hasMany: true,
+            hooks: {
+                afterRead: [
+                    onlyOwnStudent
+                ]
+            },
             relationTo: studentsCollectionSlug
         },
         {
@@ -371,10 +410,15 @@ import { pricesField } from '../fields/pricesField.js';
             admin: {
                 allowCreate: false,
                 allowEdit: false,
-                description: 'Controls the groups enrolled in the course',
+                description: 'Groups whose members can take the course. Added when a group buys it. Students see only their own groups here.',
                 position: 'sidebar'
             },
             hasMany: true,
+            hooks: {
+                afterRead: [
+                    onlyOwnGroups
+                ]
+            },
             label: 'Course Enrolled Groups',
             relationTo: 'groups'
         },
@@ -433,6 +477,9 @@ import { pricesField } from '../fields/pricesField.js';
    * Includes slug, access control, timestamps, and admin settings
    */ const baseConfig = {
         slug: 'courses',
+        // A course linked from another document (progress, certificates, groups, lessons, site links)
+        // loads only what a card or link needs, not its lessons, prices or student and group lists.
+        defaultPopulate: summaryOf(fields),
         timestamps: true,
         ...overrides,
         access: withDefaultAccess(defaultAccess.courses, overrides?.access),

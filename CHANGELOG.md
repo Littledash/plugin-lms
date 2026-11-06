@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.1
+
+### Changed
+
+- A course linked from another document (a lesson, a student's progress or certificates, a group,
+  a site link) loads only `title`, `slug`, `excerpt`, `featuredImage` and `categories`, where the
+  course has them, instead of everything including its student lists. Query courses directly for
+  other fields, or set `defaultPopulate` in the courses override.
+
+### Fixed
+
+- Course member lists were public: anyone could list who is enrolled in or has completed a course,
+  and its groups. Now admins and authors see them whole and everyone else sees only themselves and
+  their own groups. Students can now query `enrolledStudents` for their own courses (it was refused).
+
 ## 2.0.0
 
 Security release. See [Upgrading to 2.0](./docs/upgrading-to-2.0.md) for the breaking changes.

@@ -42,6 +42,10 @@ return a generic `500` message, so internal details never reach the client.
 - `roles` from `rolesField`: create and update by admins only.
 - Question answer fields (`choices.isCorrect`, `correctAnswer`, `correctAnswers`,
   `assessmentCriteria`): read by admins and authors only.
+- Course member lists (`enrolledStudents`, `courseCompletedStudents`, `courseEnrolledGroups`):
+  admins and authors see them whole; anyone else sees only themselves and their own groups, and
+  logged-out visitors see empty lists. Students can still query their own membership (`where`).
+  Reads that skip access control, such as the Local API's default, see the full lists.
 - Lesson, topic, quiz and course content fields: read by admins, authors, and users enrolled in a
   course that contains them. A lesson's `quizzes` relationship is included, so quiz ids are not
   public.
