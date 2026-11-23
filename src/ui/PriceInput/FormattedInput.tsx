@@ -120,7 +120,10 @@ export const FormattedInput: React.FC<Props> = ({
           <span>{currency.symbol}</span>
         </div>
 
+        {/* eslint-disable-next-line jsx-a11y/control-has-associated-label -- FieldLabel labels it through htmlFor, which the rule cannot see */}
         <input
+          // Without a label, name the input by its currency so screen readers still announce it
+          aria-label={label ? undefined : `Price (${currency.code.toUpperCase()})`}
           className={`${baseClass}Input`}
           disabled={disabled}
           id={id}

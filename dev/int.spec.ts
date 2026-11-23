@@ -120,6 +120,13 @@ const getDoc = async (collection: 'addresses' | 'courses' | 'groups' | 'users', 
 const ids = (values: unknown): string[] =>
   (Array.isArray(values) ? values : []).map((value) => String(typeof value === 'object' ? value.id : value))
 
+/** A relationship is an ID at depth 0 and a document when populated. */
+const idOf = (value: unknown): string => ids([value])[0]
+
+/** Docs a list request returned, treating a refused list (403) as an empty one. */
+const listedIds = async (response: Response): Promise<string[]> =>
+  response.status === 403 ? [] : ids((await response.json()).docs)
+
 /** Enrolls a user the way the site does after a verified purchase. */
 const enroll = (user: Doc, course: Doc) =>
   enrollUser({ courseId: course.id, req: { payload } as never, userId: user.id })
@@ -265,7 +272,7 @@ describe('enrollUser service', () => {
     const result = await enroll(buyer, course)
 
     expect(result.status).toBe('enrolled')
-    expect(ids((await getDoc('courses', course.id)).enrolledStudents)).toEqual([buyer.id])
+    expect(ids((await getDoc('courses', course.id)).enrolledStudents)).toStrictEqual([buyer.id])
   })
 
   it('creates a group for a leader and grants the leader role', async () => {
@@ -280,7 +287,7 @@ describe('enrollUser service', () => {
     })
 
     const group = await getDoc('groups', String(groupId))
-    expect(ids(group.leaders)).toEqual([leader.id])
+    expect(ids(group.leaders)).toStrictEqual([leader.id])
     expect(group.purchasedCourses[0].seatManagement.seatsTotal).toBe(5)
     expect(ids((await getDoc('courses', course.id)).courseEnrolledGroups)).toContain(String(groupId))
     expect((await getDoc('users', leader.id)).roles).toContain('leader')
@@ -305,7 +312,7 @@ describe('enrollUser service', () => {
     })
 
     expect(String(outsiderGroup)).not.toBe(String(ownerGroup))
-    expect(ids((await getDoc('groups', String(ownerGroup))).leaders)).toEqual([owner.id])
+    expect(ids((await getDoc('groups', String(ownerGroup))).leaders)).toStrictEqual([owner.id])
   })
 
   it('rolls back every write when a step fails', async () => {
@@ -385,7 +392,7 @@ describe('complete-lesson endpoint', () => {
 
     expect(status).toBe(200)
     const progress = (await getDoc('users', user.id)).coursesProgress[0]
-    expect(ids(progress.completedLessons.map((entry: Doc) => entry.lesson))).toEqual([lesson.id])
+    expect(ids(progress.completedLessons.map((entry: Doc) => entry.lesson))).toStrictEqual([lesson.id])
   })
 
   it('completes the course and awards its certificate after the last required lesson', async () => {
@@ -413,7 +420,7 @@ describe('complete-lesson endpoint', () => {
     expect(ids(updatedCourse.courseCompletedStudents)).toContain(user.id)
     expect(ids(updatedCourse.enrolledStudents)).not.toContain(user.id)
     const updatedUser = await getDoc('users', user.id)
-    expect(ids(updatedUser.certificates.map((entry: Doc) => entry.certificate))).toEqual([certificate.id])
+    expect(ids(updatedUser.certificates.map((entry: Doc) => entry.certificate))).toStrictEqual([certificate.id])
   })
 })
 
@@ -549,7 +556,7 @@ describe('complete-course endpoint', () => {
 
     const result = await completeCourse({ courseId: course.id, req: { payload } as never, userId: user.id })
 
-    expect(result).toEqual({ certificateAwarded: true, status: 'already-completed' })
+    expect(result).toStrictEqual({ certificateAwarded: true, status: 'already-completed' })
     expect((await getDoc('users', user.id)).certificates).toHaveLength(1)
   })
 })
@@ -632,7 +639,7 @@ describe('add-user-to-group endpoint', () => {
     })
 
     expect(status).toBe(200)
-    expect(ids((await getDoc('groups', group.id)).students)).toEqual([member.id])
+    expect(ids((await getDoc('groups', group.id)).students)).toStrictEqual([member.id])
   })
 
   it('addUserToGroup service rejects duplicate membership', async () => {
@@ -657,7 +664,7 @@ describe('fetch-progress endpoint', () => {
     const body = await response.json()
 
     expect(response.status).toBe(200)
-    expect(body.enrolledCourses.map(String)).toEqual([course.id])
+    expect(body.enrolledCourses.map(String)).toStrictEqual([course.id])
     expect(body.coursesProgress[0]).toMatchObject({ completionPercentage: 50, courseCompletion: '1/2' })
   })
 })
@@ -759,8 +766,8 @@ describe('field access', () => {
     })
 
     const saved = await getDoc('users', user.id)
-    expect(saved.coursesProgress ?? []).toHaveLength(0)
-    expect(saved.certificates ?? []).toHaveLength(0)
+    expect(ids(saved.coursesProgress)).toHaveLength(0)
+    expect(ids(saved.certificates)).toHaveLength(0)
     expect(saved.roles).not.toContain('admin')
   })
 
@@ -954,7 +961,7 @@ describe('collection access defaults', () => {
 
     expect(document.filename).not.toContain(String(user.id))
     expect(document.filename).toMatch(/^certificate-[0-9a-f-]{36}\.pdf$/)
-    expect(String(document.owner?.id ?? document.owner)).toBe(user.id)
+    expect(idOf(document.owner)).toBe(user.id)
     const award = (await getDoc('users', user.id)).certificates[0]
     expect(String(award.document)).toBe(String(document.id))
     // Nothing is left in the public media collection
@@ -1028,9 +1035,7 @@ describe('content access', () => {
   it('shows course materials only to enrolled students', async () => {
     const { course, enrolled, outsider } = await setup()
     expect((await read(enrolled, `/courses/${course.id}`)).courseSettings.courseMaterials).toBeDefined()
-    expect((await read(outsider, `/courses/${course.id}`)).courseSettings ?? {}).not.toHaveProperty(
-      'courseMaterials',
-    )
+    expect((await read(outsider, `/courses/${course.id}`)).courseSettings?.courseMaterials).toBeUndefined()
   })
 
   it('shows content to group members of an enrolled group', async () => {
@@ -1065,7 +1070,7 @@ describe('ownership access', () => {
     expect((await client.GET(`/users/${user.id}`)).status).toBe(200)
     expect([403, 404]).toContain((await client.GET(`/users/${other.id}`)).status)
     const list = await (await client.GET('/users')).json()
-    expect(list.docs.map((doc: Doc) => doc.id)).toEqual([user.id])
+    expect(list.docs.map((doc: Doc) => doc.id)).toStrictEqual([user.id])
   })
 
   it('a student cannot update or delete another student', async () => {
@@ -1096,7 +1101,7 @@ describe('ownership access', () => {
     expect([403, 404]).toContain((await client.GET(`/groups/${other.id}`)).status)
     expect([403, 404]).toContain((await client.GET('/groups/aaaaaaaaaaaaaaaaaaaaaaaa')).status)
     const list = await (await client.GET('/groups')).json()
-    expect(list.docs.map((doc: Doc) => doc.id)).toEqual([own.id])
+    expect(list.docs.map((doc: Doc) => doc.id)).toStrictEqual([own.id])
   })
 
   it('a leader who is not a student can read their group', async () => {
@@ -1147,7 +1152,7 @@ describe('ownership access', () => {
     const after = await getDoc('groups', String(groupId))
     expect(after.purchasedCourses[0].seatManagement.seatsTotal).toBe(2)
     expect(ids(after.students)).not.toContain(outsider.id)
-    expect(ids(after.leaders)).toEqual([leader.id])
+    expect(ids(after.leaders)).toStrictEqual([leader.id])
   })
 
   it('addresses are private to their owner', async () => {
@@ -1314,9 +1319,7 @@ describe('lesson availability', () => {
     expect(blocked.status).toBe(403)
     expect(blocked.body.message).toMatch(/expired/)
     expect(await (await client.GET(`/lessons/${lesson.id}`)).json()).not.toHaveProperty('content')
-    expect((await (await client.GET(`/courses/${course.id}`)).json()).courseSettings ?? {}).not.toHaveProperty(
-      'courseMaterials',
-    )
+    expect((await (await client.GET(`/courses/${course.id}`)).json()).courseSettings?.courseMaterials).toBeUndefined()
   })
 
   it('does not expire an enrollment that has no date', async () => {
@@ -1385,9 +1388,9 @@ describe('service edge cases', () => {
     })
 
     const group = await getDoc('groups', String(groupId))
-    expect(ids(group.students)).toEqual([member.id])
+    expect(ids(group.students)).toStrictEqual([member.id])
     expect(group.purchasedCourses[0].seatManagement.seatsUsed).toBe(2)
-    expect(ids((await getDoc('courses', course.id)).enrolledStudents)).toEqual(
+    expect(ids((await getDoc('courses', course.id)).enrolledStudents)).toStrictEqual(
       expect.arrayContaining([leader.id, member.id]),
     )
   })
@@ -1424,7 +1427,7 @@ describe('service edge cases', () => {
     })
 
     expect(status).toBe('created')
-    expect(String(document.owner?.id ?? document.owner)).toBe(user.id)
+    expect(idOf(document.owner)).toBe(user.id)
     expect(String((await getDoc('users', user.id)).certificates[0].document)).toBe(String(document.id))
     expect((await payload.find({ collection: 'media', where: { filename: { equals: legacyName } } })).docs).toHaveLength(0)
   })
@@ -1448,7 +1451,7 @@ describe('service edge cases', () => {
 
     const award = (await getDoc('users', user.id)).certificates[0]
     expect(String(award.document)).toBe(String(document.id))
-    expect(award.file ?? null).toBeNull()
+    expect([null, undefined]).toContain(award.file)
     expect(await payload.findByID({ id: old.id, collection: 'media', disableErrors: true })).toBeNull()
   })
 
@@ -1522,8 +1525,8 @@ describe('service edge cases', () => {
       status: 'already-completed',
     })
     const saved = await getDoc('courses', course.id)
-    expect(ids(saved.enrolledStudents)).toEqual([])
-    expect(ids(saved.courseCompletedStudents)).toEqual([user.id])
+    expect(ids(saved.enrolledStudents)).toStrictEqual([])
+    expect(ids(saved.courseCompletedStudents)).toStrictEqual([user.id])
   })
 
   it('requires a company name to create a group', async () => {
@@ -1558,7 +1561,7 @@ describe('quiz completion', () => {
 
     expect(body).toMatchObject({ completedLessonIds: [lesson.id], courseCompleted: true, passed: true })
     const saved = await getDoc('users', user.id)
-    expect(ids(saved.coursesProgress[0].completedLessons.map((entry: Doc) => entry.lesson))).toEqual([lesson.id])
+    expect(ids(saved.coursesProgress[0].completedLessons.map((entry: Doc) => entry.lesson))).toStrictEqual([lesson.id])
     expect(saved.certificates).toHaveLength(1)
   })
 
@@ -1577,7 +1580,7 @@ describe('quiz completion', () => {
         quizId: quiz.quiz.id,
       })
 
-    expect((await pass(first)).body.completedLessonIds).toEqual([])
+    expect((await pass(first)).body.completedLessonIds).toStrictEqual([])
     expect((await pass(second)).body).toMatchObject({ completedLessonIds: [lesson.id], courseCompleted: false })
   })
 
@@ -1660,13 +1663,13 @@ describe('true/false questions', () => {
     const hiddenLesson = await query(await createUser(), lessonQuery, lesson.id)
     expect(hiddenLesson.status).toBe(200)
     expect(hiddenLesson.body.data.Lesson.title).toBe(lesson.title)
-    expect(hiddenLesson.body.data.Lesson.quizzes).toEqual([])
+    expect(hiddenLesson.body.data.Lesson.quizzes).toStrictEqual([])
 
     const hiddenQuestion = await query(await createUser(), questionQuery, questionId)
     expect(JSON.stringify(hiddenQuestion.body)).not.toMatch(/"isCorrect":true/)
 
     const visibleLesson = await query(enrolled, lessonQuery, lesson.id)
-    expect(visibleLesson.body.data.Lesson.quizzes.map((item: Doc) => item.id)).toEqual([quiz.id])
+    expect(visibleLesson.body.data.Lesson.quizzes.map((item: Doc) => item.id)).toStrictEqual([quiz.id])
 
     const visibleQuestion = await query(await createUser(['author']), questionQuery, questionId)
     expect(visibleQuestion.body.data.Question.choices.some((choice: Doc) => choice.isCorrect)).toBe(true)
@@ -1762,7 +1765,7 @@ describe('access renewal', () => {
 
     expect((await purchase()).status).toBe('enrolled')
     expect((await purchase()).status).toBe('already-renewed')
-    expect((await progressFor(user.id, course.id)).accessFrom ?? null).toBeNull()
+    expect([null, undefined]).toContain((await progressFor(user.id, course.id)).accessFrom)
   })
 
   it.each(['', '   ', 'x'.repeat(201)])('rejects an unusable purchase key %#', async (key) => {
@@ -1785,7 +1788,7 @@ describe('access renewal', () => {
 
     expect(service.status).toBe('already-enrolled')
     expect(http.body.status).toBe('already-enrolled')
-    expect((await progressFor(user.id, course.id)).accessFrom ?? null).toBeNull()
+    expect([null, undefined]).toContain((await progressFor(user.id, course.id)).accessFrom)
   })
 
   it('a member added by a group leader is dated on the day they join', async () => {
@@ -1836,7 +1839,7 @@ describe('private documents', () => {
 
     expect([403, 404]).toContain((await stranger.GET(`/documents/${document.id}`)).status)
     expect([403, 404]).toContain((await stranger.GET(`/documents/file/${document.filename}`)).status)
-    expect((await (await stranger.GET('/documents')).json()).docs ?? []).toHaveLength(0)
+    expect(await listedIds(await stranger.GET('/documents'))).toHaveLength(0)
   })
 
   it('anonymous visitors cannot list or download documents', async () => {
@@ -1844,7 +1847,7 @@ describe('private documents', () => {
     const visitor = anonymous()
 
     const list = await visitor.GET('/documents', { auth: false })
-    expect(list.status === 403 || ((await list.json()).docs ?? []).length === 0).toBe(true)
+    expect(await listedIds(list)).toHaveLength(0)
     expect([401, 403, 404]).toContain((await visitor.GET(`/documents/file/${document.filename}`, { auth: false })).status)
   })
 
@@ -1854,7 +1857,7 @@ describe('private documents', () => {
 
     const document = await upload(victim, student)
 
-    expect(String(document.owner?.id ?? document.owner)).toBe(student.id)
+    expect(idOf(document.owner)).toBe(student.id)
   })
 
   const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -1951,7 +1954,7 @@ describe('course files', () => {
     await enroll(student, course)
 
     const list = await (await (await clientFor(student)).GET('/course-files')).json()
-    expect(list.docs.map((doc: Doc) => doc.id)).toEqual([mine.id])
+    expect(list.docs.map((doc: Doc) => doc.id)).toStrictEqual([mine.id])
   })
 
   it('a file stays locked until its lesson is released', async () => {

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.4
+
+### Changed
+
+- The price input has an accessible name (`Price (AUD)`, by currency) when the field has no label.
+- Lint warnings cleared in the tests and dev app. The dev app loads the example courses on start
+  when `SEED=true` is set in `dev/.env`.
+
 ## 2.0.3
 
 ### Changed

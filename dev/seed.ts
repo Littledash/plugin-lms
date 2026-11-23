@@ -50,7 +50,7 @@ export const seed = async (payload: Payload) => {
       },
     })
 
-    const designCategory = await payload.create({
+    await payload.create({
       collection: 'categories',
       data: {
         slug: 'design',
@@ -177,7 +177,7 @@ export const seed = async (payload: Payload) => {
     })
 
     // Create HTML topics
-    const htmlStructureTopic = await payload.create({
+    await payload.create({
       collection: 'topics',
       data: {
         content: {
@@ -211,7 +211,7 @@ export const seed = async (payload: Payload) => {
       },
     })
 
-    const htmlElementsTopic = await payload.create({
+    await payload.create({
       collection: 'topics',
       data: {
         content: {
@@ -245,7 +245,7 @@ export const seed = async (payload: Payload) => {
       },
     })
 
-    const htmlFormsTopic = await payload.create({
+    await payload.create({
       collection: 'topics',
       data: {
         content: {
@@ -280,7 +280,7 @@ export const seed = async (payload: Payload) => {
     })
 
     // Create CSS topics
-    const cssSelectorsTopic = await payload.create({
+    await payload.create({
       collection: 'topics',
       data: {
         content: {
@@ -314,7 +314,7 @@ export const seed = async (payload: Payload) => {
       },
     })
 
-    const cssBoxModelTopic = await payload.create({
+    await payload.create({
       collection: 'topics',
       data: {
         content: {
@@ -348,7 +348,7 @@ export const seed = async (payload: Payload) => {
       },
     })
 
-    const cssFlexboxTopic = await payload.create({
+    await payload.create({
       collection: 'topics',
       data: {
         content: {

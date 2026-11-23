@@ -142,9 +142,11 @@ export default buildConfig({
   }),
   editor: lexicalEditor(),
   email: testEmailAdapter,
-  // onInit: async (payload) => {
-  //   await seed(payload)
-  // },
+  onInit: async (payload) => {
+    if (process.env.SEED === 'true') {
+      await seed(payload)
+    }
+  },
   plugins: [
     lmsPlugin({
       groups: true,

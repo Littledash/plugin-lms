@@ -97,6 +97,8 @@ export const FormattedInput = ({ id, currency: currencyFromProps, description, d
                         })
                     }),
                     /*#__PURE__*/ _jsx("input", {
+                        // Without a label, name the input by its currency so screen readers still announce it
+                        "aria-label": label ? undefined : `Price (${currency.code.toUpperCase()})`,
                         className: `${baseClass}Input`,
                         disabled: disabled,
                         id: id,
