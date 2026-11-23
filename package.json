@@ -1,6 +1,6 @@
 {
   "name": "@littledash/plugin-lms",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "A comprehensive Learning Management System (LMS) plugin for Payload CMS with courses, lessons, quizzes, certificates, and more.",
   "license": "MIT",
   "repository": {
@@ -181,11 +181,11 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
-    "@payloadcms/db-mongodb": "3.92.0",
+    "@payloadcms/db-mongodb": "3.94.1",
     "@payloadcms/eslint-config": "3.28.0",
-    "@payloadcms/next": "3.92.0",
-    "@payloadcms/richtext-lexical": "3.92.0",
-    "@payloadcms/ui": "3.92.0",
+    "@payloadcms/next": "3.94.1",
+    "@payloadcms/richtext-lexical": "3.94.1",
+    "@payloadcms/ui": "3.94.1",
     "@swc-node/register": "1.12.1",
     "@swc/cli": "0.8.1",
     "@swc/jest": "^0.2.39",
@@ -199,15 +199,15 @@
     "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
     "eslint": "^9.39.5",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.6",
     "graphql": "^16.14.2",
     "jest": "30.5.2",
     "jest-environment-jsdom": "30.5.2",
     "lint-staged": "^17.6.0",
     "mongodb-memory-server": "^11.3.0",
-    "next": "16.4.2",
+    "next": "16.4.6",
     "open": "^10.2.0",
-    "payload": "3.92.0",
+    "payload": "3.94.1",
     "prettier": "^3.9.10",
     "qs-esm": "7.0.2",
     "react": "19.3.1",
@@ -366,7 +366,10 @@
     ],
     "overrides": {
       "@eslint/plugin-kit": "^0.3.4",
-      "happy-dom": "^21.0.4"
+      "follow-redirects": "^1.16.2",
+      "glob@>=9 <14.0.2": "^14.0.2",
+      "happy-dom": "^21.0.4",
+      "minimatch@>=7 <11.0.1": "^11.0.1"
     }
   },
   "registry": "https://registry.npmjs.org/",

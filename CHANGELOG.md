@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.3
+
+### Changed
+
+- Dev dependencies updated to clear `pnpm audit`: Payload 3.94.1 (mongoose 8.24.7), Next.js 16.4.6,
+  and overrides for `follow-redirects`, `glob` and `minimatch`. The `payload` peer range is
+  unchanged (`^3.92.0`) and no runtime code changed.
+- Removed the "under heavy development" warning from the README.
+
 ## 2.0.2
 
 ### Changed

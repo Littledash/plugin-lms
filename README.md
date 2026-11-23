@@ -4,9 +4,6 @@
 
 A comprehensive Learning Management System (LMS) plugin for Payload CMS that enables course creation, management, and delivery.
 
-> [!WARNING]
-> This plugin is under heavy development. And it may not be stable for production use. Please use with caution.
-
 ## Documentation
 
 - [Upgrading to 2.0](./docs/upgrading-to-2.0.md)
