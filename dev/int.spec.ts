@@ -8,8 +8,9 @@
 import type { Payload } from 'payload'
 
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
+import { inflateSync } from 'node:zlib'
 import { getPayload } from 'payload'
-import { PDFDocument, PDFName, StandardFonts } from 'pdf-lib'
+import { PDFDocument, PDFName, PDFRawStream, StandardFonts } from 'pdf-lib'
 import sharp from 'sharp'
 
 import { isAdminOrAuthorOrEnrolledInCourse } from '../src/access/isAdminOrAuthorOrEnrolledInCourse.js'
@@ -22,7 +23,7 @@ import {
   LMSError,
   renderCertificatePDF,
 } from '../src/exports/services.js'
-import { descriptionBlocks, layoutDescription, toDrawableText } from '../src/utilities/createPDF.js'
+import { BODY_BOTTOM, descriptionBlocks, layoutCertificateBody, toDrawableText } from '../src/utilities/createPDF.js'
 import { NextRESTClient } from './helpers/NextRESTClient.js'
 import { docx, zip } from './helpers/zip.js'
 
@@ -34,6 +35,21 @@ let memoryDB: MongoMemoryReplSet | undefined
 
 const PASSWORD = 'test-password'
 let counter = 0
+
+/** The text drawn on each page of a PDF, one entry per drawn string */
+const pdfText = async (data: Uint8Array): Promise<string[]> => {
+  const doc = await PDFDocument.load(data)
+  return doc.context
+    .enumerateIndirectObjects()
+    .map(([, object]) => object)
+    .filter((object): object is PDFRawStream => object instanceof PDFRawStream)
+    .filter((stream) => String(stream.dict.get(PDFName.of('Filter'))) === '/FlateDecode')
+    .flatMap((stream) =>
+      [...inflateSync(stream.contents).toString('latin1').matchAll(/<([\dA-F]*)> Tj/gi)].map((match) =>
+        Buffer.from(match[1], 'hex').toString('latin1'),
+      ),
+    )
+}
 
 const createUser = async (roles: string[] = ['student']): Promise<Doc> => {
   counter++
@@ -1525,33 +1541,6 @@ describe('service edge cases', () => {
       { bold: false, text: 'second' },
     ])
 
-    const doc = await PDFDocument.create()
-    const font = await doc.embedFont(StandardFonts.Helvetica)
-    const boldFont = await doc.embedFont(StandardFonts.HelveticaBold)
-    const maxWidth = 589
-    const layout = layoutDescription({
-      blocks: descriptionBlocks(importedDescription() as never),
-      boldFont,
-      font,
-      maxHeight: 110,
-      maxWidth,
-    })
-    expect(layout.size).toBeLessThan(20)
-    expect(layout.lines.length * layout.lineHeight).toBeLessThanOrEqual(110)
-    const widest = Math.max(...layout.lines.map((line) => boldFont.widthOfTextAtSize(line.text, layout.size)))
-    expect(widest).toBeLessThanOrEqual(maxWidth)
-
-    // A long paragraph wraps instead of running off the page
-    const long = layoutDescription({
-      blocks: [{ bold: false, text: 'word '.repeat(60).trim() }],
-      boldFont,
-      font,
-      maxHeight: 1000,
-      maxWidth,
-    })
-    expect(long.size).toBe(20)
-    expect(long.lines.length).toBeGreaterThan(1)
-
     const { certificate, course, user } = await awardedUser()
     await payload.update({ id: certificate.id, collection: 'certificates', data: { description: importedDescription() } })
     const pdf = await renderCertificatePDF({
@@ -1560,7 +1549,80 @@ describe('service edge cases', () => {
       req: { payload } as never,
       userId: user.id,
     })
-    expect((await PDFDocument.load(pdf.data)).getPageCount()).toBe(1)
+    expect(await pdfText(pdf.data)).toStrictEqual(
+      expect.arrayContaining([
+        'This Certifies that',
+        'has completed a 1-hour Online Masterclass on the topic of',
+        "'Masterclass 3: Challenging Behaviours in Young Children'",
+        'Date:',
+        'Certificate Number:',
+      ]),
+    )
+  })
+
+  it('shrinks the certificate body so a long title and presenter stay above the logo', async () => {
+    const doc = await PDFDocument.create()
+    const font = await doc.embedFont(StandardFonts.Helvetica)
+    const boldFont = await doc.embedFont(StandardFonts.HelveticaBold)
+    const maxWidth = 589
+    const blocks = [{ bold: false, text: 'has completed a 1-hour Online Masterclass on the topic of' }]
+    const longTitle =
+      'RAISING GOOD KIDS: A COMPLETE ONLINE COURSE FOR PARENTS OF CHILDREN AGED ZERO TO TWELVE YEARS, WITH EXPERT GUIDANCE (Updated 2023)'
+    const presenter = 'Dr Example Presenter (MBBS FRANZCP Cert C&A Psych)'
+
+    const short = layoutCertificateBody({ blocks, boldFont, courseTitle: 'Sleep', font, maxWidth, presenter, top: 355 })
+    expect(short.map((line) => line.size)).toStrictEqual([20, 24, 16, 18])
+
+    const long = layoutCertificateBody({ blocks, boldFont, courseTitle: longTitle, font, maxWidth, presenter, top: 355 })
+    const titleLines = long.filter((line) => line.color === 'blue')
+    expect(titleLines.length).toBeGreaterThan(1)
+    expect(titleLines[0].size).toBeLessThan(24)
+    expect(long.at(-1)).toMatchObject({ text: presenter })
+    expect(Math.min(...long.map((line) => line.y))).toBeGreaterThanOrEqual(BODY_BOTTOM)
+    const ys = long.map((line) => line.y)
+    expect(ys).toStrictEqual([...ys].sort((a, b) => b - a))
+    const widest = Math.max(...long.map((line) => boldFont.widthOfTextAtSize(line.text, line.size)))
+    expect(widest).toBeLessThanOrEqual(maxWidth)
+
+    // A long paragraph wraps instead of running off the page
+    const wrapped = layoutCertificateBody({
+      blocks: [{ bold: false, text: 'word '.repeat(60).trim() }],
+      boldFont,
+      bottom: 0,
+      courseTitle: 'Sleep',
+      font,
+      maxWidth,
+      top: 355,
+    })
+    expect(wrapped.filter((line) => line.color === 'black').length).toBeGreaterThan(1)
+  })
+
+  it('prints the presenter name instead of the author when one is set', async () => {
+    const author = await createUser(['author'])
+    const { certificate, course, user } = await awardedUser()
+    await payload.update({ id: certificate.id, collection: 'certificates', data: { authors: [author.id] } })
+    const render = async () =>
+      pdfText(
+        (
+          await renderCertificatePDF({
+            certificateId: certificate.id,
+            courseId: course.id,
+            req: { payload } as never,
+            userId: user.id,
+          })
+        ).data,
+      )
+
+    expect(await render()).toContain(`${author.firstName} ${author.lastName}`)
+
+    const presenter = 'Dr Example Presenter (MBBS FRANZCP Cert C&A Psych)'
+    await payload.update({ id: certificate.id, collection: 'certificates', data: { presenterName: ` ${presenter} ` } })
+    const text = await render()
+    expect(text).toContain('presented by')
+    expect(text).toContain(presenter)
+    expect(text).not.toContain(`${author.firstName} ${author.lastName}`)
+    const stored = (await payload.findByID({ id: certificate.id, collection: 'certificates' })) as unknown as Doc
+    expect(stored.presenterName).toBe(` ${presenter} `)
   })
 
   it('generates a certificate when a name has characters the PDF font cannot draw', async () => {

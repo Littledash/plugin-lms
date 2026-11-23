@@ -121,26 +121,79 @@ const wrapText = (text, maxWidth, fontSize, font)=>{
         text
     ];
 };
-const DESCRIPTION_MAX_SIZE = 20;
-const DESCRIPTION_MIN_SIZE = 10;
-const DESCRIPTION_LEADING = 1.3;
+/** The lowest baseline the body may use, clear of the logo and signature area on the template */ export const BODY_BOTTOM = 165;
+const MIN_BODY_SCALE = 0.5;
+const BODY_SCALE_STEP = 0.05;
 /**
- * Wraps the description to `maxWidth`, stepping the font size down from 20pt until the lines fit in
- * `maxHeight`, so a long imported description does not push the course title and presenter off
- * the page. At the minimum size the lines are returned even if they do not fit.
- */ export const layoutDescription = ({ blocks, boldFont, font, maxHeight, maxWidth })=>{
-    for(let size = DESCRIPTION_MAX_SIZE;; size--){
-        const lineHeight = size * DESCRIPTION_LEADING;
-        const lines = blocks.flatMap((block)=>wrapText(block.text, maxWidth, size, block.bold ? boldFont : font).map((text)=>({
-                    bold: block.bold,
-                    text
-                })));
-        if (lines.length * lineHeight <= maxHeight || size <= DESCRIPTION_MIN_SIZE) {
-            return {
-                lineHeight,
-                lines,
-                size
-            };
+ * Lays out the description, course title and presenter below the student name. Sizes and gaps
+ * start at the template's design (20pt description, 24pt title, 16pt "presented by", 18pt
+ * presenter) and shrink together in 5% steps, down to half size, until the last line sits at or
+ * above `bottom`, so a long title or presenter cannot run into the logo. At half size the lines
+ * are returned even if they do not fit.
+ */ export const layoutCertificateBody = ({ blocks, boldFont, bottom = BODY_BOTTOM, courseTitle, font, maxWidth, presenter, top })=>{
+    const sections = [
+        ...blocks.map((block, index)=>({
+                bold: block.bold,
+                color: 'black',
+                gap: index === 0 ? 50 : 26,
+                leading: 1.3,
+                size: 20,
+                texts: [
+                    block.text
+                ]
+            })),
+        {
+            bold: true,
+            color: 'blue',
+            gap: 50,
+            leading: 1.25,
+            size: 24,
+            texts: [
+                courseTitle
+            ]
+        },
+        ...presenter ? [
+            {
+                bold: false,
+                color: 'black',
+                gap: 44,
+                leading: 1.25,
+                size: 16,
+                texts: [
+                    'presented by'
+                ]
+            },
+            {
+                bold: false,
+                color: 'black',
+                gap: 22,
+                leading: 1.25,
+                size: 18,
+                texts: [
+                    presenter
+                ]
+            }
+        ] : []
+    ];
+    for(let scale = 1;; scale -= BODY_SCALE_STEP){
+        const lines = [];
+        let y = top;
+        for (const section of sections){
+            const size = section.size * scale;
+            const wrapped = section.texts.flatMap((text)=>wrapText(text, maxWidth, size, section.bold ? boldFont : font));
+            wrapped.forEach((text, index)=>{
+                y -= index === 0 ? section.gap * scale : size * section.leading;
+                lines.push({
+                    bold: section.bold,
+                    color: section.color,
+                    size,
+                    text,
+                    y
+                });
+            });
+        }
+        if (y >= bottom || scale - BODY_SCALE_STEP < MIN_BODY_SCALE - 1e-9) {
+            return lines;
         }
     }
 };
@@ -235,16 +288,15 @@ export const createPDF = async ({ authorName: rawAuthorName, completionDate: raw
         x: getCenteredX(normalizedStudentName, 22, boldFont),
         y: currentY
     });
-    const maxTextWidth = width * 0.7;
-    const lineHeight = 30;
-    const courseTitleLines = wrapText(courseTitle, maxTextWidth, 24, boldFont);
-    // The space the original one-line description had, plus the slack above the footer, less any
-    // extra lines the course title needs
     const blocks = descriptionBlocks(description).map((block)=>({
             ...block,
             text: drawable(block.text).trim()
         })).filter((block)=>block.text);
-    const descriptionLayout = layoutDescription({
+    const colors = {
+        black: rgb(0, 0, 0),
+        blue: rgb(64 / 255, 84 / 255, 165 / 255)
+    };
+    const bodyLines = layoutCertificateBody({
         blocks: blocks.length ? blocks : [
             {
                 bold: false,
@@ -252,54 +304,20 @@ export const createPDF = async ({ authorName: rawAuthorName, completionDate: raw
             }
         ],
         boldFont,
+        courseTitle,
         font: primaryFont,
-        maxHeight: Math.max(DESCRIPTION_MAX_SIZE * DESCRIPTION_LEADING, 110 - (courseTitleLines.length - 1) * lineHeight),
-        maxWidth: maxTextWidth
+        maxWidth: width * 0.7,
+        presenter: authorName || undefined,
+        top: currentY
     });
-    currentY -= 50;
-    descriptionLayout.lines.forEach((line, index)=>{
+    for (const line of bodyLines){
         const font = line.bold ? boldFont : primaryFont;
         page.drawText(line.text, {
-            color: rgb(0, 0, 0),
+            color: colors[line.color],
             font,
-            size: descriptionLayout.size,
-            x: getCenteredX(line.text, descriptionLayout.size, font),
-            y: currentY - index * descriptionLayout.lineHeight
-        });
-    });
-    currentY -= (descriptionLayout.lines.length - 1) * descriptionLayout.lineHeight;
-    // Course title - wrap text if needed, 24pt, dark blue, bold
-    currentY -= 50;
-    courseTitleLines.forEach((line, index)=>{
-        page.drawText(line, {
-            color: rgb(64 / 255, 84 / 255, 165 / 255),
-            font: boldFont,
-            size: 24,
-            x: getCenteredX(line, 24, boldFont),
-            y: currentY - index * lineHeight
-        });
-    });
-    // Adjust currentY based on number of lines
-    currentY -= (courseTitleLines.length - 1) * lineHeight;
-    // "presented by" - 20pt, above author name
-    if (authorName) {
-        currentY -= 50;
-        const presentedByText = 'presented by';
-        page.drawText(presentedByText, {
-            color: rgb(0, 0, 0),
-            font: primaryFont,
-            size: 20,
-            x: getCenteredX(presentedByText, 20, primaryFont),
-            y: currentY
-        });
-        // Author name - below "presented by", closer spacing
-        currentY -= 25;
-        page.drawText(authorName, {
-            color: rgb(0, 0, 0),
-            font: primaryFont,
-            size: 20,
-            x: getCenteredX(authorName, 20, primaryFont),
-            y: currentY
+            size: line.size,
+            x: getCenteredX(line.text, line.size, font),
+            y: line.y
         });
     }
     // Completion date - positioned above "DATE" line in bottom right

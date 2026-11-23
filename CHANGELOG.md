@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.0.8
+
+### Added
+
+- Certificates have an optional **Presenter name** (`presenterName`, up to 200 characters). When
+  set, the PDF prints it after "presented by" instead of the first author's name, so it can carry a
+  title and post-nominals, for example "Dr Jane Smith (MBBS)".
+
+### Changed
+
+- The certificate PDF fits the description, course title and presenter above the logo area. They
+  start at 20pt, 24pt and 18pt ("presented by" at 16pt, smaller than before) and shrink together in
+  5% steps, down to half size, until the presenter's baseline is at least 165pt above the bottom of
+  the page. Before, a course title of three or more lines pushed the presenter into the logo.
+  Stored PDFs keep the old layout until regenerated.
+
 ## 2.0.7
 
 ### Fixed

@@ -54,21 +54,32 @@ type DescriptionBlock = {
  * together on one line that falls off the page. Headings are printed bold.
  */
 export declare const descriptionBlocks: (richText: RichText | string | undefined) => DescriptionBlock[];
+type BodyLine = {
+    bold: boolean;
+    color: 'black' | 'blue';
+    size: number;
+    text: string;
+    y: number;
+};
+/** The lowest baseline the body may use, clear of the logo and signature area on the template */
+export declare const BODY_BOTTOM = 165;
 /**
- * Wraps the description to `maxWidth`, stepping the font size down from 20pt until the lines fit in
- * `maxHeight`, so a long imported description does not push the course title and presenter off
- * the page. At the minimum size the lines are returned even if they do not fit.
+ * Lays out the description, course title and presenter below the student name. Sizes and gaps
+ * start at the template's design (20pt description, 24pt title, 16pt "presented by", 18pt
+ * presenter) and shrink together in 5% steps, down to half size, until the last line sits at or
+ * above `bottom`, so a long title or presenter cannot run into the logo. At half size the lines
+ * are returned even if they do not fit.
  */
-export declare const layoutDescription: ({ blocks, boldFont, font, maxHeight, maxWidth, }: {
+export declare const layoutCertificateBody: ({ blocks, boldFont, bottom, courseTitle, font, maxWidth, presenter, top, }: {
     blocks: DescriptionBlock[];
     boldFont: PDFFont;
+    bottom?: number;
+    courseTitle: string;
     font: PDFFont;
-    maxHeight: number;
     maxWidth: number;
-}) => {
-    lineHeight: number;
-    lines: DescriptionBlock[];
-    size: number;
-};
+    presenter?: string;
+    /** Baseline of the student name */
+    top: number;
+}) => BodyLine[];
 export declare const createPDF: ({ authorName: rawAuthorName, completionDate: rawCompletionDate, courseTitle: rawCourseTitle, description, sharp, studentName: rawStudentName, templateImage, }: createPDFProps) => Promise<Uint8Array>;
 export {};

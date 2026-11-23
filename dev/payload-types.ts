@@ -918,6 +918,10 @@ export interface Certificate {
    * The authors of the certificate
    */
   authors?: (string | User)[] | null
+  /**
+   * Printed after "presented by" on the PDF, e.g. "Dr Jane Smith (MBBS)". Leave empty to print the first author's name.
+   */
+  presenterName?: string | null
   updatedAt: string
   createdAt: string
 }
@@ -1437,6 +1441,7 @@ export interface CertificatesSelect<T extends boolean = true> {
   expiryDate?: T
   status?: T
   authors?: T
+  presenterName?: T
   updatedAt?: T
   createdAt?: T
 }

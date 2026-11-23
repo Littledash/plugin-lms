@@ -89,9 +89,11 @@ const buildPDF = async (req: PayloadRequest, user: LMSDoc, awarded: LMSDoc, cour
   }
 
   const author = Array.isArray(certificate.authors) ? certificate.authors[0] : undefined
+  const authorName =
+    author && typeof author === 'object' ? `${author.firstName || ''} ${author.lastName || ''}`.trim() : undefined
+  const presenterName = typeof certificate.presenterName === 'string' ? certificate.presenterName.trim() : ''
   const pdf = await createPDF({
-    authorName:
-      author && typeof author === 'object' ? `${author.firstName || ''} ${author.lastName || ''}`.trim() : undefined,
+    authorName: presenterName || authorName,
     certificateNumber: `CERT-${course.id}-${certificate.id}-${user.id}`,
     completionDate: formatDate(awarded.completedDate),
     courseTitle: course.title,

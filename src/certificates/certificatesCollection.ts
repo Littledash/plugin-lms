@@ -106,6 +106,15 @@ export const certificatesCollection: (props?: Props) => CollectionConfig<'certif
       hasMany: true,
       relationTo: studentsCollectionSlug,
     },
+    {
+      name: 'presenterName',
+      type: 'text',
+      admin: {
+        description:
+          'Printed after "presented by" on the PDF, e.g. "Dr Jane Smith (MBBS)". Leave empty to print the first author\'s name.',
+      },
+      maxLength: 200,
+    },
   ]
 
   // Apply field overrides if provided

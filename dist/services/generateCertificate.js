@@ -48,8 +48,10 @@ const formatDate = (value)=>new Date(typeof value === 'string' && !Number.isNaN(
         throw new LMSError('Course title is missing.', 400);
     }
     const author = Array.isArray(certificate.authors) ? certificate.authors[0] : undefined;
+    const authorName = author && typeof author === 'object' ? `${author.firstName || ''} ${author.lastName || ''}`.trim() : undefined;
+    const presenterName = typeof certificate.presenterName === 'string' ? certificate.presenterName.trim() : '';
     const pdf = await createPDF({
-        authorName: author && typeof author === 'object' ? `${author.firstName || ''} ${author.lastName || ''}`.trim() : undefined,
+        authorName: presenterName || authorName,
         certificateNumber: `CERT-${course.id}-${certificate.id}-${user.id}`,
         completionDate: formatDate(awarded.completedDate),
         courseTitle: course.title,

@@ -122,9 +122,27 @@ for (const userId of course.courseCompletedStudents ?? []) {
 
 ## Template
 
-Upload the certificate background as the certificate's **Template** image. The PDF writes the
-student's name, the course title, the completion date, a certificate number and the first author on
-top of it. If the template is missing or cannot be loaded, the PDF is generated on a plain page.
+Upload the certificate background as the certificate's **Template** image. If the template is
+missing or cannot be loaded, the PDF is generated on a plain page.
+
+The PDF prints, centred, on top of the template:
+
+1. "this certifies that" and the student's first and last name
+2. the certificate's **Description**, one line per heading, paragraph, list item or line break,
+   with headings in bold
+3. the course title
+4. "presented by" and the certificate's **Presenter name**, or the first author's first and last
+   name when it is empty (nothing when there is neither)
+
+and the completion date in the bottom right. The description and the lines below it wrap to 70% of
+the page width and shrink together, down to half size, so the presenter stays clear of the logo
+area at the bottom of the template even with a long course title. Keep the description to what the
+layout does not already print, for example "has completed a 1-hour online masterclass on the topic
+of"; do not repeat the student, course or presenter in it.
+
+Characters the PDF font cannot draw are replaced rather than failing the certificate: invisible
+formatting characters are removed, accented letters the font lacks lose the accent, and anything
+else (emoji, non-Latin scripts) prints as `?`.
 
 The template is resized to fit A4 landscape at about 200 dpi (2400 × 1700 pixels at most) and
 embedded as a JPEG, with transparent areas filled white, so each PDF stays under about 1 MB however
