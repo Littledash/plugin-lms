@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.5
+
+### Fixed
+
+- Certificate PDFs no longer embed the template image at its uploaded size. The template is resized
+  to fit A4 landscape at about 200 dpi (2400 × 1700 pixels at most) and embedded as a JPEG, using
+  the `sharp` in the Payload config. A 16.6 MB template PNG now gives a PDF of about 490 KB.
+  Without `sharp` the image is embedded as uploaded, as before. Stored PDFs keep their size until
+  regenerated.
+
 ## 2.0.4
 
 ### Changed

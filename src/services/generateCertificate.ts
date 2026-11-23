@@ -97,6 +97,7 @@ const buildPDF = async (req: PayloadRequest, user: LMSDoc, awarded: LMSDoc, cour
     courseTitle: course.title,
     description: certificate.description || 'Certificate of Completion',
     fontFamily: 'Poppins',
+    sharp: req.payload.config.sharp,
     studentName: `${user.firstName} ${user.lastName}`,
     templateImage: certificate.template?.url || '',
   })

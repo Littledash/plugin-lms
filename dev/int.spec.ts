@@ -9,7 +9,7 @@ import type { Payload } from 'payload'
 
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import { getPayload } from 'payload'
-import { PDFDocument } from 'pdf-lib'
+import { PDFDocument, PDFName } from 'pdf-lib'
 import sharp from 'sharp'
 
 import { isAdminOrAuthorOrEnrolledInCourse } from '../src/access/isAdminOrAuthorOrEnrolledInCourse.js'
@@ -1474,6 +1474,54 @@ describe('service edge cases', () => {
     await expect(
       renderCertificatePDF({ certificateId: certificate.id, courseId: course.id, req: { payload } as never, userId: stranger.id }),
     ).rejects.toMatchObject({ status: 403 })
+  })
+
+  it('shrinks a large template image so each certificate PDF stays small', async () => {
+    // Blurred noise compresses badly as PNG, like the photographic templates sites upload, but
+    // still has the detail level of a real image, so the JPEG size is realistic
+    const width = 3508
+    const height = 2480
+    const pixels = Buffer.alloc(width * height * 3)
+    for (let i = 0; i < pixels.length; i++) {
+      pixels[i] = Math.floor(Math.random() * 256)
+    }
+    const template = await sharp(pixels, { raw: { channels: 3, height, width } }).blur(3).png().toBuffer()
+    expect(template.length).toBeGreaterThan(5_000_000)
+
+    const media = (await payload.create({
+      collection: 'media',
+      data: {},
+      file: { name: 'template.png', data: template, mimetype: 'image/png', size: template.length },
+    })) as unknown as Doc
+    const { certificate, course, user } = await awardedUser()
+    await payload.update({ id: certificate.id, collection: 'certificates', data: { template: media.id } })
+
+    // The dev media collection has no server URL to fetch from, so serve the upload directly
+    const realFetch = globalThis.fetch
+    let fetched = 0
+    globalThis.fetch = (() => {
+      fetched++
+      return Promise.resolve(new Response(template))
+    }) as typeof fetch
+    try {
+      const pdf = await renderCertificatePDF({
+        certificateId: certificate.id,
+        courseId: course.id,
+        req: { payload } as never,
+        userId: user.id,
+      })
+      expect(fetched).toBe(1)
+      expect(pdf.data.length).toBeLessThan(1_000_000)
+      const saved = await PDFDocument.load(pdf.data)
+      expect(saved.getPageCount()).toBe(1)
+      const filters = saved.context
+        .enumerateIndirectObjects()
+        .map(([, object]) => (object as { dict?: { get: (key: PDFName) => unknown } }).dict?.get(PDFName.of('Filter')))
+        .map(String)
+      expect(filters).toContain('/DCTDecode')
+    } finally {
+      globalThis.fetch = realFetch
+    }
   })
 
   it('refuses to generate a certificate for a user without a full name', async () => {

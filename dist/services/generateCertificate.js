@@ -55,6 +55,7 @@ const formatDate = (value)=>new Date(typeof value === 'string' && !Number.isNaN(
         courseTitle: course.title,
         description: certificate.description || 'Certificate of Completion',
         fontFamily: 'Poppins',
+        sharp: req.payload.config.sharp,
         studentName: `${user.firstName} ${user.lastName}`,
         templateImage: certificate.template?.url || ''
     });

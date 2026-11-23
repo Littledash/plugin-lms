@@ -125,3 +125,8 @@ for (const userId of course.courseCompletedStudents ?? []) {
 Upload the certificate background as the certificate's **Template** image. The PDF writes the
 student's name, the course title, the completion date, a certificate number and the first author on
 top of it. If the template is missing or cannot be loaded, the PDF is generated on a plain page.
+
+The template is resized to fit A4 landscape at about 200 dpi (2400 × 1700 pixels at most) and
+embedded as a JPEG, with transparent areas filled white, so each PDF stays under about 1 MB however
+large the upload is. This uses the `sharp` set in your Payload config. Without it, the image is
+embedded as uploaded. PDFs that were already stored keep their size until they are regenerated.

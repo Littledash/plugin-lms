@@ -1,3 +1,4 @@
+import type { SanitizedConfig } from 'payload'
 import type { PDFFont, PDFImage, PDFPage } from 'pdf-lib'
 
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
@@ -26,6 +27,8 @@ type RichText = {
   }
 }
 
+type Sharp = NonNullable<SanitizedConfig['sharp']>
+
 type createPDFProps = {
   authorName?: string
   certificateNumber: string
@@ -33,8 +36,38 @@ type createPDFProps = {
   courseTitle: string
   description: RichText | string
   fontFamily: string
+  /** Payload's `sharp`, used to shrink the template image. Without it the image is embedded as uploaded. */
+  sharp?: Sharp
   studentName: string
   templateImage: string
+}
+
+// A4 landscape at about 200 dpi: sharp in print, small enough to download and store per student
+const TEMPLATE_MAX_WIDTH = 2400
+const TEMPLATE_MAX_HEIGHT = 1700
+const TEMPLATE_JPEG_QUALITY = 85
+
+/**
+ * Templates are often uploaded as large PNGs (5 MB or more). pdf-lib embeds images byte for byte,
+ * so every certificate would carry the full file. Resize to print resolution and re-encode as JPEG,
+ * keeping the original when it is already smaller.
+ */
+export const shrinkTemplateImage = async (bytes: Uint8Array, sharp?: Sharp): Promise<Uint8Array> => {
+  if (!sharp) {
+    return bytes
+  }
+  try {
+    const resized = await sharp(bytes)
+      .rotate()
+      .resize({ fit: 'inside', height: TEMPLATE_MAX_HEIGHT, width: TEMPLATE_MAX_WIDTH, withoutEnlargement: true })
+      // Transparent areas would turn black in a JPEG; the page behind them is white
+      .flatten({ background: '#ffffff' })
+      .jpeg({ mozjpeg: true, quality: TEMPLATE_JPEG_QUALITY })
+      .toBuffer()
+    return resized.length < bytes.length ? new Uint8Array(resized) : bytes
+  } catch {
+    return bytes
+  }
 }
 
 /**
@@ -86,6 +119,7 @@ export const createPDF = async ({
   completionDate,
   courseTitle,
   description,
+  sharp,
   studentName,
   templateImage,
 }: createPDFProps): Promise<Uint8Array> => {
@@ -114,24 +148,14 @@ export const createPDF = async ({
   if (templateImage) {
     try {
       const imageResponse = await fetch(templateImage)
-      const imageBytes = await imageResponse.arrayBuffer()
+      const imageBytes = await shrinkTemplateImage(new Uint8Array(await imageResponse.arrayBuffer()), sharp)
 
-      // Determine image type and embed accordingly
+      // Embed by content rather than URL: a shrunk PNG template is now a JPEG
       let image: PDFImage
-      if (
-        templateImage.toLowerCase().includes('.jpg') ||
-        templateImage.toLowerCase().includes('.jpeg')
-      ) {
+      try {
         image = await pdfDoc.embedJpg(imageBytes)
-      } else if (templateImage.toLowerCase().includes('.png')) {
+      } catch {
         image = await pdfDoc.embedPng(imageBytes)
-      } else {
-        // Try JPG first, then PNG
-        try {
-          image = await pdfDoc.embedJpg(imageBytes)
-        } catch {
-          image = await pdfDoc.embedPng(imageBytes)
-        }
       }
 
       // Scale image to fit page

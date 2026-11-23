@@ -2,6 +2,36 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - @pdf-lib/fontkit doesn't have proper TypeScript definitions
 import fontkit from '@pdf-lib/fontkit';
+// A4 landscape at about 200 dpi: sharp in print, small enough to download and store per student
+const TEMPLATE_MAX_WIDTH = 2400;
+const TEMPLATE_MAX_HEIGHT = 1700;
+const TEMPLATE_JPEG_QUALITY = 85;
+/**
+ * Templates are often uploaded as large PNGs (5 MB or more). pdf-lib embeds images byte for byte,
+ * so every certificate would carry the full file. Resize to print resolution and re-encode as JPEG,
+ * keeping the original when it is already smaller.
+ */ export const shrinkTemplateImage = async (bytes, sharp)=>{
+    if (!sharp) {
+        return bytes;
+    }
+    try {
+        const resized = await sharp(bytes).rotate().resize({
+            fit: 'inside',
+            height: TEMPLATE_MAX_HEIGHT,
+            width: TEMPLATE_MAX_WIDTH,
+            withoutEnlargement: true
+        })// Transparent areas would turn black in a JPEG; the page behind them is white
+        .flatten({
+            background: '#ffffff'
+        }).jpeg({
+            mozjpeg: true,
+            quality: TEMPLATE_JPEG_QUALITY
+        }).toBuffer();
+        return resized.length < bytes.length ? new Uint8Array(resized) : bytes;
+    } catch  {
+        return bytes;
+    }
+};
 /**
  * Extracts plain text from a Payload rich text field (Lexical editor state)
  * Recursively traverses the node structure to extract all text content
@@ -37,7 +67,7 @@ import fontkit from '@pdf-lib/fontkit';
     }
     return result.trim();
 };
-export const createPDF = async ({ authorName, completionDate, courseTitle, description, studentName, templateImage })=>{
+export const createPDF = async ({ authorName, completionDate, courseTitle, description, sharp, studentName, templateImage })=>{
     // Validate inputs
     if (!studentName || !courseTitle) {
         throw new Error('Missing required fields: studentName and courseTitle are required');
@@ -61,20 +91,13 @@ export const createPDF = async ({ authorName, completionDate, courseTitle, descr
     if (templateImage) {
         try {
             const imageResponse = await fetch(templateImage);
-            const imageBytes = await imageResponse.arrayBuffer();
-            // Determine image type and embed accordingly
+            const imageBytes = await shrinkTemplateImage(new Uint8Array(await imageResponse.arrayBuffer()), sharp);
+            // Embed by content rather than URL: a shrunk PNG template is now a JPEG
             let image;
-            if (templateImage.toLowerCase().includes('.jpg') || templateImage.toLowerCase().includes('.jpeg')) {
+            try {
                 image = await pdfDoc.embedJpg(imageBytes);
-            } else if (templateImage.toLowerCase().includes('.png')) {
+            } catch  {
                 image = await pdfDoc.embedPng(imageBytes);
-            } else {
-                // Try JPG first, then PNG
-                try {
-                    image = await pdfDoc.embedJpg(imageBytes);
-                } catch  {
-                    image = await pdfDoc.embedPng(imageBytes);
-                }
             }
             // Scale image to fit page
             const imageDims = image.scaleToFit(width, height);
