@@ -66,7 +66,28 @@ export type AddressesConfig = {
   supportedCountries?: CountryType[]
 }
 
+export type CanSelfEnrollArgs = {
+  /** The course at depth 0 */
+  course: { [key: string]: unknown; id: number | string }
+  req: PayloadRequest
+  /** The logged-in user asking to enroll */
+  user: NonNullable<PayloadRequest['user']>
+}
+
+/**
+ * Decides whether the logged-in user may enroll themselves in a course through
+ * `POST /api/lms/enroll`. Called only after the course passed the built-in check (published, access
+ * mode `open` or `free`), so it can refuse but never allow more. Admins are not checked.
+ */
+export type CanSelfEnroll = (args: CanSelfEnrollArgs) => boolean | Promise<boolean>
+
 export type CoursesConfig = {
+  /**
+   * Refuses self-enrollment beyond the access mode, for example in a course a paid product sells
+   * even if its access mode was left `open`. A refusal returns 403 "This course requires a purchase."
+   * Server-side `enrollUser` (purchases, coupons, renewals) is not affected.
+   */
+  canSelfEnroll?: CanSelfEnroll
   coursesCollection?: CollectionOverride
 }
 

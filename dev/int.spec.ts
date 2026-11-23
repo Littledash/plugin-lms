@@ -281,6 +281,74 @@ describe('enroll endpoint', () => {
   })
 })
 
+describe('canSelfEnroll', () => {
+  const soldCourse = async () => {
+    const course = await createCourse()
+    return (await payload.update({
+      id: course.id,
+      collection: 'courses',
+      data: { title: `Sold ${course.title}` },
+    })) as unknown as Doc
+  }
+
+  it('refuses self-enrollment in an open course the site says is sold, and allows the others', async () => {
+    const user = await createUser()
+    const client = await clientFor(user)
+    const sold = await soldCourse()
+    const unsold = await createCourse()
+
+    const refused = await post(client, 'enroll', { courseId: sold.id })
+    expect(refused).toStrictEqual({ body: { message: 'This course requires a purchase.' }, status: 403 })
+    expect(ids((await getDoc('courses', sold.id)).enrolledStudents)).not.toContain(user.id)
+    expect(ids((await getDoc('users', user.id)).coursesProgress)).toHaveLength(0)
+
+    const allowed = await post(client, 'enroll', { courseId: unsold.id })
+    expect(allowed.status).toBe(200)
+    expect(ids((await getDoc('courses', unsold.id)).enrolledStudents)).toContain(user.id)
+  })
+
+  it('does not stop admins or server-side enrollment after a purchase', async () => {
+    const admin = await createUser(['admin'])
+    const buyer = await createUser()
+    const sold = await soldCourse()
+
+    expect((await post(await clientFor(admin), 'enroll', { courseId: sold.id })).status).toBe(200)
+    expect((await enroll(buyer, sold)).status).toBe('enrolled')
+    expect(ids((await getDoc('courses', sold.id)).enrolledStudents)).toStrictEqual(
+      expect.arrayContaining([admin.id, buyer.id]),
+    )
+  })
+
+  it('cannot open a course the access mode refuses, and refuses when it throws', async () => {
+    const lms = payload.config.custom.lms as { canSelfEnroll: unknown }
+    const original = lms.canSelfEnroll
+    const user = await createUser()
+    const client = await clientFor(user)
+    const calls: { courseId: unknown; userId: unknown }[] = []
+    try {
+      lms.canSelfEnroll = ({ course, user: caller }: { course: Doc; user: Doc }) => {
+        calls.push({ courseId: course.id, userId: caller.id })
+        return true
+      }
+      const paid = await createCourse({ accessMode: 'buy now' })
+      expect((await post(client, 'enroll', { courseId: paid.id })).status).toBe(403)
+      expect(calls).toHaveLength(0)
+
+      const open = await createCourse()
+      expect((await post(client, 'enroll', { courseId: open.id })).status).toBe(200)
+      expect(calls).toStrictEqual([{ courseId: open.id, userId: user.id }])
+
+      lms.canSelfEnroll = () => Promise.reject(new Error('product lookup failed'))
+      const other = await createCourse()
+      const failed = await post(client, 'enroll', { courseId: other.id })
+      expect(failed.status).toBe(500)
+      expect(ids((await getDoc('courses', other.id)).enrolledStudents)).not.toContain(user.id)
+    } finally {
+      lms.canSelfEnroll = original
+    }
+  })
+})
+
 describe('enrollUser service', () => {
   it('enrolls the given user, not the caller', async () => {
     const buyer = await createUser()

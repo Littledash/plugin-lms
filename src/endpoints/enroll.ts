@@ -1,5 +1,7 @@
 import type { Endpoint } from 'payload'
 
+import type { CanSelfEnroll } from '../types.js'
+
 import { checkRole } from '../access/checkRole.js'
 import { enrollUser, SELF_ENROLL_ACCESS_MODES } from '../services/enrollUser.js'
 import { findDoc, getSlugs, LMSError } from '../services/shared.js'
@@ -31,8 +33,15 @@ export const enrollHandler = (_args?: Record<string, unknown>): Endpoint['handle
       throw new LMSError('Course not found.', 404)
     }
     const accessMode = course.enrollment?.accessMode ?? 'open'
-    if (!SELF_ENROLL_ACCESS_MODES.includes(accessMode) && !isAdmin) {
-      throw new LMSError('This course requires a purchase.', 403)
+    if (!isAdmin) {
+      const canSelfEnroll = req.payload.config.custom?.lms?.canSelfEnroll as CanSelfEnroll | undefined
+      // The site's check runs only after the built-in one, so it can refuse but never allow more
+      if (
+        !SELF_ENROLL_ACCESS_MODES.includes(accessMode) ||
+        (canSelfEnroll && (await canSelfEnroll({ course, req, user: req.user! })) !== true)
+      ) {
+        throw new LMSError('This course requires a purchase.', 403)
+      }
     }
 
     const { status } = await enrollUser({ courseId: course.id, req, userId })

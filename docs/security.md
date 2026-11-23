@@ -21,7 +21,7 @@ the body, and the API-key account is not the user you mean to act on.
 | Endpoint | Enforced |
 | --- | --- |
 | all | Logged-in user; at most 60 calls per user per minute (`rateLimit`); body `userId` rejected; IDs must be plain strings or positive integers |
-| `enroll` | Course access mode is `open` or `free` (admins excepted); no group enrollment |
+| `enroll` | Course access mode is `open` or `free` and `courses.canSelfEnroll`, when set, returns `true` (admins excepted); no group enrollment |
 | `complete-lesson` | Enrolled; access not expired; lesson released; previous lessons done when navigation is linear; lesson in course; all of the lesson's quizzes passed |
 | `submit-quiz` | Enrolled; access not expired; the lesson is released and unlocked; quiz belongs to a lesson in the course; attempt limit and cooldown; answers capped at 500 primitive values. A pass completes lessons whose quizzes are all passed. |
 | `complete-course` | Enrolled; access not expired; all required lessons completed |

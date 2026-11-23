@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.9
+
+### Added
+
+- `courses.canSelfEnroll` plugin option: a server-side callback, `({ course, req, user }) =>
+  boolean | Promise<boolean>`, that can refuse self-enrollment through `POST /api/lms/enroll`
+  (403 "This course requires a purchase."), for example in a course sold by a paid product whose
+  access mode was left `open`. It runs only after the access-mode check, so it can never allow
+  more; a throw refuses with a 500. Admins and server-side `enrollUser` are not affected. The
+  `CanSelfEnroll`, `CanSelfEnrollArgs`, `CoursesConfig` and `LMSPluginConfig` types are exported
+  from `@littledash/plugin-lms`.
+
 ## 2.0.8
 
 ### Added

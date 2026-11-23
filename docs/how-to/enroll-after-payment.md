@@ -148,3 +148,29 @@ Users can enroll themselves in `open` and `free` courses from the browser:
 const { enroll } = useLMS()
 await enroll(course.id)
 ```
+
+Every other access mode (`buy now`, `recurring`, `closed`) refuses self-enrollment with 403 "This
+course requires a purchase." New courses default to `open`, so set the access mode on every course
+you sell.
+
+### Refuse self-enrollment in sold courses
+
+If what a course costs is decided elsewhere, for example by your products, add `canSelfEnroll` so a
+course left `open` by mistake still cannot be joined for free:
+
+```typescript
+import type { CanSelfEnroll } from '@littledash/plugin-lms'
+
+const canSelfEnroll: CanSelfEnroll = async ({ course, req }) =>
+  !(await isSoldByPaidProduct(req.payload, String(course.id), req))
+
+lmsPlugin({
+  courses: { canSelfEnroll },
+})
+```
+
+It runs for `POST /api/lms/enroll` (and so `useLMS().enroll`) only after the built-in check has
+passed, so it can refuse but never allow a course the access mode refuses. Return `true` to allow;
+anything else refuses with the same 403. If it throws, the request fails with a 500 and the user is
+not enrolled. Admins are not checked, and server-side `enrollUser` (purchases, coupons, renewals)
+does not call it.

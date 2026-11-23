@@ -156,7 +156,11 @@ export default buildConfig({
       },
       // Drafts on, as in the consuming site
       courseFiles: { courseFilesCollection: { upload: { staticDir: path.resolve(dirname, 'course-files') } } },
-      courses: { coursesCollection: { versions: { drafts: true } } },
+      courses: {
+        // Stands in for a site rule such as "sold by a paid product"
+        canSelfEnroll: ({ course }) => !String(course.title).startsWith('Sold '),
+        coursesCollection: { versions: { drafts: true } },
+      },
       documents: {
         documentsCollection: {
           upload: { mimeTypes: DEFAULT_DOCUMENT_MIME_TYPES, staticDir: path.resolve(dirname, 'documents') },

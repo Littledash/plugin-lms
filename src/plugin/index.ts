@@ -293,6 +293,8 @@ export const lmsPlugin =
         ...incomingConfig.custom,
         // Read by the LMS services so they work without the plugin config
         lms: {
+          canSelfEnroll:
+            typeof sanitizedPluginConfig.courses === 'object' ? sanitizedPluginConfig.courses.canSelfEnroll : undefined,
           quizAttemptCooldownSeconds:
             typeof sanitizedPluginConfig.quizzes === 'object'
               ? (sanitizedPluginConfig.quizzes.attemptCooldownSeconds ?? 5)
