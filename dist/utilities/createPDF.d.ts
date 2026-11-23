@@ -37,6 +37,13 @@ type createPDFProps = {
  * keeping the original when it is already smaller.
  */
 export declare const shrinkTemplateImage: (bytes: Uint8Array, sharp?: Sharp) => Promise<Uint8Array>;
+/**
+ * Makes text drawable with a standard PDF font, which only covers WinAnsi and throws on anything
+ * else. A student can type any character into their name, and a throw would mean they never get a
+ * certificate. Invisible format characters (such as a left-to-right mark) are dropped, letters with
+ * marks the font lacks lose the mark, and anything else becomes '?'.
+ */
+export declare const toDrawableText: (text: string, characterSet: ReadonlySet<number>) => string;
 type DescriptionBlock = {
     bold: boolean;
     text: string;
@@ -63,5 +70,5 @@ export declare const layoutDescription: ({ blocks, boldFont, font, maxHeight, ma
     lines: DescriptionBlock[];
     size: number;
 };
-export declare const createPDF: ({ authorName, completionDate, courseTitle, description, sharp, studentName, templateImage, }: createPDFProps) => Promise<Uint8Array>;
+export declare const createPDF: ({ authorName: rawAuthorName, completionDate: rawCompletionDate, courseTitle: rawCourseTitle, description, sharp, studentName: rawStudentName, templateImage, }: createPDFProps) => Promise<Uint8Array>;
 export {};

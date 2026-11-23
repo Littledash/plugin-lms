@@ -22,7 +22,7 @@ import {
   LMSError,
   renderCertificatePDF,
 } from '../src/exports/services.js'
-import { descriptionBlocks, layoutDescription } from '../src/utilities/createPDF.js'
+import { descriptionBlocks, layoutDescription, toDrawableText } from '../src/utilities/createPDF.js'
 import { NextRESTClient } from './helpers/NextRESTClient.js'
 import { docx, zip } from './helpers/zip.js'
 
@@ -1554,6 +1554,25 @@ describe('service edge cases', () => {
 
     const { certificate, course, user } = await awardedUser()
     await payload.update({ id: certificate.id, collection: 'certificates', data: { description: importedDescription() } })
+    const pdf = await renderCertificatePDF({
+      certificateId: certificate.id,
+      courseId: course.id,
+      req: { payload } as never,
+      userId: user.id,
+    })
+    expect((await PDFDocument.load(pdf.data)).getPageCount()).toBe(1)
+  })
+
+  it('generates a certificate when a name has characters the PDF font cannot draw', async () => {
+    const doc = await PDFDocument.create()
+    const characterSet = new Set((await doc.embedFont(StandardFonts.Helvetica)).getCharacterSet())
+    expect(toDrawableText('Smith\u200E', characterSet)).toBe('Smith')
+    expect(toDrawableText('\uFEFFZo\u00EB \u201CJo\u201D', characterSet)).toBe('Zo\u00EB \u201CJo\u201D')
+    expect(toDrawableText('\u0141ukasz Dvo\u0159\u00E1k', characterSet)).toBe('Lukasz Dvor\u00E1k')
+    expect(toDrawableText('Ann\tLee \u{1F600} \u738B', characterSet)).toBe('Ann Lee ? ?')
+
+    const { certificate, course, user } = await awardedUser()
+    await payload.update({ id: user.id, collection: 'users', data: { lastName: 'Smith\u200E \u{1F600}' } })
     const pdf = await renderCertificatePDF({
       certificateId: certificate.id,
       courseId: course.id,

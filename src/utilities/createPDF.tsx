@@ -70,6 +70,37 @@ export const shrinkTemplateImage = async (bytes: Uint8Array, sharp?: Sharp): Pro
   }
 }
 
+// Latin letters that have no decomposition to a base letter
+const LETTER_FALLBACKS: Record<string, string> = { Đ: 'D', đ: 'd', Ħ: 'H', ħ: 'h', ı: 'i', Ł: 'L', ł: 'l' }
+
+/**
+ * Makes text drawable with a standard PDF font, which only covers WinAnsi and throws on anything
+ * else. A student can type any character into their name, and a throw would mean they never get a
+ * certificate. Invisible format characters (such as a left-to-right mark) are dropped, letters with
+ * marks the font lacks lose the mark, and anything else becomes '?'.
+ */
+export const toDrawableText = (text: string, characterSet: ReadonlySet<number>): string => {
+  let result = ''
+  for (const char of text.replace(/\p{Cf}/gu, '')) {
+    if (characterSet.has(char.codePointAt(0)!)) {
+      result += char
+      continue
+    }
+    if (/[\p{Cc}\p{Z}]/u.test(char)) {
+      result += ' '
+      continue
+    }
+    const fallback = LETTER_FALLBACKS[char]
+    if (fallback) {
+      result += fallback
+      continue
+    }
+    const base = [...char.normalize('NFKD').replace(/\p{M}/gu, '')].filter((c) => characterSet.has(c.codePointAt(0)!))
+    result += base.length ? base.join('') : '?'
+  }
+  return result
+}
+
 type DescriptionBlock = { bold: boolean; text: string }
 
 const nodeText = (node: RichTextNode): string => {
@@ -163,16 +194,16 @@ export const layoutDescription = ({
 }
 
 export const createPDF = async ({
-  authorName,
-  completionDate,
-  courseTitle,
+  authorName: rawAuthorName,
+  completionDate: rawCompletionDate,
+  courseTitle: rawCourseTitle,
   description,
   sharp,
-  studentName,
+  studentName: rawStudentName,
   templateImage,
 }: createPDFProps): Promise<Uint8Array> => {
   // Validate inputs
-  if (!studentName || !courseTitle) {
+  if (!rawStudentName || !rawCourseTitle) {
     throw new Error('Missing required fields: studentName and courseTitle are required')
   }
 
@@ -188,6 +219,14 @@ export const createPDF = async ({
   // Helvetica matches the sans-serif certificate template
   const primaryFont: PDFFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const boldFont: PDFFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+
+  // Helvetica and Helvetica Bold share the WinAnsi character set
+  const characterSet = new Set(primaryFont.getCharacterSet())
+  const drawable = (text: string) => toDrawableText(text, characterSet)
+  const authorName = rawAuthorName ? drawable(rawAuthorName).trim() : undefined
+  const completionDate = drawable(rawCompletionDate)
+  const courseTitle = drawable(rawCourseTitle)
+  const studentName = drawable(rawStudentName)
 
   // Get page dimensions
   const { height, width } = page.getSize()
@@ -272,6 +311,8 @@ export const createPDF = async ({
   // The space the original one-line description had, plus the slack above the footer, less any
   // extra lines the course title needs
   const blocks = descriptionBlocks(description)
+    .map((block) => ({ ...block, text: drawable(block.text).trim() }))
+    .filter((block) => block.text)
   const descriptionLayout = layoutDescription({
     blocks: blocks.length ? blocks : [{ bold: false, text: 'has completed a 1 hour online Masterclass on the topic of' }],
     boldFont,

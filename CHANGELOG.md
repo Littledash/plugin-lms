@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.7
+
+### Fixed
+
+- Certificates are generated when a name, course title or description contains characters the
+  PDF font cannot draw. Before, generation failed with `WinAnsi cannot encode` and the student got
+  no certificate. Invisible format characters (such as U+200E, a left-to-right mark) are removed,
+  letters the font lacks lose their accent or get a close plain letter (`ř` → `r`, `Ł` → `L`), and
+  anything else (emoji, non-Latin scripts) prints as `?`.
+
 ## 2.0.6
 
 ### Fixed

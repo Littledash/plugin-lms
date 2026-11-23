@@ -32,6 +32,44 @@ const TEMPLATE_JPEG_QUALITY = 85;
         return bytes;
     }
 };
+// Latin letters that have no decomposition to a base letter
+const LETTER_FALLBACKS = {
+    Đ: 'D',
+    đ: 'd',
+    Ħ: 'H',
+    ħ: 'h',
+    ı: 'i',
+    Ł: 'L',
+    ł: 'l'
+};
+/**
+ * Makes text drawable with a standard PDF font, which only covers WinAnsi and throws on anything
+ * else. A student can type any character into their name, and a throw would mean they never get a
+ * certificate. Invisible format characters (such as a left-to-right mark) are dropped, letters with
+ * marks the font lacks lose the mark, and anything else becomes '?'.
+ */ export const toDrawableText = (text, characterSet)=>{
+    let result = '';
+    for (const char of text.replace(/\p{Cf}/gu, '')){
+        if (characterSet.has(char.codePointAt(0))) {
+            result += char;
+            continue;
+        }
+        if (/[\p{Cc}\p{Z}]/u.test(char)) {
+            result += ' ';
+            continue;
+        }
+        const fallback = LETTER_FALLBACKS[char];
+        if (fallback) {
+            result += fallback;
+            continue;
+        }
+        const base = [
+            ...char.normalize('NFKD').replace(/\p{M}/gu, '')
+        ].filter((c)=>characterSet.has(c.codePointAt(0)));
+        result += base.length ? base.join('') : '?';
+    }
+    return result;
+};
 const nodeText = (node)=>{
     if (node.type === 'linebreak') {
         return '\n';
@@ -106,9 +144,9 @@ const DESCRIPTION_LEADING = 1.3;
         }
     }
 };
-export const createPDF = async ({ authorName, completionDate, courseTitle, description, sharp, studentName, templateImage })=>{
+export const createPDF = async ({ authorName: rawAuthorName, completionDate: rawCompletionDate, courseTitle: rawCourseTitle, description, sharp, studentName: rawStudentName, templateImage })=>{
     // Validate inputs
-    if (!studentName || !courseTitle) {
+    if (!rawStudentName || !rawCourseTitle) {
         throw new Error('Missing required fields: studentName and courseTitle are required');
     }
     // Create a new PDF document
@@ -124,6 +162,13 @@ export const createPDF = async ({ authorName, completionDate, courseTitle, descr
     // Helvetica matches the sans-serif certificate template
     const primaryFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    // Helvetica and Helvetica Bold share the WinAnsi character set
+    const characterSet = new Set(primaryFont.getCharacterSet());
+    const drawable = (text)=>toDrawableText(text, characterSet);
+    const authorName = rawAuthorName ? drawable(rawAuthorName).trim() : undefined;
+    const completionDate = drawable(rawCompletionDate);
+    const courseTitle = drawable(rawCourseTitle);
+    const studentName = drawable(rawStudentName);
     // Get page dimensions
     const { height, width } = page.getSize();
     // Add background image if provided
@@ -195,7 +240,10 @@ export const createPDF = async ({ authorName, completionDate, courseTitle, descr
     const courseTitleLines = wrapText(courseTitle, maxTextWidth, 24, boldFont);
     // The space the original one-line description had, plus the slack above the footer, less any
     // extra lines the course title needs
-    const blocks = descriptionBlocks(description);
+    const blocks = descriptionBlocks(description).map((block)=>({
+            ...block,
+            text: drawable(block.text).trim()
+        })).filter((block)=>block.text);
     const descriptionLayout = layoutDescription({
         blocks: blocks.length ? blocks : [
             {
