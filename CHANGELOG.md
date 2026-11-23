@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.6
+
+### Fixed
+
+- Certificate PDFs print the description one line per block (heading, paragraph, list item or line
+  break), wrapped to the page, with headings in bold. Before, the blocks were joined into one
+  unwrapped line that ran off both edges of the page. A long description is set smaller (down to
+  10pt) so the course title and presenter below it stay on the page, and they move down to make
+  room. Stored PDFs keep the old layout until regenerated.
+
 ## 2.0.5
 
 ### Fixed

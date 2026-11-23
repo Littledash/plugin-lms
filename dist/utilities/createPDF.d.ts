@@ -1,4 +1,5 @@
 import type { SanitizedConfig } from 'payload';
+import type { PDFFont } from 'pdf-lib';
 type RichTextNode = {
     [k: string]: unknown;
     children?: RichTextNode[];
@@ -36,5 +37,31 @@ type createPDFProps = {
  * keeping the original when it is already smaller.
  */
 export declare const shrinkTemplateImage: (bytes: Uint8Array, sharp?: Sharp) => Promise<Uint8Array>;
+type DescriptionBlock = {
+    bold: boolean;
+    text: string;
+};
+/**
+ * Splits a certificate description into the lines it should print as. Each Lexical block (heading,
+ * paragraph, list item) and each soft line break starts a new line. Joining them would run the text
+ * together on one line that falls off the page. Headings are printed bold.
+ */
+export declare const descriptionBlocks: (richText: RichText | string | undefined) => DescriptionBlock[];
+/**
+ * Wraps the description to `maxWidth`, stepping the font size down from 20pt until the lines fit in
+ * `maxHeight`, so a long imported description does not push the course title and presenter off
+ * the page. At the minimum size the lines are returned even if they do not fit.
+ */
+export declare const layoutDescription: ({ blocks, boldFont, font, maxHeight, maxWidth, }: {
+    blocks: DescriptionBlock[];
+    boldFont: PDFFont;
+    font: PDFFont;
+    maxHeight: number;
+    maxWidth: number;
+}) => {
+    lineHeight: number;
+    lines: DescriptionBlock[];
+    size: number;
+};
 export declare const createPDF: ({ authorName, completionDate, courseTitle, description, sharp, studentName, templateImage, }: createPDFProps) => Promise<Uint8Array>;
 export {};

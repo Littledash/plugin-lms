@@ -9,7 +9,7 @@ import type { Payload } from 'payload'
 
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
 import { getPayload } from 'payload'
-import { PDFDocument, PDFName } from 'pdf-lib'
+import { PDFDocument, PDFName, StandardFonts } from 'pdf-lib'
 import sharp from 'sharp'
 
 import { isAdminOrAuthorOrEnrolledInCourse } from '../src/access/isAdminOrAuthorOrEnrolledInCourse.js'
@@ -22,6 +22,7 @@ import {
   LMSError,
   renderCertificatePDF,
 } from '../src/exports/services.js'
+import { descriptionBlocks, layoutDescription } from '../src/utilities/createPDF.js'
 import { NextRESTClient } from './helpers/NextRESTClient.js'
 import { docx, zip } from './helpers/zip.js'
 
@@ -1474,6 +1475,92 @@ describe('service edge cases', () => {
     await expect(
       renderCertificatePDF({ certificateId: certificate.id, courseId: course.id, req: { payload } as never, userId: stranger.id }),
     ).rejects.toMatchObject({ status: 403 })
+  })
+
+  // A description imported from WordPress, as seen on a live site
+  const importedDescription = () => {
+    const block = (type: string, text: string, extra: Record<string, unknown> = {}) => ({
+      type,
+      children: [{ type: 'text', format: 0, text, version: 1 }],
+      version: 1,
+      ...extra,
+    })
+    return {
+      root: {
+        type: 'root',
+        children: [
+          block('heading', 'This Certifies that', { tag: 'h2' }),
+          block('paragraph', 'has completed a 1-hour Online Masterclass on the topic of'),
+          block('heading', "'Masterclass 3: Challenging Behaviours in Young Children'", { tag: 'h2' }),
+          block('paragraph', 'Presented by Dr Example Presenter (MBBS FRANZCP Cert C&A Psych)'),
+          {
+            type: 'paragraph',
+            children: [
+              { type: 'text', text: 'Date:', version: 1 },
+              { type: 'linebreak', version: 1 },
+              { type: 'text', text: '  Certificate   Number:', version: 1 },
+            ],
+            version: 1,
+          },
+        ],
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+        version: 1,
+      },
+    }
+  }
+
+  it('prints each description block on its own line, wrapped to the page', async () => {
+    expect(descriptionBlocks(importedDescription() as never)).toStrictEqual([
+      { bold: true, text: 'This Certifies that' },
+      { bold: false, text: 'has completed a 1-hour Online Masterclass on the topic of' },
+      { bold: true, text: "'Masterclass 3: Challenging Behaviours in Young Children'" },
+      { bold: false, text: 'Presented by Dr Example Presenter (MBBS FRANZCP Cert C&A Psych)' },
+      { bold: false, text: 'Date:' },
+      { bold: false, text: 'Certificate Number:' },
+    ])
+    expect(descriptionBlocks('first\n\n second ')).toStrictEqual([
+      { bold: false, text: 'first' },
+      { bold: false, text: 'second' },
+    ])
+
+    const doc = await PDFDocument.create()
+    const font = await doc.embedFont(StandardFonts.Helvetica)
+    const boldFont = await doc.embedFont(StandardFonts.HelveticaBold)
+    const maxWidth = 589
+    const layout = layoutDescription({
+      blocks: descriptionBlocks(importedDescription() as never),
+      boldFont,
+      font,
+      maxHeight: 110,
+      maxWidth,
+    })
+    expect(layout.size).toBeLessThan(20)
+    expect(layout.lines.length * layout.lineHeight).toBeLessThanOrEqual(110)
+    const widest = Math.max(...layout.lines.map((line) => boldFont.widthOfTextAtSize(line.text, layout.size)))
+    expect(widest).toBeLessThanOrEqual(maxWidth)
+
+    // A long paragraph wraps instead of running off the page
+    const long = layoutDescription({
+      blocks: [{ bold: false, text: 'word '.repeat(60).trim() }],
+      boldFont,
+      font,
+      maxHeight: 1000,
+      maxWidth,
+    })
+    expect(long.size).toBe(20)
+    expect(long.lines.length).toBeGreaterThan(1)
+
+    const { certificate, course, user } = await awardedUser()
+    await payload.update({ id: certificate.id, collection: 'certificates', data: { description: importedDescription() } })
+    const pdf = await renderCertificatePDF({
+      certificateId: certificate.id,
+      courseId: course.id,
+      req: { payload } as never,
+      userId: user.id,
+    })
+    expect((await PDFDocument.load(pdf.data)).getPageCount()).toBe(1)
   })
 
   it('shrinks a large template image so each certificate PDF stays small', async () => {

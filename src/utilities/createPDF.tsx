@@ -70,48 +70,96 @@ export const shrinkTemplateImage = async (bytes: Uint8Array, sharp?: Sharp): Pro
   }
 }
 
+type DescriptionBlock = { bold: boolean; text: string }
+
+const nodeText = (node: RichTextNode): string => {
+  if (node.type === 'linebreak') {
+    return '\n'
+  }
+  let text = typeof node.text === 'string' ? node.text : ''
+  for (const child of Array.isArray(node.children) ? node.children : []) {
+    text += nodeText(child)
+  }
+  return text
+}
+
+const toBlocks = (text: string, bold: boolean): DescriptionBlock[] =>
+  text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .map((line) => ({ bold, text: line }))
+
 /**
- * Extracts plain text from a Payload rich text field (Lexical editor state)
- * Recursively traverses the node structure to extract all text content
+ * Splits a certificate description into the lines it should print as. Each Lexical block (heading,
+ * paragraph, list item) and each soft line break starts a new line. Joining them would run the text
+ * together on one line that falls off the page. Headings are printed bold.
  */
-const extractPlainTextFromRichText = (richText: RichText | string): string => {
-  // If it's already a string, return it
+export const descriptionBlocks = (richText: RichText | string | undefined): DescriptionBlock[] => {
   if (typeof richText === 'string') {
-    return richText
+    return toBlocks(richText, false)
   }
-
-  // If it's not a valid rich text object, return empty string
-  if (!richText || typeof richText !== 'object' || !richText.root) {
-    return ''
+  if (!richText || typeof richText !== 'object' || !Array.isArray(richText.root?.children)) {
+    return []
   }
+  return richText.root.children.flatMap((block) => {
+    const items = block.type === 'list' && Array.isArray(block.children) ? block.children : [block]
+    return items.flatMap((item) => toBlocks(nodeText(item), block.type === 'heading'))
+  })
+}
 
-  const extractTextFromNode = (node: RichTextNode): string => {
-    let text = ''
+const wrapText = (text: string, maxWidth: number, fontSize: number, font: PDFFont): string[] => {
+  const lines: string[] = []
+  let currentLine = ''
 
-    // If the node has text property, add it
-    if (node.text && typeof node.text === 'string') {
-      text += node.text
-    }
-
-    // Recursively process children
-    if (node.children && Array.isArray(node.children)) {
-      for (const child of node.children) {
-        text += extractTextFromNode(child)
-      }
-    }
-
-    return text
-  }
-
-  // Extract text from root's children
-  let result = ''
-  if (richText.root.children && Array.isArray(richText.root.children)) {
-    for (const child of richText.root.children) {
-      result += extractTextFromNode(child)
+  for (const word of text.split(' ')) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word
+    if (font.widthOfTextAtSize(testLine, fontSize) > maxWidth && currentLine) {
+      lines.push(currentLine)
+      currentLine = word
+    } else {
+      currentLine = testLine
     }
   }
 
-  return result.trim()
+  if (currentLine) {
+    lines.push(currentLine)
+  }
+
+  return lines.length > 0 ? lines : [text]
+}
+
+const DESCRIPTION_MAX_SIZE = 20
+const DESCRIPTION_MIN_SIZE = 10
+const DESCRIPTION_LEADING = 1.3
+
+/**
+ * Wraps the description to `maxWidth`, stepping the font size down from 20pt until the lines fit in
+ * `maxHeight`, so a long imported description does not push the course title and presenter off
+ * the page. At the minimum size the lines are returned even if they do not fit.
+ */
+export const layoutDescription = ({
+  blocks,
+  boldFont,
+  font,
+  maxHeight,
+  maxWidth,
+}: {
+  blocks: DescriptionBlock[]
+  boldFont: PDFFont
+  font: PDFFont
+  maxHeight: number
+  maxWidth: number
+}): { lineHeight: number; lines: DescriptionBlock[]; size: number } => {
+  for (let size = DESCRIPTION_MAX_SIZE; ; size--) {
+    const lineHeight = size * DESCRIPTION_LEADING
+    const lines = blocks.flatMap((block) =>
+      wrapText(block.text, maxWidth, size, block.bold ? boldFont : font).map((text) => ({ bold: block.bold, text })),
+    )
+    if (lines.length * lineHeight <= maxHeight || size <= DESCRIPTION_MIN_SIZE) {
+      return { lineHeight, lines, size }
+    }
+  }
 }
 
 export const createPDF = async ({
@@ -191,31 +239,6 @@ export const createPDF = async ({
     }
   }
 
-  // Helper function to wrap text to multiple lines
-  const wrapText = (text: string, maxWidth: number, fontSize: number, font: PDFFont): string[] => {
-    const words = text.split(' ')
-    const lines: string[] = []
-    let currentLine = ''
-
-    for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word
-      const testWidth = font.widthOfTextAtSize(testLine, fontSize)
-
-      if (testWidth > maxWidth && currentLine) {
-        lines.push(currentLine)
-        currentLine = word
-      } else {
-        currentLine = testLine
-      }
-    }
-
-    if (currentLine) {
-      lines.push(currentLine)
-    }
-
-    return lines.length > 0 ? lines : [text]
-  }
-
   // Starting Y position - "This certifies that" should be just below the "CERTIFICATE OF COMPLETION" heading
   // Position text higher on the page, just below the heading
   let currentY = height - 190
@@ -242,25 +265,35 @@ export const createPDF = async ({
     y: currentY,
   })
 
-  // Description text - "has completed a 1 hour online Masterclass on the topic of" - 20pt
-  currentY -= 50
-  const descriptionText = description
-    ? extractPlainTextFromRichText(description) ||
-      'has completed a 1 hour online Masterclass on the topic of'
-    : 'has completed a 1 hour online Masterclass on the topic of'
-  page.drawText(descriptionText, {
-    color: rgb(0, 0, 0),
+  const maxTextWidth = width * 0.7
+  const lineHeight = 30
+  const courseTitleLines = wrapText(courseTitle, maxTextWidth, 24, boldFont)
+
+  // The space the original one-line description had, plus the slack above the footer, less any
+  // extra lines the course title needs
+  const blocks = descriptionBlocks(description)
+  const descriptionLayout = layoutDescription({
+    blocks: blocks.length ? blocks : [{ bold: false, text: 'has completed a 1 hour online Masterclass on the topic of' }],
+    boldFont,
     font: primaryFont,
-    size: 20,
-    x: getCenteredX(descriptionText, 20, primaryFont),
-    y: currentY,
+    maxHeight: Math.max(DESCRIPTION_MAX_SIZE * DESCRIPTION_LEADING, 110 - (courseTitleLines.length - 1) * lineHeight),
+    maxWidth: maxTextWidth,
   })
+  currentY -= 50
+  descriptionLayout.lines.forEach((line, index) => {
+    const font = line.bold ? boldFont : primaryFont
+    page.drawText(line.text, {
+      color: rgb(0, 0, 0),
+      font,
+      size: descriptionLayout.size,
+      x: getCenteredX(line.text, descriptionLayout.size, font),
+      y: currentY - index * descriptionLayout.lineHeight,
+    })
+  })
+  currentY -= (descriptionLayout.lines.length - 1) * descriptionLayout.lineHeight
 
   // Course title - wrap text if needed, 24pt, dark blue, bold
   currentY -= 50
-  const maxCourseTitleWidth = width * 0.7 // 70% of page width for wrapping
-  const courseTitleLines = wrapText(courseTitle, maxCourseTitleWidth, 24, boldFont)
-  const lineHeight = 30 // Space between lines
   courseTitleLines.forEach((line, index) => {
     page.drawText(line, {
       color: rgb(64 / 255, 84 / 255, 165 / 255), // Dark blue color
