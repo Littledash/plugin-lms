@@ -1,6 +1,7 @@
 import type { PayloadRequest, Where } from 'payload'
 
 import { renewAccess } from './lessonAccess.js'
+import { clearRevocations, groupMemberIds } from './revocations.js'
 import {
   asSlug,
   type CourseProgressEntry,
@@ -11,7 +12,7 @@ import {
   hasFreeSeat,
   type ID,
   includesId,
-  isEnrolledInCourse,
+  isActivePurchase,
   type LMSDoc,
   LMSError,
   sameId,
@@ -98,14 +99,36 @@ const enrollGroup = async ({
       sameId(entry?.seatManagement?.course, course.id),
     )
 
+    const restoring = purchase !== undefined && !isActivePurchase(purchase)
+    if (restoring && !isLeader) {
+      throw new LMSError('This group purchase is no longer active.', 403)
+    }
+
     const data: Record<string, unknown> = {}
-    if (purchase && isNewMember && !hasFreeSeat(purchase.seatManagement)) {
+    if (purchase && !restoring && isNewMember && !hasFreeSeat(purchase.seatManagement)) {
       throw new LMSError('This group has no seats remaining for this course.', 409)
     }
     if (isNewMember) {
       data[memberField] = [...members, user.id]
     }
-    if (!purchase) {
+    if (restoring) {
+      // A new purchase by a leader of a group whose purchase was refunded: the group gets the
+      // course back with the seats just bought
+      data.purchasedCourses = purchasedCourses.map((entry) =>
+        entry === purchase
+          ? {
+              ...entry,
+              seatManagement: {
+                ...entry.seatManagement,
+                revokedAt: null,
+                revokedReason: null,
+                seatsTotal: totalSeats,
+                seatsUsed: (entry.seatManagement.seatsUsed || 0) + (isNewMember ? 1 : 0),
+              },
+            }
+          : entry,
+      )
+    } else if (!purchase) {
       data.purchasedCourses = [
         ...purchasedCourses,
         { seatManagement: { coupon: couponId, course: course.id, seatsTotal: totalSeats, seatsUsed: 1 } },
@@ -131,6 +154,10 @@ const enrollGroup = async ({
         data,
         req,
       })) as LMSDoc
+    }
+    if (restoring) {
+      // The buyer is restored by `enrollUser` itself
+      await clearRevocations({ courseId: course.id, req, userIds: groupMemberIds(group).filter((id) => !sameId(id, user.id)) })
     }
   } else {
     if (!companyName) {
@@ -209,6 +236,13 @@ export const enrollUser = ({
     // The group step may update the course, so read it again afterwards
     let course = await findDoc(req, slugs.courses, courseId, 'Course')
 
+    // A retried fulfilment of a purchase that was since refunded must not give access back, to
+    // the user or (through the group step) to their group
+    const priorProgress = getCoursesProgress(user).find((progress) => sameId(progress.course, course.id))
+    if (renewalKey !== undefined && priorProgress?.revokedAt && hasRenewal(priorProgress, renewalKey)) {
+      return { status: 'already-renewed' }
+    }
+
     const groupId = group ? await enrollGroup({ course, group, req, user }) : undefined
     if (groupId !== undefined) {
       course = await findDoc(req, slugs.courses, courseId, 'Course')
@@ -257,10 +291,6 @@ export const enrollUser = ({
     }
 
     const revoked = existing?.revokedAt ? existing : undefined
-    // A retried fulfilment of a purchase that was since refunded must not give access back
-    if (revoked && renewalKey !== undefined && hasRenewal(revoked, renewalKey)) {
-      return { groupId, status: 'already-renewed' }
-    }
 
     // A student whose access was revoked after finishing goes back to the completed list, so the
     // course is not completed (and its certificate awarded) a second time
@@ -295,81 +325,3 @@ export const enrollUser = ({
  */
 export const SELF_ENROLL_ACCESS_MODES = ['open', 'free']
 
-export type UnenrollUserResult = {
-  /**
-   * The user still has access through a group enrolled in the course (as a member or leader).
-   * `unenrollUser` does not change groups; a refunded group purchase needs its own handling.
-   */
-  groupAccess: boolean
-  status: 'not-enrolled' | 'unenrolled'
-}
-
-const MAX_REASON_LENGTH = 200
-
-/**
- * Takes a user's access to a course away, for example after a refund or a payment dispute. The
- * user is removed from the course's enrolled and completed students, which stops access to its
- * lessons, topics, quizzes, files and materials. Their progress is kept, marked revoked, so
- * `enrollUser` for a new purchase restores it with a fresh access period. Certificates already
- * awarded are not touched. Safe to call again: a user who is not listed is left alone.
- *
- * Trusted server-side operation, like `enrollUser`: call it only with a `userId` from verified
- * server state, such as a payment provider webhook.
- */
-export const unenrollUser = ({
-  courseId,
-  reason,
-  req,
-  userId,
-}: {
-  courseId: ID
-  /** Stored on the progress entry, for example "refund" or "dispute". */
-  reason?: null | string
-  req: PayloadRequest
-  userId: ID
-}): Promise<UnenrollUserResult> =>
-  withTransaction(req, async () => {
-    if (reason !== undefined && reason !== null && (typeof reason !== 'string' || reason.length > MAX_REASON_LENGTH)) {
-      throw new LMSError(`reason must be a string of at most ${MAX_REASON_LENGTH} characters.`, 400)
-    }
-    const slugs = getSlugs(req)
-    const user = await findDoc(req, slugs.students, userId, 'User')
-    const course = await findDoc(req, slugs.courses, courseId, 'Course')
-
-    const enrolledStudents = toIds(course.enrolledStudents)
-    const completedStudents = toIds(course.courseCompletedStudents)
-    const isListed = includesId(enrolledStudents, user.id) || includesId(completedStudents, user.id)
-
-    let updatedCourse = course
-    if (isListed) {
-      updatedCourse = (await req.payload.update({
-        id: course.id,
-        collection: asSlug(slugs.courses),
-        data: {
-          courseCompletedStudents: completedStudents.filter((id) => !sameId(id, user.id)),
-          enrolledStudents: enrolledStudents.filter((id) => !sameId(id, user.id)),
-        },
-        depth: 0,
-        req,
-      })) as LMSDoc
-
-      const coursesProgress = getCoursesProgress(user)
-      const progress = coursesProgress.find((entry) => sameId(entry.course, course.id))
-      if (progress) {
-        progress.revokedAt = new Date().toISOString()
-        progress.revokedReason = reason?.trim() || null
-        await req.payload.update({
-          id: user.id,
-          collection: asSlug(slugs.students),
-          data: { coursesProgress },
-          req,
-        })
-      }
-      req.payload.logger.info(`User ${user.id} unenrolled from course ${toId(course)}`)
-    }
-
-    return {
-      groupAccess: await isEnrolledInCourse(req, updatedCourse, user.id),
-      status: isListed ? 'unenrolled' : 'not-enrolled',
-    }
-  })

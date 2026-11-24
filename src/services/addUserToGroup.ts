@@ -8,6 +8,7 @@ import {
   getSlugs,
   type ID,
   includesId,
+  isActivePurchase,
   type LMSDoc,
   LMSError,
   takeSeatOnEachPurchase,
@@ -59,7 +60,7 @@ export const addUserToGroup = ({ groupId, req, role, userId }: AddUserToGroupArg
     // when they joined rather than from their first lesson
     const coursesProgress = getCoursesProgress(user)
     const before = coursesProgress.length
-    for (const entry of purchasedCourses) {
+    for (const entry of purchasedCourses.filter(isActivePurchase)) {
       const courseId = toId(entry?.seatManagement?.course)
       if (courseId !== undefined) {
         ensureCourseProgress(coursesProgress, courseId)

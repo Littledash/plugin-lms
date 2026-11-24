@@ -178,19 +178,21 @@ export const requireUser = (req)=>{
     return req.user.id;
 };
 export const hasFreeSeat = (seatManagement)=>(seatManagement?.seatsUsed || 0) < (seatManagement?.seatsTotal ?? 1);
+/** A group purchase that was not refunded or disputed (see `unenrollGroup`). */ export const isActivePurchase = (entry)=>!entry?.seatManagement?.revokedAt;
 /**
- * Takes one seat on every course the group purchased. Throws when any of them is full.
+ * Takes one seat on every course the group purchased and still holds. Throws when any of them is
+ * full. Revoked purchases give no access, so they take no seat.
  */ export const takeSeatOnEachPurchase = (purchasedCourses)=>{
-    if (purchasedCourses.some((entry)=>!hasFreeSeat(entry?.seatManagement))) {
+    if (purchasedCourses.some((entry)=>isActivePurchase(entry) && !hasFreeSeat(entry?.seatManagement))) {
         throw new LMSError('This group has no seats remaining.', 409);
     }
-    return purchasedCourses.map((entry)=>({
+    return purchasedCourses.map((entry)=>isActivePurchase(entry) ? {
             ...entry,
             seatManagement: {
                 ...entry.seatManagement,
                 seatsUsed: (entry.seatManagement?.seatsUsed || 0) + 1
             }
-        }));
+        } : entry);
 };
 
 //# sourceMappingURL=shared.js.map

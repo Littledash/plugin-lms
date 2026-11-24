@@ -124,14 +124,47 @@ for (const item of order.items) {
 - It returns `unenrolled`, or `not-enrolled` when the student was not on the course, so a webhook
   retry changes nothing. It runs in the transaction of the `req` you pass.
 - Groups are not changed. `groupAccess: true` means the student can still open the course through
-  a group they lead or belong to; a refunded group purchase needs your own handling (for example
-  removing the group from the course's enrolled groups).
+  a group they lead or belong to. For a refunded group purchase, use `unenrollGroup` (below).
 
 A later purchase restores access: `enrollUser` puts the student back (on the completed list if they
 had finished, so the course is not completed or awarded twice), clears the revocation and starts a
 new access period. **Pass `renewal: { key }` on every purchase.** A retried fulfilment of the
 refunded order then returns `already-renewed` and does not give the course back; without a key,
 `enrollUser` cannot tell a retry from a new purchase.
+
+### Group purchases
+
+When the refunded or disputed order bought seats for a group, call `unenrollGroup` with the group
+the purchase created (the `groupId` `enrollUser` returned) for each course:
+
+```typescript
+import { unenrollGroup } from '@littledash/plugin-lms/services'
+
+const { status, unenrolledUserIds } = await unenrollGroup({
+  req,
+  groupId: order.group,
+  courseId: item.course,
+  reason: 'refund',
+  keepUserIds: membersWhoAlsoBoughtTheCourse, // optional
+})
+```
+
+- The group is removed from the course's enrolled groups, and its purchase of the course is marked
+  revoked (`purchasedCourses.seatManagement.revokedAt` and `revokedReason`).
+- Every leader and student of the group loses the course, including members who joined with the
+  coupon or were added by a leader, unless they still have access through another group. Their
+  progress is kept and marked revoked; certificates are kept. `unenrolledUserIds` lists them.
+- Members in `keepUserIds` are left on the course. Use it for members who also bought the course
+  themselves; the plugin cannot tell their own purchase from the group's. Pass the same list on
+  every call, since a call without it takes the course from them.
+- The purchase's coupon stops working (403 "This group purchase is no longer active."), and members
+  added afterwards take no seat on it. The group, its members and its other courses are unchanged.
+- It returns `unenrolled`, or `not-enrolled` with no IDs when there was nothing left to remove.
+
+A new purchase by a leader of the same group (`enrollUser` with `group.isLeader`) restores the
+purchase with the seats just bought and gives every member the course back. As with individual
+purchases, pass `renewal: { key }`, so a retried fulfilment of the refunded group order returns
+`already-renewed` and does not restore it.
 
 ## 3. Group purchases
 

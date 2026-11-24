@@ -1,4 +1,4 @@
-import { asSlug, ensureCourseProgress, findDoc, getCoursesProgress, getSlugs, includesId, LMSError, takeSeatOnEachPurchase, toId, toIds, withTransaction } from './shared.js';
+import { asSlug, ensureCourseProgress, findDoc, getCoursesProgress, getSlugs, includesId, isActivePurchase, LMSError, takeSeatOnEachPurchase, toId, toIds, withTransaction } from './shared.js';
 /**
  * Adds a user to a group as a leader or student, using a seat on each purchased course. Does not
  * check who is asking; the endpoint checks that the requester is an admin or a leader of the group.
@@ -32,7 +32,7 @@ import { asSlug, ensureCourseProgress, findDoc, getCoursesProgress, getSlugs, in
         // when they joined rather than from their first lesson
         const coursesProgress = getCoursesProgress(user);
         const before = coursesProgress.length;
-        for (const entry of purchasedCourses){
+        for (const entry of purchasedCourses.filter(isActivePurchase)){
             const courseId = toId(entry?.seatManagement?.course);
             if (courseId !== undefined) {
                 ensureCourseProgress(coursesProgress, courseId);

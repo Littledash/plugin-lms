@@ -84,8 +84,11 @@ type SeatManagement = {
     seatsUsed?: null | number;
 } | undefined;
 export declare const hasFreeSeat: (seatManagement: SeatManagement) => boolean;
+/** A group purchase that was not refunded or disputed (see `unenrollGroup`). */
+export declare const isActivePurchase: (entry: LMSDoc | undefined) => boolean;
 /**
- * Takes one seat on every course the group purchased. Throws when any of them is full.
+ * Takes one seat on every course the group purchased and still holds. Throws when any of them is
+ * full. Revoked purchases give no access, so they take no seat.
  */
 export declare const takeSeatOnEachPurchase: (purchasedCourses: LMSDoc[]) => LMSDoc[];
 export {};

@@ -991,6 +991,14 @@ export interface Group {
            * The coupon that is associated with the group
            */
           coupon?: (string | null) | Coupon
+          /**
+           * When this purchase was refunded or disputed. The group lost the course, its coupon stops working and it takes no seats.
+           */
+          revokedAt?: string | null
+          /**
+           * Why the purchase was revoked, as given by the site (for example "refund").
+           */
+          revokedReason?: string | null
         }
         id?: string | null
       }[]
@@ -1552,6 +1560,8 @@ export interface GroupsSelect<T extends boolean = true> {
               seatsUsed?: T
               course?: T
               coupon?: T
+              revokedAt?: T
+              revokedReason?: T
             }
         id?: T
       }

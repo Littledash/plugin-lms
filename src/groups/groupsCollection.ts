@@ -93,7 +93,26 @@ export const groupsCollection: (props?: Props) => CollectionConfig = (props) => 
               type: 'relationship',
               admin: { description: 'The coupon that is associated with the group' },
               relationTo: couponsCollectionSlug,
-            }
+            },
+            {
+              name: 'revokedAt',
+              type: 'date',
+              admin: {
+                condition: (_, siblingData) => Boolean(siblingData?.revokedAt),
+                description:
+                  'When this purchase was refunded or disputed. The group lost the course, its coupon stops working and it takes no seats.',
+                readOnly: true,
+              },
+            },
+            {
+              name: 'revokedReason',
+              type: 'text',
+              admin: {
+                condition: (_, siblingData) => Boolean(siblingData?.revokedAt),
+                description: 'Why the purchase was revoked, as given by the site (for example "refund").',
+                readOnly: true,
+              },
+            },
           ],
           required: true,
         },

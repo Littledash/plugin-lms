@@ -38,29 +38,4 @@ export declare const enrollUser: ({ courseId, group, renewal, req, userId, }: En
  * Access modes a user can enroll in themselves without a purchase.
  */
 export declare const SELF_ENROLL_ACCESS_MODES: string[];
-export type UnenrollUserResult = {
-    /**
-     * The user still has access through a group enrolled in the course (as a member or leader).
-     * `unenrollUser` does not change groups; a refunded group purchase needs its own handling.
-     */
-    groupAccess: boolean;
-    status: 'not-enrolled' | 'unenrolled';
-};
-/**
- * Takes a user's access to a course away, for example after a refund or a payment dispute. The
- * user is removed from the course's enrolled and completed students, which stops access to its
- * lessons, topics, quizzes, files and materials. Their progress is kept, marked revoked, so
- * `enrollUser` for a new purchase restores it with a fresh access period. Certificates already
- * awarded are not touched. Safe to call again: a user who is not listed is left alone.
- *
- * Trusted server-side operation, like `enrollUser`: call it only with a `userId` from verified
- * server state, such as a payment provider webhook.
- */
-export declare const unenrollUser: ({ courseId, reason, req, userId, }: {
-    courseId: ID;
-    /** Stored on the progress entry, for example "refund" or "dispute". */
-    reason?: null | string;
-    req: PayloadRequest;
-    userId: ID;
-}) => Promise<UnenrollUserResult>;
 export {};

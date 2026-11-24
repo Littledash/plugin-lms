@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.0.11
+
+### Added
+
+- `unenrollGroup({ req, groupId, courseId, reason?, keepUserIds? })` in
+  `@littledash/plugin-lms/services` takes a course away from a group after its purchase was
+  refunded or disputed. The group is removed from the course's enrolled groups and its purchase is
+  marked with the new `purchasedCourses.seatManagement.revokedAt` and `revokedReason` fields. Every
+  leader and member loses the course unless another group gives them access or they are in
+  `keepUserIds`; their progress is kept and marked revoked, and certificates are kept. Returns the
+  IDs of the members who lost access. Safe to call twice.
+- A revoked group purchase refuses coupon joins (403) and takes no seat when a leader adds a member.
+  A new purchase by a leader of the group restores it with the seats bought and clears the members'
+  revocations. A retried fulfilment of the refunded group order (same purchase key) restores
+  nothing.
+
 ## 2.0.10
 
 ### Added

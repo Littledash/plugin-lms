@@ -22,6 +22,7 @@ import {
   getCertificateFileName,
   LMSError,
   renderCertificatePDF,
+  unenrollGroup,
   unenrollUser,
 } from '../src/exports/services.js'
 import { BODY_BOTTOM, descriptionBlocks, layoutCertificateBody, toDrawableText } from '../src/utilities/createPDF.js'
@@ -490,6 +491,114 @@ describe('unenrollUser service', () => {
 
     expect(await unenroll(leader, course, 'refund')).toStrictEqual({ groupAccess: true, status: 'unenrolled' })
     await expect(unenroll(leader, course, 'x'.repeat(201))).rejects.toMatchObject({ status: 400 })
+  })
+})
+
+describe('unenrollGroup service', () => {
+  const setup = async () => {
+    const lesson = (await payload.create({
+      collection: 'lessons',
+      data: { content: richText('Lesson secret'), title: `Lesson ${++counter}` },
+    })) as unknown as Doc
+    const course = await createCourse({ accessMode: 'buy now', lessons: [{ lesson: lesson.id }] })
+    const coupon = (await payload.create({ collection: 'coupons', data: {} })) as unknown as Doc
+    const companyName = `Refunded Co ${++counter}`
+    const leader = await createUser()
+    const buy = (key: string, totalSeats: number) =>
+      enrollUser({
+        courseId: course.id,
+        group: { companyName, couponId: coupon.id, isLeader: true, totalSeats },
+        renewal: { key },
+        req: { payload } as never,
+        userId: leader.id,
+      })
+    const { groupId } = await buy('group-order-1', 4)
+    const joinWithCoupon = async () => {
+      const user = await createUser()
+      await enrollUser({
+        courseId: course.id,
+        group: { couponId: coupon.id, isLeader: false },
+        req: { payload } as never,
+        userId: user.id,
+      })
+      return user
+    }
+    const joiner = await joinWithCoupon()
+    const added = await createUser()
+    await addUserToGroup({ groupId: groupId!, req: { payload } as never, role: 'student', userId: added.id })
+    // Bought the course themselves as well as joining the group
+    const ownBuyer = await createUser()
+    await enroll(ownBuyer, course)
+    await addUserToGroup({ groupId: groupId!, req: { payload } as never, role: 'student', userId: ownBuyer.id })
+    const canRead = async (user: Doc) =>
+      'content' in (await (await (await clientFor(user)).GET(`/lessons/${lesson.id}`)).json())
+    return { added, buy, canRead, course, groupId: groupId!, joiner, joinWithCoupon, leader, ownBuyer }
+  }
+
+  it('takes a refunded group purchase away from every member and stops its coupon', async () => {
+    const { added, buy, canRead, course, groupId, joiner, joinWithCoupon, leader, ownBuyer } = await setup()
+    expect(await canRead(added)).toBe(true)
+
+    const result = await unenrollGroup({
+      courseId: course.id,
+      groupId,
+      keepUserIds: [ownBuyer.id],
+      reason: 'refund',
+      req: { payload } as never,
+    })
+    expect(result.status).toBe('unenrolled')
+    expect(result.unenrolledUserIds.map(String).sort()).toStrictEqual([added.id, joiner.id, leader.id].sort())
+
+    const stored = await getDoc('courses', course.id)
+    expect(ids(stored.courseEnrolledGroups)).not.toContain(groupId)
+    expect(ids(stored.enrolledStudents)).toStrictEqual([ownBuyer.id])
+    expect(await canRead(added)).toBe(false)
+    expect(await canRead(leader)).toBe(false)
+    expect(await canRead(ownBuyer)).toBe(true)
+    const progress = (await getDoc('users', added.id)).coursesProgress.find((entry: Doc) => String(entry.course) === course.id)
+    expect(progress).toMatchObject({ revokedReason: 'refund' })
+
+    const group = await getDoc('groups', String(groupId))
+    const seats = group.purchasedCourses[0].seatManagement
+    expect(seats).toMatchObject({ revokedReason: 'refund', seatsUsed: 4 })
+    expect(ids(group.students)).toStrictEqual(expect.arrayContaining([added.id, joiner.id]))
+
+    await expect(joinWithCoupon()).rejects.toMatchObject({ status: 403 })
+    const late = await createUser()
+    await addUserToGroup({ groupId, req: { payload } as never, role: 'student', userId: late.id })
+    expect((await getDoc('groups', String(groupId))).purchasedCourses[0].seatManagement.seatsUsed).toBe(4)
+    expect(ids((await getDoc('users', late.id)).coursesProgress)).toHaveLength(0)
+
+    expect(
+      await unenrollGroup({
+        courseId: course.id,
+        groupId,
+        keepUserIds: [ownBuyer.id],
+        reason: 'refund',
+        req: { payload } as never,
+      }),
+    ).toStrictEqual({ status: 'not-enrolled', unenrolledUserIds: [] })
+
+    // A retried fulfilment of the refunded order gives nothing back
+    expect((await buy('group-order-1', 4)).status).toBe('already-renewed')
+    expect(ids((await getDoc('courses', course.id)).courseEnrolledGroups)).not.toContain(groupId)
+    expect((await getDoc('groups', String(groupId))).purchasedCourses[0].seatManagement.revokedAt).toBeTruthy()
+  })
+
+  it('gives the group the course back when its leader buys it again', async () => {
+    const { added, buy, canRead, course, groupId, leader } = await setup()
+    await unenrollGroup({ courseId: course.id, groupId, reason: 'dispute', req: { payload } as never })
+
+    expect((await buy('group-order-2', 6)).status).toBe('enrolled')
+
+    const stored = await getDoc('courses', course.id)
+    expect(ids(stored.courseEnrolledGroups)).toContain(groupId)
+    expect(ids(stored.enrolledStudents)).toContain(leader.id)
+    const seats = (await getDoc('groups', String(groupId))).purchasedCourses[0].seatManagement
+    expect(seats).toMatchObject({ revokedAt: null, revokedReason: null, seatsTotal: 6 })
+    expect(await canRead(added)).toBe(true)
+    const progress = (await getDoc('users', added.id)).coursesProgress.find((entry: Doc) => String(entry.course) === course.id)
+    expect(progress).toMatchObject({ revokedAt: null })
   })
 })
 
