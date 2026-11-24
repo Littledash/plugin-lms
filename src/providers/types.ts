@@ -38,6 +38,13 @@ export type CourseProgress = {
   courseCompletion?: string
   /** When the student was enrolled. Access expiry and lesson release count from this date. */
   enrolledAt?: null | string
+  /**
+   * Set when the course was taken away, for example after a refund or a payment dispute. The
+   * progress is kept so a new purchase restores it, but the student has no access while this is set.
+   */
+  revokedAt?: null | string
+  /** Why the course was taken away, as given by the site (for example "refund"). */
+  revokedReason?: null | string
 }
 
 /**
@@ -73,7 +80,10 @@ export type LMSContextType = {
    * server-side after purchase.
    */
   enroll: (courseId: DefaultDocumentIDType) => Promise<void>
-  /** A list of course IDs the current user is enrolled in. */
+  /**
+   * Course IDs the current user is enrolled in directly (purchase, self-enrollment or coupon).
+   * Courses they can open only through a group are not listed; see `getProgress`.
+   */
   enrolledCourses: DefaultDocumentIDType[]
   /** Any error that occurred during data fetching. */
   error: Error | null
@@ -89,7 +99,11 @@ export type LMSContextType = {
   fetchTopics: (courseId: DefaultDocumentIDType) => Promise<void>
   /** Fetches a list of all users. */
   fetchUsers: () => Promise<void>
-  /** Gets the progress for a specific course from the local state. */
+  /**
+   * Gets the progress for a specific course from the local state. Progress is kept when a course is
+   * taken away, so a progress entry alone does not mean access: check `revokedAt`. The server
+   * decides access; lesson, topic and course content fields are returned only when it allows them.
+   */
   getProgress: (courseId: DefaultDocumentIDType) => CourseProgress | undefined
   /** Whether the provider is currently fetching data. */
   isLoading: boolean

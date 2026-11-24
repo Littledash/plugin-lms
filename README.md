@@ -356,6 +356,8 @@ export function CourseProgress({ courseId }) {
   } = useLMS()
 
   const progress = getProgress(courseId)
+  // Progress is kept after a refund or dispute; a revoked course is not open to the student
+  const isRevoked = Boolean(progress?.revokedAt)
   const completedLessons = progress?.completedLessons || []
 
   const handleCompleteLesson = async (lessonId) => {
@@ -370,6 +372,7 @@ export function CourseProgress({ courseId }) {
   return (
     <div>
       <h3>Course Progress</h3>
+      {isRevoked && <p>Your access to this course has ended.</p>}
       <p>Completed: {completedLessons.length} lessons</p>
       {/* Your lesson list with completion buttons */}
     </div>

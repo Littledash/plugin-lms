@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.12
+
+### Changed
+
+- The provider's `CourseProgress` type (`useLMS().getProgress`, `progress`) includes `revokedAt` and
+  `revokedReason`. The data was already returned; now it is typed, so a site can see that a
+  progress entry kept after a refund or dispute gives no access. The `getProgress` and
+  `enrolledCourses` docs say what each one means for access, and the README progress example
+  checks `revokedAt`.
+
 ## 2.0.11
 
 ### Added

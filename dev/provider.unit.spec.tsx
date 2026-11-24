@@ -38,6 +38,7 @@ const Harness = () => {
       <p data-testid="loading">{String(lms.isLoading)}</p>
       <p data-testid="error">{lms.error?.message ?? ''}</p>
       <p data-testid="lesson">{lessonId ?? ''}</p>
+      <p data-testid="revoked">{progress?.revokedReason ?? ''}</p>
       <p data-testid="quiz">{lms.quizStarted?.quizId ?? ''}</p>
       <p data-testid="courses">{lms.courses.map((course) => String(course.id)).join(',')}</p>
       <p data-testid="last">{last}</p>
@@ -99,6 +100,37 @@ describe('LMSProvider', () => {
     expect(urls()[0]).toBe('http://lms.test/api/users/me')
     expect(screen.getByTestId('enrolled').textContent).toBe('course-1,course-2')
     expect(screen.getByTestId('completed').textContent).toBe('course-2')
+  })
+
+  it('keeps a revoked course in progress, marked revoked, and out of the enrolled courses', async () => {
+    fetchMock.mockImplementation((input) => {
+      const url = String(input)
+      if (url.endsWith('/users/me')) {return json({ user: { id: 'user-1' } })}
+      if (url.endsWith('/lms/fetch-progress')) {
+        return json({
+          completedCourses: [],
+          coursesProgress: [
+            {
+              completed: false,
+              completedLessons: [{ completedAt: '2026-01-01', lesson: 'lesson-1' }],
+              completedQuizzes: [],
+              course: 'course-1',
+              revokedAt: '2026-11-20T00:00:00.000Z',
+              revokedReason: 'refund',
+            },
+          ],
+          enrolledCourses: [],
+        })
+      }
+      return json({})
+    })
+
+    renderProvider()
+    await settle()
+
+    expect(screen.getByTestId('revoked').textContent).toBe('refund')
+    expect(screen.getByTestId('lesson').textContent).toBe('lesson-1')
+    expect(screen.getByTestId('enrolled').textContent).toBe('')
   })
 
   const storedFor = (userId?: string) =>
