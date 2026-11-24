@@ -2,7 +2,7 @@ import type { PayloadRequest } from 'payload'
 
 import { markCourseCompleted } from './completeCourse.js'
 import { scoreQuiz } from './grading.js'
-import { assertLessonAccessible, lessonBlockReason } from './lessonAccess.js'
+import { assertLessonAccessible, isAccessExpired, lessonBlockReason } from './lessonAccess.js'
 import {
   asSlug,
   type CourseProgressEntry,
@@ -282,6 +282,13 @@ export const submitQuiz = ({
   })
 
 export type ProgressResult = {
+  /**
+   * Courses the user can open now: enrolled directly, completed, or through a group they lead or
+   * belong to, and not expired. The same rule the server applies to course content. Use it to
+   * decide what to show; `enrolledCourses` and `completedCourses` list direct enrollments only.
+   * Admins and authors can open every course and are not listed for that.
+   */
+  accessibleCourses: ID[]
   completedCourses: ID[]
   coursesProgress: ({
     completionPercentage: number
@@ -315,15 +322,34 @@ export const getProgress = async ({
       })
     ).docs as LMSDoc[]
 
-  const [progressCourses, enrolledCourses, completedCourses] = await Promise.all([
+  const { docs: groups } = await req.payload.find({
+    collection: asSlug(slugs.groups),
+    depth: 0,
+    pagination: false,
+    req,
+    where: { or: [{ students: { in: [user.id] } }, { leaders: { in: [user.id] } }] },
+  })
+  const groupIds = groups.map((group) => group.id)
+
+  const [progressCourses, enrolledCourses, completedCourses, groupCourses] = await Promise.all([
     coursesProgress.length > 0
       ? findCourses({ id: { in: coursesProgress.map((progress) => progress.course) } })
       : Promise.resolve([]),
     findCourses({ enrolledStudents: { in: [user.id] } }),
     findCourses({ courseCompletedStudents: { in: [user.id] } }),
+    groupIds.length > 0 ? findCourses({ courseEnrolledGroups: { in: groupIds } }) : Promise.resolve([]),
   ])
 
+  const accessibleCourses: ID[] = []
+  for (const course of [...enrolledCourses, ...completedCourses, ...groupCourses]) {
+    const progress = coursesProgress.find((entry) => sameId(entry.course, course.id))
+    if (!includesId(accessibleCourses, course.id) && !isAccessExpired(course, progress)) {
+      accessibleCourses.push(toId(course) as ID)
+    }
+  }
+
   return {
+    accessibleCourses,
     completedCourses: completedCourses.map((course) => toId(course) as ID),
     coursesProgress: coursesProgress.map((progress) => {
       const course = progressCourses.find((doc) => sameId(doc.id, progress.course))

@@ -10,6 +10,7 @@ import type { CourseProgress, LMSContextType, LMSProviderProps } from './types.j
 import { initialState, lmsReducer } from './reducer.js'
 
 const defaultContext: LMSContextType = {
+  accessibleCourses: [],
   addUserToGroup: async () => {},
   certificates: [],
   completeCourse: async () => {},
@@ -158,10 +159,12 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         // Normalize enrolled and completed courses to use IDs only
         const normalizedEnrolledCourses = (parsed.enrolledCourses || []).map(toCourseId)
         const normalizedCompletedCourses = (parsed.completedCourses || []).map(toCourseId)
+        const normalizedAccessibleCourses = (parsed.accessibleCourses || []).map(toCourseId)
 
         dispatch({
           type: 'LOAD_FROM_STORAGE',
           payload: {
+            accessibleCourses: normalizedAccessibleCourses,
             completedCourses: normalizedCompletedCourses,
             enrolledCourses: normalizedEnrolledCourses,
             progress: normalizedProgress,
@@ -211,7 +214,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
         throw new Error('Failed to fetch user progress')
       }
       const data = await response.json()
-      const { completedCourses, coursesProgress, enrolledCourses } = data
+      const { accessibleCourses, completedCourses, coursesProgress, enrolledCourses } = data
 
       // Update all progress-related state
       dispatch({ type: 'UPDATE_PROGRESS', payload: coursesProgress || [] })
@@ -223,6 +226,9 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
       // Ensure completedCourses is an array before mapping
       const completedCoursesArray = Array.isArray(completedCourses) ? completedCourses : []
       dispatch({ type: 'SET_COMPLETED_COURSES', payload: completedCoursesArray.map(toCourseId) })
+
+      const accessibleCoursesArray = Array.isArray(accessibleCourses) ? accessibleCourses : []
+      dispatch({ type: 'SET_ACCESSIBLE_COURSES', payload: accessibleCoursesArray.map(toCourseId) })
     } catch (e: unknown) {
       dispatch({
         type: 'SET_ERROR',
@@ -245,6 +251,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   useEffect(() => {
     if (syncLocalStorage && cachedUserId.current) {
       const serializedState = JSON.stringify({
+        accessibleCourses: state.accessibleCourses,
         completedCourses: state.completedCourses,
         enrolledCourses: state.enrolledCourses,
         progress: state.progress,
@@ -254,6 +261,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
     }
   }, [
     state.progress,
+    state.accessibleCourses,
     state.enrolledCourses,
     state.completedCourses,
     syncLocalStorage,
@@ -579,6 +587,7 @@ export const LMSProvider: React.FC<LMSProviderProps> = ({
   )
 
   const value: LMSContextType = {
+    accessibleCourses: state.accessibleCourses,
     addUserToGroup,
     certificates: state.certificates,
     completeCourse,

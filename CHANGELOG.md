@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.0.13
+
+### Added
+
+- `fetch-progress` and `getProgress` return `accessibleCourses`, and the provider exposes it as
+  `useLMS().accessibleCourses`: the courses the user can open now, enrolled directly, completed, or
+  through a group they lead or belong to, and not expired. It is the rule the server applies to
+  course content, so sites no longer need to infer access from progress entries, which are kept
+  after a refund, dispute or expiry and are missing for some group access. `enrolledCourses` and
+  `completedCourses` are unchanged and still list direct enrollments only. The provider caches the
+  list with the rest of the progress; a cache saved by an older version shows no courses until the
+  server responds.
+
 ## 2.0.12
 
 ### Changed

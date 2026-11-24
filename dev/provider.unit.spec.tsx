@@ -34,6 +34,7 @@ const Harness = () => {
   return (
     <>
       <p data-testid="enrolled">{lms.enrolledCourses.join(',')}</p>
+      <p data-testid="accessible">{lms.accessibleCourses.join(',')}</p>
       <p data-testid="completed">{lms.completedCourses.join(',')}</p>
       <p data-testid="loading">{String(lms.isLoading)}</p>
       <p data-testid="error">{lms.error?.message ?? ''}</p>
@@ -86,6 +87,7 @@ describe('LMSProvider', () => {
       if (url.endsWith('/lms/fetch-progress')) {
         // The shape fetch-progress returns: plain ids
         return json({
+          accessibleCourses: ['course-1', 'course-2', 'course-3'],
           completedCourses: ['course-2'],
           coursesProgress: [],
           enrolledCourses: ['course-1', 'course-2'],
@@ -100,6 +102,7 @@ describe('LMSProvider', () => {
     expect(urls()[0]).toBe('http://lms.test/api/users/me')
     expect(screen.getByTestId('enrolled').textContent).toBe('course-1,course-2')
     expect(screen.getByTestId('completed').textContent).toBe('course-2')
+    expect(screen.getByTestId('accessible').textContent).toBe('course-1,course-2,course-3')
   })
 
   it('keeps a revoked course in progress, marked revoked, and out of the enrolled courses', async () => {
@@ -129,6 +132,7 @@ describe('LMSProvider', () => {
     await settle()
 
     expect(screen.getByTestId('revoked').textContent).toBe('refund')
+    expect(screen.getByTestId('accessible').textContent).toBe('')
     expect(screen.getByTestId('lesson').textContent).toBe('lesson-1')
     expect(screen.getByTestId('enrolled').textContent).toBe('')
   })

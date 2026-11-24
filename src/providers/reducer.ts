@@ -3,6 +3,7 @@ import type { DefaultDocumentIDType } from 'payload'
 import type { Certificate, Course, CourseProgress, Lesson, LMSUser, Quiz, Topic } from './types.js'
 
 export type LMSState = {
+  accessibleCourses: DefaultDocumentIDType[]
   certificates: Certificate[]
   completedCourses: DefaultDocumentIDType[]
   courses: Course[]
@@ -21,12 +22,12 @@ export type LMSState = {
 }
 
 export type LMSAction =
+  | { payload: { accessibleCourses: DefaultDocumentIDType[]; completedCourses: DefaultDocumentIDType[]; enrolledCourses: DefaultDocumentIDType[]; progress: CourseProgress[] }; type: 'LOAD_FROM_STORAGE' }
   | { payload: {
     completedAt: string
     quizId: DefaultDocumentIDType
     score: number
   }; type: 'SET_QUIZ_COMPLETED' }
-  | { payload: { completedCourses: DefaultDocumentIDType[]; enrolledCourses: DefaultDocumentIDType[]; progress: CourseProgress[] }; type: 'LOAD_FROM_STORAGE' }
   | { payload: {
     courseId: DefaultDocumentIDType
     exitedAt: string
@@ -44,6 +45,7 @@ export type LMSAction =
   | { payload: CourseProgress[]; type: 'UPDATE_PROGRESS' }
   | { payload: DefaultDocumentIDType; type: 'COMPLETE_COURSE' }
   | { payload: DefaultDocumentIDType; type: 'ENROLL_IN_COURSE' }
+  | { payload: DefaultDocumentIDType[]; type: 'SET_ACCESSIBLE_COURSES' }
   | { payload: DefaultDocumentIDType[]; type: 'SET_COMPLETED_COURSES' }
   | { payload: DefaultDocumentIDType[]; type: 'SET_ENROLLED_COURSES' }
   | { payload: Error | null; type: 'SET_ERROR' }
@@ -54,6 +56,7 @@ export type LMSAction =
   | { type: 'RESET_STATE' }
 
 export const initialState: LMSState = {
+  accessibleCourses: [],
   certificates: [],
   completedCourses: [],
   courses: [],
@@ -80,12 +83,14 @@ export const lmsReducer = (state: LMSState, action: LMSAction): LMSState => {
     case 'ENROLL_IN_COURSE':
       return {
         ...state,
+        accessibleCourses: [...state.accessibleCourses, action.payload],
         enrolledCourses: [...state.enrolledCourses, action.payload],
       }
 
     case 'LOAD_FROM_STORAGE':
       return {
         ...state,
+        accessibleCourses: action.payload.accessibleCourses,
         completedCourses: action.payload.completedCourses,
         enrolledCourses: action.payload.enrolledCourses,
         progress: action.payload.progress,
@@ -93,6 +98,12 @@ export const lmsReducer = (state: LMSState, action: LMSAction): LMSState => {
 
     case 'RESET_STATE':
       return initialState
+
+    case 'SET_ACCESSIBLE_COURSES':
+      return {
+        ...state,
+        accessibleCourses: action.payload,
+      }
 
     case 'SET_CERTIFICATES':
       return {

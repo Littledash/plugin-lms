@@ -1,6 +1,6 @@
 import { markCourseCompleted } from './completeCourse.js';
 import { scoreQuiz } from './grading.js';
-import { assertLessonAccessible, lessonBlockReason } from './lessonAccess.js';
+import { assertLessonAccessible, isAccessExpired, lessonBlockReason } from './lessonAccess.js';
 import { asSlug, ensureCourseProgress, findDoc, getCourseLessonIds, getCoursesProgress, getSlugs, hasCompletedRequiredLessons, includesId, isEnrolledInCourse, LMSError, sameId, toId, toIds, withTransaction } from './shared.js';
 const DEFAULT_MINIMUM_SCORE = 100;
 /**
@@ -242,7 +242,32 @@ const assertCanAttempt = (req, quiz, attempt)=>{
             req,
             where
         })).docs;
-    const [progressCourses, enrolledCourses, completedCourses] = await Promise.all([
+    const { docs: groups } = await req.payload.find({
+        collection: asSlug(slugs.groups),
+        depth: 0,
+        pagination: false,
+        req,
+        where: {
+            or: [
+                {
+                    students: {
+                        in: [
+                            user.id
+                        ]
+                    }
+                },
+                {
+                    leaders: {
+                        in: [
+                            user.id
+                        ]
+                    }
+                }
+            ]
+        }
+    });
+    const groupIds = groups.map((group)=>group.id);
+    const [progressCourses, enrolledCourses, completedCourses, groupCourses] = await Promise.all([
         coursesProgress.length > 0 ? findCourses({
             id: {
                 in: coursesProgress.map((progress)=>progress.course)
@@ -261,9 +286,26 @@ const assertCanAttempt = (req, quiz, attempt)=>{
                     user.id
                 ]
             }
-        })
+        }),
+        groupIds.length > 0 ? findCourses({
+            courseEnrolledGroups: {
+                in: groupIds
+            }
+        }) : Promise.resolve([])
     ]);
+    const accessibleCourses = [];
+    for (const course of [
+        ...enrolledCourses,
+        ...completedCourses,
+        ...groupCourses
+    ]){
+        const progress = coursesProgress.find((entry)=>sameId(entry.course, course.id));
+        if (!includesId(accessibleCourses, course.id) && !isAccessExpired(course, progress)) {
+            accessibleCourses.push(toId(course));
+        }
+    }
     return {
+        accessibleCourses,
         completedCourses: completedCourses.map((course)=>toId(course)),
         coursesProgress: coursesProgress.map((progress)=>{
             const course = progressCourses.find((doc)=>sameId(doc.id, progress.course));

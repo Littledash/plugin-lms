@@ -39,6 +39,13 @@ export type SubmitQuizResult = {
  */
 export declare const submitQuiz: ({ answers, courseId, quizId, req, userId, }: SubmitQuizArgs) => Promise<SubmitQuizResult>;
 export type ProgressResult = {
+    /**
+     * Courses the user can open now: enrolled directly, completed, or through a group they lead or
+     * belong to, and not expired. The same rule the server applies to course content. Use it to
+     * decide what to show; `enrolledCourses` and `completedCourses` list direct enrollments only.
+     * Admins and authors can open every course and are not listed for that.
+     */
+    accessibleCourses: ID[];
     completedCourses: ID[];
     coursesProgress: ({
         completionPercentage: number;

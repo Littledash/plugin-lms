@@ -4,6 +4,7 @@ import * as qs from 'qs-esm';
 import React, { createContext, use, useCallback, useEffect, useReducer, useRef } from 'react';
 import { initialState, lmsReducer } from './reducer.js';
 const defaultContext = {
+    accessibleCourses: [],
     addUserToGroup: async ()=>{},
     certificates: [],
     completeCourse: async ()=>{},
@@ -116,9 +117,11 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
             // Normalize enrolled and completed courses to use IDs only
             const normalizedEnrolledCourses = (parsed.enrolledCourses || []).map(toCourseId);
             const normalizedCompletedCourses = (parsed.completedCourses || []).map(toCourseId);
+            const normalizedAccessibleCourses = (parsed.accessibleCourses || []).map(toCourseId);
             dispatch({
                 type: 'LOAD_FROM_STORAGE',
                 payload: {
+                    accessibleCourses: normalizedAccessibleCourses,
                     completedCourses: normalizedCompletedCourses,
                     enrolledCourses: normalizedEnrolledCourses,
                     progress: normalizedProgress
@@ -179,7 +182,7 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
                 throw new Error('Failed to fetch user progress');
             }
             const data = await response.json();
-            const { completedCourses, coursesProgress, enrolledCourses } = data;
+            const { accessibleCourses, completedCourses, coursesProgress, enrolledCourses } = data;
             // Update all progress-related state
             dispatch({
                 type: 'UPDATE_PROGRESS',
@@ -196,6 +199,11 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
             dispatch({
                 type: 'SET_COMPLETED_COURSES',
                 payload: completedCoursesArray.map(toCourseId)
+            });
+            const accessibleCoursesArray = Array.isArray(accessibleCourses) ? accessibleCourses : [];
+            dispatch({
+                type: 'SET_ACCESSIBLE_COURSES',
+                payload: accessibleCoursesArray.map(toCourseId)
             });
         } catch (e) {
             dispatch({
@@ -229,6 +237,7 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
     useEffect(()=>{
         if (syncLocalStorage && cachedUserId.current) {
             const serializedState = JSON.stringify({
+                accessibleCourses: state.accessibleCourses,
                 completedCourses: state.completedCourses,
                 enrolledCourses: state.enrolledCourses,
                 progress: state.progress,
@@ -238,6 +247,7 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
         }
     }, [
         state.progress,
+        state.accessibleCourses,
         state.enrolledCourses,
         state.completedCourses,
         syncLocalStorage,
@@ -724,6 +734,7 @@ export const LMSProvider = ({ api, children, syncLocalStorage = true })=>{
         baseAPIURL
     ]);
     const value = {
+        accessibleCourses: state.accessibleCourses,
         addUserToGroup,
         certificates: state.certificates,
         completeCourse,

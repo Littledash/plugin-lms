@@ -1,6 +1,7 @@
 import type { DefaultDocumentIDType } from 'payload';
 import type { Certificate, Course, CourseProgress, Lesson, LMSUser, Quiz, Topic } from './types.js';
 export type LMSState = {
+    accessibleCourses: DefaultDocumentIDType[];
     certificates: Certificate[];
     completedCourses: DefaultDocumentIDType[];
     courses: Course[];
@@ -19,18 +20,19 @@ export type LMSState = {
 };
 export type LMSAction = {
     payload: {
-        completedAt: string;
-        quizId: DefaultDocumentIDType;
-        score: number;
-    };
-    type: 'SET_QUIZ_COMPLETED';
-} | {
-    payload: {
+        accessibleCourses: DefaultDocumentIDType[];
         completedCourses: DefaultDocumentIDType[];
         enrolledCourses: DefaultDocumentIDType[];
         progress: CourseProgress[];
     };
     type: 'LOAD_FROM_STORAGE';
+} | {
+    payload: {
+        completedAt: string;
+        quizId: DefaultDocumentIDType;
+        score: number;
+    };
+    type: 'SET_QUIZ_COMPLETED';
 } | {
     payload: {
         courseId: DefaultDocumentIDType;
@@ -63,6 +65,9 @@ export type LMSAction = {
 } | {
     payload: DefaultDocumentIDType;
     type: 'ENROLL_IN_COURSE';
+} | {
+    payload: DefaultDocumentIDType[];
+    type: 'SET_ACCESSIBLE_COURSES';
 } | {
     payload: DefaultDocumentIDType[];
     type: 'SET_COMPLETED_COURSES';

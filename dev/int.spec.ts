@@ -941,6 +941,44 @@ describe('fetch-progress endpoint', () => {
     expect(body.enrolledCourses.map(String)).toStrictEqual([course.id])
     expect(body.coursesProgress[0]).toMatchObject({ completionPercentage: 50, courseCompletion: '1/2' })
   })
+
+  it('lists the courses the user can open, including through a group, and not expired or revoked ones', async () => {
+    const user = await createUser()
+    const direct = await createCourse({ accessMode: 'buy now' })
+    await enroll(user, direct)
+
+    const lesson = await createLesson()
+    const completed = await createCourse({ lessons: [{ lesson: lesson.id }] })
+    await enroll(user, completed)
+    const client = await clientFor(user)
+    await post(client, 'complete-lesson', { courseId: completed.id, lessonId: lesson.id })
+
+    const throughGroup = await createCourse({ accessMode: 'buy now' })
+    const leader = await createUser()
+    const { groupId } = await enrollUser({
+      courseId: throughGroup.id,
+      group: { companyName: `Access Co ${++counter}`, isLeader: true, totalSeats: 2 },
+      req: { payload } as never,
+      userId: leader.id,
+    })
+    await addUserToGroup({ groupId: groupId!, req: { payload } as never, role: 'student', userId: user.id })
+
+    const expired = await createCourse()
+    await payload.update({ id: expired.id, collection: 'courses', data: { courseSettings: { accessExpirationDays: 1 } } })
+    await enroll(user, expired)
+    await setEnrolledAt(user.id, expired.id, daysAgo(2))
+
+    const revoked = await createCourse({ accessMode: 'buy now' })
+    await enroll(user, revoked)
+    await unenrollUser({ courseId: revoked.id, reason: 'refund', req: { payload } as never, userId: user.id })
+
+    await createCourse()
+
+    const body = await (await client.GET('/lms/fetch-progress')).json()
+    expect(body.accessibleCourses.map(String).sort()).toStrictEqual([completed.id, direct.id, throughGroup.id].sort())
+    expect(body.enrolledCourses.map(String).sort()).toStrictEqual([direct.id, expired.id].sort())
+    expect(body.completedCourses.map(String)).toStrictEqual([completed.id])
+  })
 })
 
 describe('field access', () => {

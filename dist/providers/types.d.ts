@@ -60,6 +60,12 @@ export type Progress = CourseProgress[];
  * Defines the shape of the LMS React Context.
  */
 export type LMSContextType = {
+    /**
+     * Course IDs the current user can open now: enrolled directly, completed, or through a group, and
+     * not expired. Use this to decide what to show; the server applies the same rule to content.
+     * Admins and authors can open every course and are not listed for that.
+     */
+    accessibleCourses: DefaultDocumentIDType[];
     /** Adds a user to a group with a specific role. */
     addUserToGroup: (groupId: DefaultDocumentIDType, memberId: DefaultDocumentIDType, role: 'leader' | 'student') => Promise<void>;
     /** A list of certificates earned by the current user. */
@@ -79,7 +85,7 @@ export type LMSContextType = {
     enroll: (courseId: DefaultDocumentIDType) => Promise<void>;
     /**
      * Course IDs the current user is enrolled in directly (purchase, self-enrollment or coupon).
-     * Courses they can open only through a group are not listed; see `getProgress`.
+     * Courses they can open only through a group are not listed; use `accessibleCourses` for access.
      */
     enrolledCourses: DefaultDocumentIDType[];
     /** Any error that occurred during data fetching. */
@@ -98,8 +104,8 @@ export type LMSContextType = {
     fetchUsers: () => Promise<void>;
     /**
      * Gets the progress for a specific course from the local state. Progress is kept when a course is
-     * taken away, so a progress entry alone does not mean access: check `revokedAt`. The server
-     * decides access; lesson, topic and course content fields are returned only when it allows them.
+     * taken away or access expires, so a progress entry alone does not mean access: use
+     * `accessibleCourses`.
      */
     getProgress: (courseId: DefaultDocumentIDType) => CourseProgress | undefined;
     /** Whether the provider is currently fetching data. */

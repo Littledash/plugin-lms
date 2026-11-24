@@ -1,4 +1,5 @@
 export const initialState = {
+    accessibleCourses: [],
     certificates: [],
     completedCourses: [],
     courses: [],
@@ -26,6 +27,10 @@ export const lmsReducer = (state, action)=>{
         case 'ENROLL_IN_COURSE':
             return {
                 ...state,
+                accessibleCourses: [
+                    ...state.accessibleCourses,
+                    action.payload
+                ],
                 enrolledCourses: [
                     ...state.enrolledCourses,
                     action.payload
@@ -34,12 +39,18 @@ export const lmsReducer = (state, action)=>{
         case 'LOAD_FROM_STORAGE':
             return {
                 ...state,
+                accessibleCourses: action.payload.accessibleCourses,
                 completedCourses: action.payload.completedCourses,
                 enrolledCourses: action.payload.enrolledCourses,
                 progress: action.payload.progress
             };
         case 'RESET_STATE':
             return initialState;
+        case 'SET_ACCESSIBLE_COURSES':
+            return {
+                ...state,
+                accessibleCourses: action.payload
+            };
         case 'SET_CERTIFICATES':
             return {
                 ...state,

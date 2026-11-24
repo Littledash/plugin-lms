@@ -119,10 +119,11 @@ for (const item of order.items) {
 - The student is removed from the course's enrolled and completed students. Lessons, topics,
   quizzes, course files and course materials stop opening at once, and `complete-lesson` and
   `submit-quiz` refuse them.
-- Their progress is kept, with `revokedAt` and `revokedReason` set on `coursesProgress`. If your
-  pages treat a progress entry as "enrolled", skip entries with `revokedAt` (they also appear in
-  `fetch-progress` and `useLMS().getProgress`). `enrolledCourses` and `completedCourses` only list
-  direct enrollments, not access through a group.
+- Their progress is kept, with `revokedAt` and `revokedReason` set on `coursesProgress`, so a
+  progress entry does not mean access. To decide what a student can open, use `accessibleCourses`
+  from `fetch-progress` (`useLMS().accessibleCourses`): courses they are enrolled in directly, have
+  completed, or reach through a group, and whose access has not expired. `enrolledCourses` and
+  `completedCourses` list direct enrollments only.
 - Certificates already awarded are kept, and the student can still download them.
 - It returns `unenrolled`, or `not-enrolled` when the student was not on the course, so a webhook
   retry changes nothing. It runs in the transaction of the `req` you pass.
