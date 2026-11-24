@@ -67,6 +67,24 @@ import { isAdminFieldLevel } from '../access/isAdmin.js';
                 ]
             },
             {
+                name: 'revokedAt',
+                type: 'date',
+                admin: {
+                    condition: (_, siblingData)=>Boolean(siblingData?.revokedAt),
+                    description: 'When access was taken away, for example after a refund. Progress is kept so a new purchase restores it.',
+                    readOnly: true
+                }
+            },
+            {
+                name: 'revokedReason',
+                type: 'text',
+                admin: {
+                    condition: (_, siblingData)=>Boolean(siblingData?.revokedAt),
+                    description: 'Why access was taken away, as given by the site (for example "refund" or "dispute").',
+                    readOnly: true
+                }
+            },
+            {
                 name: 'completed',
                 type: 'checkbox',
                 admin: {

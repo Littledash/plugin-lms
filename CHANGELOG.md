@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.0.10
+
+### Added
+
+- `unenrollUser({ req, userId, courseId, reason? })` in `@littledash/plugin-lms/services` takes a
+  course away, for example after a refund or a payment dispute. The student is removed from the
+  course's enrolled and completed students, so content access stops at once. Their progress is
+  kept and marked with the new `coursesProgress.revokedAt` and `revokedReason` fields. Awarded
+  certificates are kept. Safe to call twice. Groups are not changed; the result's `groupAccess`
+  says whether the student still has access through one.
+- `enrollUser` restores a revoked student on a new purchase: back on the enrolled list (or the
+  completed list if they had finished), revocation cleared, new access period from now. A purchase
+  key already recorded for that course returns `already-renewed`, so a retried fulfilment of a
+  refunded order does not give the course back.
+
 ## 2.0.9
 
 ### Added

@@ -1,8 +1,8 @@
 export { addUserToGroup } from '../services/addUserToGroup.js';
 export { completeCourse } from '../services/completeCourse.js';
 export type { CompleteCourseResult } from '../services/completeCourse.js';
-export { enrollUser, SELF_ENROLL_ACCESS_MODES } from '../services/enrollUser.js';
-export type { EnrollUserResult, GroupEnrollment } from '../services/enrollUser.js';
+export { enrollUser, SELF_ENROLL_ACCESS_MODES, unenrollUser } from '../services/enrollUser.js';
+export type { EnrollUserResult, GroupEnrollment, UnenrollUserResult } from '../services/enrollUser.js';
 export { generateCertificate, getCertificateFileName, renderCertificatePDF } from '../services/generateCertificate.js';
 export type { CertificatePDF, GenerateCertificateResult } from '../services/generateCertificate.js';
 export { completeLesson, getProgress, submitQuiz } from '../services/progress.js';

@@ -271,6 +271,14 @@ export interface User {
             }[]
           | null
         /**
+         * When access was taken away, for example after a refund. Progress is kept so a new purchase restores it.
+         */
+        revokedAt?: string | null
+        /**
+         * Why access was taken away, as given by the site (for example "refund" or "dispute").
+         */
+        revokedReason?: string | null
+        /**
          * Ticked when the student finishes every lesson and passes every quiz in the course. Set by the LMS; tick it by hand only to mark a course complete without the work.
          */
         completed?: boolean | null
@@ -1365,6 +1373,8 @@ export interface UsersSelect<T extends boolean = true> {
               renewedAt?: T
               id?: T
             }
+        revokedAt?: T
+        revokedReason?: T
         completed?: T
         completedAt?: T
         completedLessons?:

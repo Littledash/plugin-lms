@@ -39,6 +39,9 @@ export type CourseProgressEntry = {
   enrolledAt?: null | string
   /** Purchases already applied to this course, by key, so a retried renewal is a no-op. */
   renewals?: { key: string; renewedAt: string }[]
+  /** Set by `unenrollUser`; cleared when a new purchase enrolls the user again. */
+  revokedAt?: null | string
+  revokedReason?: null | string
 }
 
 /**

@@ -35,6 +35,9 @@ export type CourseProgressEntry = {
         key: string;
         renewedAt: string;
     }[];
+    /** Set by `unenrollUser`; cleared when a new purchase enrolls the user again. */
+    revokedAt?: null | string;
+    revokedReason?: null | string;
 };
 /**
  * An error whose message is safe to return to the client.

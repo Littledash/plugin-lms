@@ -22,6 +22,7 @@ import {
   getCertificateFileName,
   LMSError,
   renderCertificatePDF,
+  unenrollUser,
 } from '../src/exports/services.js'
 import { BODY_BOTTOM, descriptionBlocks, layoutCertificateBody, toDrawableText } from '../src/utilities/createPDF.js'
 import { NextRESTClient } from './helpers/NextRESTClient.js'
@@ -410,6 +411,85 @@ describe('enrollUser service', () => {
     ).rejects.toBeInstanceOf(LMSError)
 
     expect(ids((await getDoc('courses', course.id)).enrolledStudents)).not.toContain(user.id)
+  })
+})
+
+describe('unenrollUser service', () => {
+  const unenroll = (user: Doc, course: Doc, reason?: string) =>
+    unenrollUser({ courseId: course.id, reason, req: { payload } as never, userId: user.id })
+  const progressFor = async (user: Doc, course: Doc) =>
+    ((await getDoc('users', user.id)).coursesProgress as Doc[]).find((entry) => String(entry.course) === course.id)
+
+  it('takes access away after a refund, keeps progress, and is safe to repeat', async () => {
+    const first = await createLesson()
+    const lesson = (await payload.create({
+      collection: 'lessons',
+      data: { content: richText('Lesson secret'), title: `Lesson ${++counter}` },
+    })) as unknown as Doc
+    const course = await createCourse({ accessMode: 'buy now', lessons: [{ lesson: first.id }, { lesson: lesson.id }] })
+    const user = await createUser()
+    const client = await clientFor(user)
+    await enroll(user, course)
+    expect((await post(client, 'complete-lesson', { courseId: course.id, lessonId: first.id })).status).toBe(200)
+    expect((await (await client.GET(`/lessons/${lesson.id}`)).json()).content).toBeDefined()
+
+    expect(await unenroll(user, course, ' refund ')).toStrictEqual({ groupAccess: false, status: 'unenrolled' })
+
+    expect(ids((await getDoc('courses', course.id)).enrolledStudents)).not.toContain(user.id)
+    expect(await (await client.GET(`/lessons/${lesson.id}`)).json()).not.toHaveProperty('content')
+    const refused = await post(client, 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+    expect(refused.status).toBe(403)
+    const progress = await progressFor(user, course)
+    expect(progress).toMatchObject({ revokedReason: 'refund' })
+    expect(progress.revokedAt).toBeTruthy()
+    expect(ids(progress.completedLessons.map((entry: Doc) => entry.lesson))).toStrictEqual([first.id])
+
+    expect(await unenroll(user, course, 'dispute')).toStrictEqual({ groupAccess: false, status: 'not-enrolled' })
+    expect(await progressFor(user, course)).toMatchObject({ revokedAt: progress.revokedAt, revokedReason: 'refund' })
+  })
+
+  it('keeps awarded certificates, and a new purchase restores the completed course without a second award', async () => {
+    const certificate = (await payload.create({ collection: 'certificates', data: { title: 'Refunded' } })) as unknown as Doc
+    const lesson = await createLesson()
+    const course = await createCourse({ accessMode: 'buy now', certificate: certificate.id, lessons: [{ lesson: lesson.id }] })
+    const user = await createUser()
+    await enrollUser({ courseId: course.id, renewal: { key: 'order-1' }, req: { payload } as never, userId: user.id })
+    await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+    expect(ids((await getDoc('courses', course.id)).courseCompletedStudents)).toContain(user.id)
+
+    expect((await unenroll(user, course, 'dispute')).status).toBe('unenrolled')
+    const afterRefund = await getDoc('courses', course.id)
+    expect(ids(afterRefund.courseCompletedStudents)).not.toContain(user.id)
+    expect((await getDoc('users', user.id)).certificates).toHaveLength(1)
+
+    // A retried fulfilment of the refunded order does not give access back
+    const retried = await enrollUser({ courseId: course.id, renewal: { key: 'order-1' }, req: { payload } as never, userId: user.id })
+    expect(retried.status).toBe('already-renewed')
+    expect(ids((await getDoc('courses', course.id)).courseCompletedStudents)).not.toContain(user.id)
+
+    const repurchase = await enrollUser({ courseId: course.id, renewal: { key: 'order-2' }, req: { payload } as never, userId: user.id })
+    expect(repurchase.status).toBe('enrolled')
+    const restored = await getDoc('courses', course.id)
+    expect(ids(restored.courseCompletedStudents)).toContain(user.id)
+    expect(ids(restored.enrolledStudents)).not.toContain(user.id)
+    const progress = await progressFor(user, course)
+    expect(progress).toMatchObject({ completed: true, revokedAt: null, revokedReason: null })
+    expect(Date.parse(progress.accessFrom)).toBeGreaterThan(Date.parse(progress.enrolledAt))
+    expect((await getDoc('users', user.id)).certificates).toHaveLength(1)
+  })
+
+  it('reports access that remains through a group, and rejects an unusable reason', async () => {
+    const course = await createCourse({ accessMode: 'buy now' })
+    const leader = await createUser()
+    await enrollUser({
+      courseId: course.id,
+      group: { companyName: `Refund Co ${++counter}`, isLeader: true, totalSeats: 2 },
+      req: { payload } as never,
+      userId: leader.id,
+    })
+
+    expect(await unenroll(leader, course, 'refund')).toStrictEqual({ groupAccess: true, status: 'unenrolled' })
+    await expect(unenroll(leader, course, 'x'.repeat(201))).rejects.toMatchObject({ status: 400 })
   })
 })
 

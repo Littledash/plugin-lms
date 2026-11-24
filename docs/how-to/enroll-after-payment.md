@@ -98,6 +98,41 @@ Two calls with the same key at the same instant are separated by the database tr
 MongoDB one of them fails with a write conflict, and retrying it returns `already-renewed`. This
 relies on transactions, which MongoDB only supports on a replica set.
 
+## Refunds and disputes
+
+To take a course away after a full refund or a payment dispute, call `unenrollUser` from the
+webhook, with the user and courses from your own order record:
+
+```typescript
+import { unenrollUser } from '@littledash/plugin-lms/services'
+
+for (const item of order.items) {
+  const { groupAccess, status } = await unenrollUser({
+    req,
+    userId: order.customer,
+    courseId: item.course,
+    reason: 'refund', // or 'dispute'; stored on the student's progress
+  })
+}
+```
+
+- The student is removed from the course's enrolled and completed students. Lessons, topics,
+  quizzes, course files and course materials stop opening at once, and `complete-lesson` and
+  `submit-quiz` refuse them.
+- Their progress is kept, with `revokedAt` and `revokedReason` set on `coursesProgress`.
+- Certificates already awarded are kept, and the student can still download them.
+- It returns `unenrolled`, or `not-enrolled` when the student was not on the course, so a webhook
+  retry changes nothing. It runs in the transaction of the `req` you pass.
+- Groups are not changed. `groupAccess: true` means the student can still open the course through
+  a group they lead or belong to; a refunded group purchase needs your own handling (for example
+  removing the group from the course's enrolled groups).
+
+A later purchase restores access: `enrollUser` puts the student back (on the completed list if they
+had finished, so the course is not completed or awarded twice), clears the revocation and starts a
+new access period. **Pass `renewal: { key }` on every purchase.** A retried fulfilment of the
+refunded order then returns `already-renewed` and does not give the course back; without a key,
+`enrollUser` cannot tell a retry from a new purchase.
+
 ## 3. Group purchases
 
 Pass `group` to enroll the buyer as the group's leader. See
