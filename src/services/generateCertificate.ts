@@ -2,6 +2,9 @@ import type { PayloadRequest, Where } from 'payload'
 
 import { randomUUID } from 'crypto'
 
+import type { CertificateConfig, CertificateLayout } from '../types.js'
+
+import { formatCompletionDate, resolveCertificateLayout } from '../certificates/layout.js'
 import { createPDF } from '../utilities/createPDF.js'
 import {
   asSlug,
@@ -56,12 +59,11 @@ const loadAward = async (req: PayloadRequest, { certificateId, courseId, userId 
   return { awarded, certificates, user }
 }
 
-// e.g. "26 November 2025"
-const formatDate = (value: unknown): string =>
-  new Date(typeof value === 'string' && !Number.isNaN(Date.parse(value)) ? value : Date.now()).toLocaleDateString(
-    'en-US',
-    { day: 'numeric', month: 'long', year: 'numeric' },
-  )
+const completedOn = (value: unknown): Date =>
+  new Date(typeof value === 'string' && !Number.isNaN(Date.parse(value)) ? value : Date.now())
+
+const certificateSettings = (req: PayloadRequest): Pick<CertificateConfig, 'layout' | 'render'> =>
+  (req.payload.config.custom?.lms?.certificates as Pick<CertificateConfig, 'layout' | 'render'> | undefined) ?? {}
 
 /**
  * Renders the PDF for an award. Dated with the award's completion date, so the same award always
@@ -92,17 +94,41 @@ const buildPDF = async (req: PayloadRequest, user: LMSDoc, awarded: LMSDoc, cour
   const authorName =
     author && typeof author === 'object' ? `${author.firstName || ''} ${author.lastName || ''}`.trim() : undefined
   const presenterName = typeof certificate.presenterName === 'string' ? certificate.presenterName.trim() : ''
-  const pdf = await createPDF({
-    authorName: presenterName || authorName,
-    certificateNumber: `CERT-${course.id}-${certificate.id}-${user.id}`,
-    completionDate: formatDate(awarded.completedDate),
-    courseTitle: course.title,
-    description: certificate.description || 'Certificate of Completion',
-    fontFamily: 'Poppins',
-    sharp: req.payload.config.sharp,
+
+  const settings = certificateSettings(req)
+  const docs = { certificate, course, req, student: user }
+  const siteLayout: CertificateLayout | undefined =
+    typeof settings.layout === 'function' ? await settings.layout(docs) : settings.layout
+  const layout = resolveCertificateLayout(siteLayout)
+  const completedDate = completedOn(awarded.completedDate)
+  const completionDate = formatCompletionDate(completedDate, layout)
+  const fields = {
+    courseTitle: String(course.title),
+    description: certificate.description,
+    presenterName: presenterName || authorName || undefined,
     studentName: `${user.firstName} ${user.lastName}`,
-    templateImage: certificate.template?.url || '',
-  })
+    templateImage: typeof certificate.template?.url === 'string' ? certificate.template.url : '',
+  }
+
+  const renderDefault = (overrides?: CertificateLayout) =>
+    createPDF({
+      authorName: fields.presenterName,
+      certificateNumber: `CERT-${course.id}-${certificate.id}-${user.id}`,
+      completionDate,
+      courseTitle: fields.courseTitle,
+      description: fields.description,
+      layout: overrides ? resolveCertificateLayout(siteLayout, overrides) : layout,
+      sharp: req.payload.config.sharp,
+      studentName: fields.studentName,
+      templateImage: fields.templateImage,
+    })
+
+  const pdf = settings.render
+    ? await settings.render({ ...docs, ...fields, completedDate, completionDate, layout, renderDefault })
+    : await renderDefault()
+  if (!(pdf instanceof Uint8Array) || pdf.length === 0) {
+    throw new Error('The certificate render function must return the PDF bytes')
+  }
   return { course, data: Buffer.from(pdf) }
 }
 

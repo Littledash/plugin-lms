@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.0.14
+
+### Added
+
+- Sites can change the certificate PDF without changing the plugin. `certificates.layout` sets the
+  page size, fonts (standard PDF fonts or `.ttf`/`.otf` bytes), colours, fixed wording, the
+  position, sizes and wrap width of the centred text, and the date's position and format (locale
+  or a function). It can be a function of the certificate, course and student, for layouts that
+  depend on certificate fields. `certificates.render` replaces the PDF entirely, with
+  `renderDefault(layout?)` to start from the built-in one. A fixed layout is checked at startup. See
+  [Change the layout](./docs/how-to/certificates.md#change-the-layout). Without either option the
+  PDF is the same as before.
+
+### Changed
+
+- A certificate whose description has no text (for example empty rich text paragraphs) prints
+  "Certificate of Completion", like a certificate with no description, instead of "has completed a
+  1 hour online Masterclass on the topic of". Set `layout.text.defaultDescription` to choose the
+  wording.
+
 ## 2.0.13
 
 ### Added

@@ -184,7 +184,7 @@ This plugin is highly configurable. You can enable or disable features and custo
 | `questions`    | `boolean \| { questionTypes?: QuestionTypeOption[], questionsCollection?: CollectionOverride }` | Enables and configures the `questions` collection for quizzes. You can customize available question types. |
 | `categories`   | `boolean \| { ... }`               | Enables and configures the `categories` collection for courses.                                         |
 | `tags`         | `boolean \| { ... }`               | Enables and configures the `tags` collection for content organization.                                  |
-| `certificates` | `boolean \| { ... }`               | Enables and configures the `certificates` collection for course completion awards.                      |
+| `certificates` | `boolean \| { ... }`               | Enables and configures the `certificates` collection for course completion awards. `layout` and `render` change the PDF ([guide](./docs/how-to/certificates.md#change-the-layout)). |
 | `groups`       | `boolean \| { ... }`               | Enables and configures the `groups` collection to manage student cohorts.                               |
 | `currencies`   | `{ defaultCurrency: string, supportedCurrencies: Currency[] }` | **Required.** Configures the default and supported currencies for course pricing. |
 | `endpoints`    | `Endpoint[]`                       | An array of custom [Payload endpoints](https://payloadcms.com/docs/rest-api/endpoints) to add to your config. |

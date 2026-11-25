@@ -1,10 +1,18 @@
 import type { SanitizedConfig } from 'payload'
 import type { PDFFont, PDFImage, PDFPage } from 'pdf-lib'
 
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { PDFDocument, rgb } from 'pdf-lib'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - @pdf-lib/fontkit doesn't have proper TypeScript definitions
 import fontkit from '@pdf-lib/fontkit'
+
+import type { CertificateFont } from '../types.js'
+
+import {
+  colorChannels,
+  DEFAULT_CERTIFICATE_LAYOUT,
+  type ResolvedCertificateLayout,
+} from '../certificates/layout.js'
 
 // Type for Payload rich text field (Lexical editor state)
 type RichTextNode = {
@@ -34,13 +42,15 @@ type createPDFProps = {
   certificateNumber: string
   completionDate: string
   courseTitle: string
-  description: RichText | string
-  fontFamily: string
+  description?: RichText | string
+  layout?: ResolvedCertificateLayout
   /** Payload's `sharp`, used to shrink the template image. Without it the image is embedded as uploaded. */
   sharp?: Sharp
   studentName: string
   templateImage: string
 }
+
+type BodySizes = ResolvedCertificateLayout['body']['sizes']
 
 // A4 landscape at about 200 dpi: sharp in print, small enough to download and store per student
 const TEMPLATE_MAX_WIDTH = 2400
@@ -160,12 +170,12 @@ const wrapText = (text: string, maxWidth: number, fontSize: number, font: PDFFon
   return lines.length > 0 ? lines : [text]
 }
 
-type BodyLine = { bold: boolean; color: 'black' | 'blue'; size: number; text: string; y: number }
+type BodyLine = { bold: boolean; color: 'courseTitle' | 'text'; size: number; text: string; y: number }
 
 type BodySection = {
   bold: boolean
   color: BodyLine['color']
-  /** Baseline distance from the previous section's last line */
+  /** Baseline distance from the previous section's last line, as a multiple of `size` */
   gap: number
   /** Baseline distance between wrapped lines, as a multiple of `size` */
   leading: number
@@ -173,17 +183,18 @@ type BodySection = {
   texts: string[]
 }
 
-/** The lowest baseline the body may use, clear of the logo and signature area on the template */
-export const BODY_BOTTOM = 165
+/** The lowest baseline the body may use by default, clear of the logo and signature area on the template */
+export const BODY_BOTTOM = DEFAULT_CERTIFICATE_LAYOUT.body.bottom
 const MIN_BODY_SCALE = 0.5
 const BODY_SCALE_STEP = 0.05
 
 /**
  * Lays out the description, course title and presenter below the student name. Sizes and gaps
- * start at the template's design (20pt description, 24pt title, 16pt "presented by", 18pt
- * presenter) and shrink together in 5% steps, down to half size, until the last line sits at or
- * above `bottom`, so a long title or presenter cannot run into the logo. At half size the lines
- * are returned even if they do not fit.
+ * start at `sizes` (by default 20pt description, 24pt title, 16pt "presented by", 18pt presenter)
+ * and shrink together in 5% steps, down to half size, until the last line sits at or above
+ * `bottom`, so a long title or presenter cannot run into the logo. At half size the lines are
+ * returned even if they do not fit. Gaps are proportional to the sizes so that larger text in a
+ * site's layout does not overlap.
  */
 export const layoutCertificateBody = ({
   blocks,
@@ -192,7 +203,9 @@ export const layoutCertificateBody = ({
   courseTitle,
   font,
   maxWidth,
+  presentedBy = DEFAULT_CERTIFICATE_LAYOUT.text.presentedBy,
   presenter,
+  sizes = DEFAULT_CERTIFICATE_LAYOUT.body.sizes,
   top,
 }: {
   blocks: DescriptionBlock[]
@@ -201,24 +214,36 @@ export const layoutCertificateBody = ({
   courseTitle: string
   font: PDFFont
   maxWidth: number
+  /** Label above the presenter; empty leaves it out */
+  presentedBy?: string
   presenter?: string
+  sizes?: BodySizes
   /** Baseline of the student name */
   top: number
 }): BodyLine[] => {
   const sections: BodySection[] = [
     ...blocks.map((block, index) => ({
       bold: block.bold,
-      color: 'black' as const,
-      gap: index === 0 ? 50 : 26,
+      color: 'text' as const,
+      gap: index === 0 ? 50 / 20 : 26 / 20,
       leading: 1.3,
-      size: 20,
+      size: sizes.description,
       texts: [block.text],
     })),
-    { bold: true, color: 'blue', gap: 50, leading: 1.25, size: 24, texts: [courseTitle] },
+    { bold: true, color: 'courseTitle', gap: 50 / 24, leading: 1.25, size: sizes.courseTitle, texts: [courseTitle] },
+    ...(presenter && presentedBy
+      ? [{ bold: false, color: 'text' as const, gap: 44 / 16, leading: 1.25, size: sizes.presentedBy, texts: [presentedBy] }]
+      : []),
     ...(presenter
       ? [
-          { bold: false, color: 'black' as const, gap: 44, leading: 1.25, size: 16, texts: ['presented by'] },
-          { bold: false, color: 'black' as const, gap: 22, leading: 1.25, size: 18, texts: [presenter] },
+          {
+            bold: false,
+            color: 'text' as const,
+            gap: (presentedBy ? 22 : 44) / 18,
+            leading: 1.25,
+            size: sizes.presenter,
+            texts: [presenter],
+          },
         ]
       : []),
   ]
@@ -230,7 +255,7 @@ export const layoutCertificateBody = ({
       const size = section.size * scale
       const wrapped = section.texts.flatMap((text) => wrapText(text, maxWidth, size, section.bold ? boldFont : font))
       wrapped.forEach((text, index) => {
-        y -= index === 0 ? section.gap * scale : size * section.leading
+        y -= index === 0 ? section.gap * size : size * section.leading
         lines.push({ bold: section.bold, color: section.color, size, text, y })
       })
     }
@@ -240,45 +265,52 @@ export const layoutCertificateBody = ({
   }
 }
 
+const embedFont = (pdfDoc: PDFDocument, font: CertificateFont): Promise<PDFFont> =>
+  typeof font === 'string' ? pdfDoc.embedFont(font) : pdfDoc.embedFont(font, { subset: true })
+
 export const createPDF = async ({
   authorName: rawAuthorName,
   completionDate: rawCompletionDate,
   courseTitle: rawCourseTitle,
   description,
+  layout = DEFAULT_CERTIFICATE_LAYOUT,
   sharp,
   studentName: rawStudentName,
   templateImage,
 }: createPDFProps): Promise<Uint8Array> => {
-  // Validate inputs
   if (!rawStudentName || !rawCourseTitle) {
     throw new Error('Missing required fields: studentName and courseTitle are required')
   }
 
-  // Create a new PDF document
   const pdfDoc = await PDFDocument.create()
-
-  // Register fontkit for custom font support
+  // Needed to embed font files
   pdfDoc.registerFontkit(fontkit)
 
-  // Add a page (A4 size in landscape orientation)
-  const page: PDFPage = pdfDoc.addPage([842, 595]) // A4 landscape dimensions
+  const page: PDFPage = pdfDoc.addPage(layout.pageSize)
+  const primaryFont = await embedFont(pdfDoc, layout.fonts.regular)
+  const boldFont = await embedFont(pdfDoc, layout.fonts.bold)
 
-  // Helvetica matches the sans-serif certificate template
-  const primaryFont: PDFFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
-  const boldFont: PDFFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-
-  // Helvetica and Helvetica Bold share the WinAnsi character set
-  const characterSet = new Set(primaryFont.getCharacterSet())
+  // A line can use either font, so only characters both can draw are safe
+  const boldCharacters = new Set(boldFont.getCharacterSet())
+  const characterSet = new Set(primaryFont.getCharacterSet().filter((code) => boldCharacters.has(code)))
   const drawable = (text: string) => toDrawableText(text, characterSet)
   const authorName = rawAuthorName ? drawable(rawAuthorName).trim() : undefined
   const completionDate = drawable(rawCompletionDate)
   const courseTitle = drawable(rawCourseTitle)
   const studentName = drawable(rawStudentName)
+  const text = {
+    defaultDescription: drawable(layout.text.defaultDescription).trim(),
+    intro: drawable(layout.text.intro).trim(),
+    presentedBy: drawable(layout.text.presentedBy).trim(),
+  }
+  const colors = {
+    courseTitle: rgb(...colorChannels(layout.colors.courseTitle)),
+    studentName: rgb(...colorChannels(layout.colors.studentName)),
+    text: rgb(...colorChannels(layout.colors.text)),
+  }
 
-  // Get page dimensions
   const { height, width } = page.getSize()
 
-  // Add background image if provided
   if (templateImage) {
     try {
       const imageResponse = await fetch(templateImage)
@@ -292,10 +324,7 @@ export const createPDF = async ({
         image = await pdfDoc.embedPng(imageBytes)
       }
 
-      // Scale image to fit page
       const imageDims = image.scaleToFit(width, height)
-
-      // Center the image on the page
       page.drawImage(image, {
         height: imageDims.height,
         width: imageDims.width,
@@ -309,59 +338,47 @@ export const createPDF = async ({
     }
   }
 
-  // Add certificate content - Updated template layout
-  const centerX = width / 2
+  const { sizes } = layout.body
+  const centerX = width * layout.body.center
+  const getCenteredX = (line: string, fontSize: number, font: PDFFont): number =>
+    centerX - font.widthOfTextAtSize(line, fontSize) / 2
 
-  // Helper function to center text horizontally
-  const getCenteredX = (text: string, fontSize: number, font: PDFFont): number => {
-    try {
-      // pdf-lib fonts have widthOfTextAtSize method
-      const textWidth = font.widthOfTextAtSize(text, fontSize)
-      return centerX - textWidth / 2
-    } catch {
-      // Fallback: estimate based on character count (approximate)
-      const estimatedWidth = text.length * (fontSize * 0.6)
-      return centerX - estimatedWidth / 2
-    }
+  // The default top puts the intro just below the template's "CERTIFICATE OF COMPLETION" heading
+  let currentY = height - layout.body.top
+
+  if (text.intro) {
+    page.drawText(text.intro, {
+      color: colors.text,
+      font: primaryFont,
+      size: sizes.intro,
+      x: getCenteredX(text.intro, sizes.intro, primaryFont),
+      y: currentY,
+    })
+    currentY -= (50 / 22) * sizes.studentName
   }
 
-  // Starting Y position - "This certifies that" should be just below the "CERTIFICATE OF COMPLETION" heading
-  // Position text higher on the page, just below the heading
-  let currentY = height - 190
-
-  // "This certifies that" - static text, 20pt, positioned below the certificate heading
-  const certifiesText = 'this certifies that'
-  page.drawText(certifiesText, {
-    color: rgb(0, 0, 0),
-    font: primaryFont,
-    size: 20,
-    x: getCenteredX(certifiesText, 20, primaryFont),
-    y: currentY,
-  })
-
-  // Student name - ensure there's a space between first and last name
-  // Trim and normalize spaces in studentName
   const normalizedStudentName = studentName.trim().replace(/\s+/g, ' ')
-  currentY -= 50
   page.drawText(normalizedStudentName, {
-    color: rgb(0.8, 0.2, 0.4), // Pink color to match template
+    color: colors.studentName,
     font: boldFont,
-    size: 22,
-    x: getCenteredX(normalizedStudentName, 22, boldFont),
+    size: sizes.studentName,
+    x: getCenteredX(normalizedStudentName, sizes.studentName, boldFont),
     y: currentY,
   })
 
   const blocks = descriptionBlocks(description)
     .map((block) => ({ ...block, text: drawable(block.text).trim() }))
     .filter((block) => block.text)
-  const colors = { black: rgb(0, 0, 0), blue: rgb(64 / 255, 84 / 255, 165 / 255) }
   const bodyLines = layoutCertificateBody({
-    blocks: blocks.length ? blocks : [{ bold: false, text: 'has completed a 1 hour online Masterclass on the topic of' }],
+    blocks: blocks.length ? blocks : text.defaultDescription ? [{ bold: false, text: text.defaultDescription }] : [],
     boldFont,
+    bottom: layout.body.bottom,
     courseTitle,
     font: primaryFont,
-    maxWidth: width * 0.7,
+    maxWidth: width * layout.body.maxWidth,
+    presentedBy: text.presentedBy,
     presenter: authorName || undefined,
+    sizes,
     top: currentY,
   })
   for (const line of bodyLines) {
@@ -375,28 +392,23 @@ export const createPDF = async ({
     })
   }
 
-  // Completion date - positioned above "DATE" line in bottom right
-  // The "DATE" label is in the bottom right, date should be above that line, moved left and higher
-  const dateTextWidth = primaryFont.widthOfTextAtSize(completionDate, 12)
-  const dateX = width - 150 - dateTextWidth // Right-aligned, 150px from right edge (moved left)
-  page.drawText(completionDate, {
-    color: rgb(0, 0, 0),
-    font: primaryFont,
-    size: 12,
-    x: dateX,
-    y: 100, // Position higher above the "DATE" label line
-  })
+  // By default above the "DATE" line in the template's bottom right
+  if (layout.date && completionDate) {
+    const { right, size, y } = layout.date
+    page.drawText(completionDate, {
+      color: colors.text,
+      font: primaryFont,
+      size,
+      x: width - right - primaryFont.widthOfTextAtSize(completionDate, size),
+      y,
+    })
+  }
 
-  // Set document metadata
   pdfDoc.setTitle(`Certificate of Completion - ${studentName}`)
   pdfDoc.setAuthor(authorName || 'LMS System')
   pdfDoc.setSubject(`Certificate for ${courseTitle}`)
   pdfDoc.setKeywords(['certificate', 'completion', 'course', 'education'])
   pdfDoc.setCreationDate(new Date())
 
-  // Generate PDF bytes
-  const pdfBytes = await pdfDoc.save()
-
-  // Return the Uint8Array directly - the calling code can convert to blob if needed
-  return pdfBytes
+  return pdfDoc.save()
 }

@@ -1,5 +1,6 @@
 import type { SanitizedConfig } from 'payload';
 import type { PDFFont } from 'pdf-lib';
+import { type ResolvedCertificateLayout } from '../certificates/layout.js';
 type RichTextNode = {
     [k: string]: unknown;
     children?: RichTextNode[];
@@ -24,13 +25,14 @@ type createPDFProps = {
     certificateNumber: string;
     completionDate: string;
     courseTitle: string;
-    description: RichText | string;
-    fontFamily: string;
+    description?: RichText | string;
+    layout?: ResolvedCertificateLayout;
     /** Payload's `sharp`, used to shrink the template image. Without it the image is embedded as uploaded. */
     sharp?: Sharp;
     studentName: string;
     templateImage: string;
 };
+type BodySizes = ResolvedCertificateLayout['body']['sizes'];
 /**
  * Templates are often uploaded as large PNGs (5 MB or more). pdf-lib embeds images byte for byte,
  * so every certificate would carry the full file. Resize to print resolution and re-encode as JPEG,
@@ -56,30 +58,34 @@ type DescriptionBlock = {
 export declare const descriptionBlocks: (richText: RichText | string | undefined) => DescriptionBlock[];
 type BodyLine = {
     bold: boolean;
-    color: 'black' | 'blue';
+    color: 'courseTitle' | 'text';
     size: number;
     text: string;
     y: number;
 };
-/** The lowest baseline the body may use, clear of the logo and signature area on the template */
-export declare const BODY_BOTTOM = 165;
+/** The lowest baseline the body may use by default, clear of the logo and signature area on the template */
+export declare const BODY_BOTTOM: number;
 /**
  * Lays out the description, course title and presenter below the student name. Sizes and gaps
- * start at the template's design (20pt description, 24pt title, 16pt "presented by", 18pt
- * presenter) and shrink together in 5% steps, down to half size, until the last line sits at or
- * above `bottom`, so a long title or presenter cannot run into the logo. At half size the lines
- * are returned even if they do not fit.
+ * start at `sizes` (by default 20pt description, 24pt title, 16pt "presented by", 18pt presenter)
+ * and shrink together in 5% steps, down to half size, until the last line sits at or above
+ * `bottom`, so a long title or presenter cannot run into the logo. At half size the lines are
+ * returned even if they do not fit. Gaps are proportional to the sizes so that larger text in a
+ * site's layout does not overlap.
  */
-export declare const layoutCertificateBody: ({ blocks, boldFont, bottom, courseTitle, font, maxWidth, presenter, top, }: {
+export declare const layoutCertificateBody: ({ blocks, boldFont, bottom, courseTitle, font, maxWidth, presentedBy, presenter, sizes, top, }: {
     blocks: DescriptionBlock[];
     boldFont: PDFFont;
     bottom?: number;
     courseTitle: string;
     font: PDFFont;
     maxWidth: number;
+    /** Label above the presenter; empty leaves it out */
+    presentedBy?: string;
     presenter?: string;
+    sizes?: BodySizes;
     /** Baseline of the student name */
     top: number;
 }) => BodyLine[];
-export declare const createPDF: ({ authorName: rawAuthorName, completionDate: rawCompletionDate, courseTitle: rawCourseTitle, description, sharp, studentName: rawStudentName, templateImage, }: createPDFProps) => Promise<Uint8Array>;
+export declare const createPDF: ({ authorName: rawAuthorName, completionDate: rawCompletionDate, courseTitle: rawCourseTitle, description, layout, sharp, studentName: rawStudentName, templateImage, }: createPDFProps) => Promise<Uint8Array>;
 export {};

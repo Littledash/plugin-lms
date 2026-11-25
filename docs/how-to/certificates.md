@@ -138,13 +138,135 @@ and the completion date in the bottom right. The description and the lines below
 the page width and shrink together, down to half size, so the presenter stays clear of the logo
 area at the bottom of the template even with a long course title. Keep the description to what the
 layout does not already print, for example "has completed a 1-hour online masterclass on the topic
-of"; do not repeat the student, course or presenter in it.
+of"; do not repeat the student, course or presenter in it. A certificate without a description
+prints "Certificate of Completion".
+
+This is the default layout. Each site can change it; see [Change the layout](#change-the-layout).
 
 Characters the PDF font cannot draw are replaced rather than failing the certificate: invisible
 formatting characters are removed, accented letters the font lacks lose the accent, and anything
-else (emoji, non-Latin scripts) prints as `?`.
+else (emoji, non-Latin scripts) prints as `?`. The default fonts cover Latin text only; give the
+layout a font file to print other scripts.
 
 The template is resized to fit A4 landscape at about 200 dpi (2400 × 1700 pixels at most) and
 embedded as a JPEG, with transparent areas filled white, so each PDF stays under about 1 MB however
 large the upload is. This uses the `sharp` set in your Payload config. Without it, the image is
 embedded as uploaded. PDFs that were already stored keep their size until they are regenerated.
+
+## Change the layout
+
+The default layout was designed for one A4 landscape template. Set `certificates.layout` in the
+plugin config to fit your own template. Every property is optional; anything you leave out keeps
+its default. Positions and sizes are in PDF points (1/72 inch), measured from the bottom left of the
+page. A4 landscape is 842 × 595.
+
+```typescript
+import { readFileSync } from 'node:fs'
+
+lmsPlugin({
+  certificates: {
+    layout: {
+      pageSize: [842, 595], // A4 landscape; [595, 842] for portrait
+      fonts: {
+        // A standard PDF font name, or the bytes of a .ttf / .otf file
+        regular: readFileSync('src/fonts/Poppins-Regular.ttf'),
+        bold: readFileSync('src/fonts/Poppins-Bold.ttf'),
+      },
+      colors: { text: '#222222', studentName: '#0b6e4f', courseTitle: '#0b6e4f' },
+      text: {
+        intro: 'This is to certify that', // '' leaves the line out
+        presentedBy: 'with', // '' prints the presenter without a label
+        defaultDescription: 'has successfully completed', // when the certificate has no description
+      },
+      body: {
+        top: 210, // intro baseline, measured down from the top of the page
+        bottom: 140, // lowest baseline, above logos and signatures
+        center: 0.5, // horizontal centre, as a fraction of the page width
+        maxWidth: 0.6, // wrap width, as a fraction of the page width
+        sizes: { intro: 18, studentName: 32, description: 16, courseTitle: 22, presentedBy: 14, presenter: 16 },
+      },
+      date: {
+        locale: 'en-AU', // "26 November 2025"
+        // or format: (date) => date.toISOString().slice(0, 10),
+        right: 120, // right edge of the date, from the right edge of the page
+        y: 80,
+        size: 12,
+      },
+      // date: false leaves the date out
+    },
+  },
+})
+```
+
+The gaps between lines scale with the font sizes, so larger text does not overlap. A fixed layout
+is checked when Payload starts: a colour that is not `#rrggbb`, a negative position or a fraction
+above 1 stops the app with a message naming the property.
+
+### A different layout per certificate
+
+Pass a function to choose the layout for each certificate. It receives the certificate (at depth
+1), the course and the student, so it can read fields you add to the certificates collection:
+
+```typescript
+lmsPlugin({
+  certificates: {
+    certificatesCollection: {
+      fields: ({ defaultFields }) => [
+        ...defaultFields,
+        { name: 'orientation', type: 'select', defaultValue: 'landscape', options: ['landscape', 'portrait'] },
+      ],
+    },
+    layout: ({ certificate }) =>
+      certificate.orientation === 'portrait'
+        ? { pageSize: [595, 842], body: { top: 260, bottom: 200 } }
+        : {},
+  },
+})
+```
+
+A function's layout is checked when each certificate is generated, and an invalid one fails that
+request with a 500.
+
+### Replace the PDF entirely
+
+When the layout options are not enough, `certificates.render` replaces the built-in PDF. It
+receives the certificate, course and student documents, the text to print (`studentName`,
+`courseTitle`, `completionDate` formatted by the layout, `completedDate` as a `Date`,
+`presenterName`, `description`, `templateImage`) and the resolved `layout`, and returns the PDF
+bytes. Build them with pdf-lib, a headless browser or a PDF service.
+
+```typescript
+import { PDFDocument, StandardFonts } from 'pdf-lib'
+
+lmsPlugin({
+  certificates: {
+    render: async ({ studentName, courseTitle, completionDate }) => {
+      const pdf = await PDFDocument.create()
+      const page = pdf.addPage([842, 595])
+      const font = await pdf.embedFont(StandardFonts.TimesRoman)
+      page.drawText(`${studentName} completed ${courseTitle} on ${completionDate}`, { x: 60, y: 300, size: 20, font })
+      return pdf.save()
+    },
+  },
+})
+```
+
+`renderDefault(layout?)` renders the built-in certificate with extra layout changes, so a render
+function can adjust the layout per student or add pages to the default certificate:
+
+```typescript
+render: async ({ renderDefault, student }) => {
+  const pdf = await PDFDocument.load(await renderDefault())
+  // ... add a transcript page
+  return pdf.save()
+}
+```
+
+The plugin still checks the award, stores the result in the private documents collection and
+returns it from `generate-certificate` and `renderCertificatePDF` as before. A render function
+that does not return bytes fails the request, and nothing is stored. Print only the data you are
+given: the PDF is readable by the student, and by anyone they share it with.
+
+Certificates already stored keep the old layout. A stored PDF is regenerated only when it is
+missing, so to reissue one, clear `certificates[].document` on the student (as an admin) and
+request it again.

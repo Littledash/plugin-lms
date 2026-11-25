@@ -8,12 +8,17 @@
 import type { Payload } from 'payload'
 
 import { MongoMemoryReplSet } from 'mongodb-memory-server'
+import { readFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { inflateSync } from 'node:zlib'
 import { getPayload } from 'payload'
 import { PDFDocument, PDFName, PDFRawStream, StandardFonts } from 'pdf-lib'
 import sharp from 'sharp'
 
 import { isAdminOrAuthorOrEnrolledInCourse } from '../src/access/isAdminOrAuthorOrEnrolledInCourse.js'
+import { resolveCertificateLayout } from '../src/certificates/layout.js'
 import {
   addUserToGroup,
   completeCourse,
@@ -25,6 +30,7 @@ import {
   unenrollGroup,
   unenrollUser,
 } from '../src/exports/services.js'
+import { lmsPlugin } from '../src/index.js'
 import { BODY_BOTTOM, descriptionBlocks, layoutCertificateBody, toDrawableText } from '../src/utilities/createPDF.js'
 import { NextRESTClient } from './helpers/NextRESTClient.js'
 import { docx, zip } from './helpers/zip.js'
@@ -1869,7 +1875,7 @@ describe('service edge cases', () => {
     expect(short.map((line) => line.size)).toStrictEqual([20, 24, 16, 18])
 
     const long = layoutCertificateBody({ blocks, boldFont, courseTitle: longTitle, font, maxWidth, presenter, top: 355 })
-    const titleLines = long.filter((line) => line.color === 'blue')
+    const titleLines = long.filter((line) => line.color === 'courseTitle')
     expect(titleLines.length).toBeGreaterThan(1)
     expect(titleLines[0].size).toBeLessThan(24)
     expect(long.at(-1)).toMatchObject({ text: presenter })
@@ -1889,7 +1895,7 @@ describe('service edge cases', () => {
       maxWidth,
       top: 355,
     })
-    expect(wrapped.filter((line) => line.color === 'black').length).toBeGreaterThan(1)
+    expect(wrapped.filter((line) => line.color === 'text').length).toBeGreaterThan(1)
   })
 
   it('prints the presenter name instead of the author when one is set', async () => {
@@ -2052,6 +2058,174 @@ describe('service edge cases', () => {
         userId: user.id,
       }),
     ).rejects.toMatchObject({ message: 'Company name is required to create a new group.', status: 400 })
+  })
+})
+
+describe('certificate layout', () => {
+  type CertificateSettings = { layout?: unknown; render?: unknown }
+  const settings = () => (payload.config.custom.lms as { certificates: CertificateSettings }).certificates
+
+  const awarded = async (data: Record<string, unknown> = {}) => {
+    const certificate = (await payload.create({
+      collection: 'certificates',
+      data: { title: 'Layout', ...data },
+    })) as unknown as Doc
+    const lesson = await createLesson()
+    const course = await createCourse({ certificate: certificate.id, lessons: [{ lesson: lesson.id }] })
+    const user = await createUser()
+    await enroll(user, course)
+    await post(await clientFor(user), 'complete-lesson', { courseId: course.id, lessonId: lesson.id })
+    return { certificate, course, user }
+  }
+
+  const render = async ({ certificate, course, user }: { certificate: Doc; course: Doc; user: Doc }) =>
+    (await renderCertificatePDF({ certificateId: certificate.id, courseId: course.id, req: { payload } as never, userId: user.id })).data
+
+  // Each test sets its own layout; the dev config has none
+  afterEach(() => {
+    const current = settings()
+    delete current.layout
+    delete current.render
+  })
+
+  it('prints the built-in wording and A4 landscape page without a layout', async () => {
+    const award = await awarded({ presenterName: 'Dr Presenter' })
+    const pdf = await render(award)
+    const text = await pdfText(pdf)
+    expect(text).toStrictEqual(
+      expect.arrayContaining(['this certifies that', 'Certificate of Completion', 'presented by', 'Dr Presenter', award.course.title]),
+    )
+    expect((await PDFDocument.load(pdf)).getPage(0).getSize()).toStrictEqual({ height: 595, width: 842 })
+  })
+
+  it('applies the site layout to wording, date and page size', async () => {
+    const formatted: Date[] = []
+    settings().layout = {
+      date: {
+        format: (date: Date) => {
+          formatted.push(date)
+          return 'Awarded on a test day'
+        },
+      },
+      pageSize: [595, 842],
+      text: { defaultDescription: 'completed the course', intro: 'awarded to', presentedBy: '' },
+    }
+    const award = await awarded({ presenterName: 'Dr Presenter' })
+    const pdf = await render(award)
+
+    const text = await pdfText(pdf)
+    expect(text).toStrictEqual(
+      expect.arrayContaining(['awarded to', 'completed the course', 'Dr Presenter', 'Awarded on a test day']),
+    )
+    expect(text).not.toContain('this certifies that')
+    expect(text).not.toContain('presented by')
+    expect(formatted).toHaveLength(1)
+    expect(formatted[0]).toBeInstanceOf(Date)
+    expect((await PDFDocument.load(pdf)).getPage(0).getSize()).toStrictEqual({ height: 842, width: 595 })
+  })
+
+  it('leaves the date out when the layout turns it off', async () => {
+    settings().layout = { date: { format: () => 'Dated' } }
+    const award = await awarded()
+    expect(await pdfText(await render(award))).toContain('Dated')
+
+    settings().layout = { date: false }
+    expect(await pdfText(await render(award))).not.toContain(
+      new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+    )
+  })
+
+  it('calls a layout function with the certificate, course and student', async () => {
+    const calls: { certificate: unknown; course: unknown; student: unknown }[] = []
+    settings().layout = ({ certificate, course, student }: { certificate: Doc; course: Doc; student: Doc }) => {
+      calls.push({ certificate: certificate.id, course: course.id, student: student.id })
+      return { text: { intro: `intro for ${String(certificate.title)}` } }
+    }
+    const award = await awarded({ title: 'Per certificate' })
+
+    expect(await pdfText(await render(award))).toContain('intro for Per certificate')
+    expect(calls).toStrictEqual([{ certificate: award.certificate.id, course: award.course.id, student: award.user.id }])
+  })
+
+  it('embeds a font file from the layout', async () => {
+    const require = createRequire(import.meta.url)
+    const nextDir = path.dirname(require.resolve('next/package.json'))
+    const font = await readFile(path.join(nextDir, 'dist/compiled/@vercel/og/Geist-Regular.ttf'))
+    settings().layout = { fonts: { bold: font, regular: font } }
+
+    const pdf = await PDFDocument.load(await render(await awarded()))
+    const fontNames = pdf.context
+      .enumerateIndirectObjects()
+      .map(([, object]) => (object as { dict?: { get: (key: PDFName) => unknown } }).dict?.get(PDFName.of('BaseFont')))
+      .filter(Boolean)
+      .map(String)
+    expect(fontNames.some((name) => name.includes('Geist'))).toBe(true)
+    expect(fontNames.some((name) => name.includes('Helvetica'))).toBe(false)
+  })
+
+  it('stores the PDF from a render function through the endpoint', async () => {
+    const seen: Record<string, unknown>[] = []
+    settings().render = async (args: { renderDefault: (layout: unknown) => Promise<Uint8Array> } & Record<string, unknown>) => {
+      seen.push(args)
+      return args.renderDefault({ text: { intro: 'rendered by the site' } })
+    }
+    const award = await awarded({ presenterName: 'Dr Presenter' })
+
+    const response = await post(await clientFor(award.user), 'generate-certificate', {
+      certificateId: award.certificate.id,
+      courseId: award.course.id,
+    })
+    expect(response.status).toBe(200)
+
+    const stored = (await payload.findByID({ id: response.body.certificate.id, collection: 'documents', depth: 0 })) as unknown as Doc
+    expect(String(stored.owner)).toBe(award.user.id)
+    const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 'documents')
+    expect(await pdfText(await readFile(path.join(dir, stored.filename)))).toContain('rendered by the site')
+
+    expect(seen).toHaveLength(1)
+    expect(seen[0]).toMatchObject({
+      courseTitle: award.course.title,
+      presenterName: 'Dr Presenter',
+      studentName: `${award.user.firstName} ${award.user.lastName}`,
+      templateImage: '',
+    })
+    expect((seen[0].certificate as Doc).id).toBe(award.certificate.id)
+    expect((seen[0].student as Doc).id).toBe(award.user.id)
+    expect(seen[0].completedDate).toBeInstanceOf(Date)
+  })
+
+  it('uses the bytes a render function returns and refuses anything else', async () => {
+    const custom = await PDFDocument.create()
+    custom.addPage([200, 100])
+    const bytes = await custom.save()
+    settings().render = () => bytes
+    const award = await awarded()
+    expect(Buffer.compare(await render(award), Buffer.from(bytes))).toBe(0)
+
+    settings().render = () => 'not a pdf'
+    await expect(render(award)).rejects.toThrow('must return the PDF bytes')
+    // Nothing is stored when rendering fails
+    await expect(
+      generateCertificate({ certificateId: award.certificate.id, courseId: award.course.id, req: { payload } as never, userId: award.user.id }),
+    ).rejects.toThrow('must return the PDF bytes')
+    expect((await payload.find({ collection: 'documents', where: { owner: { equals: award.user.id } } })).docs).toHaveLength(0)
+  })
+
+  it('refuses a layout the PDF cannot use', async () => {
+    expect(() => resolveCertificateLayout({ colors: { text: 'red' } })).toThrow('colors.text')
+    expect(() => resolveCertificateLayout({ body: { maxWidth: 2 } })).toThrow('body.maxWidth')
+    expect(() => resolveCertificateLayout({ pageSize: [0, 100] })).toThrow('pageSize[0]')
+    expect(() => resolveCertificateLayout({ fonts: { regular: 42 as never } })).toThrow('fonts.regular')
+    expect(resolveCertificateLayout({ body: { sizes: { intro: 30 } } }).body.sizes).toMatchObject({ intro: 30, studentName: 22 })
+
+    // A fixed layout is checked when the config is built
+    expect(() => lmsPlugin({ certificates: { layout: { colors: { studentName: '#12' } } } })({ collections: [] } as never)).toThrow(
+      'colors.studentName',
+    )
+
+    // A layout function is checked when the certificate is rendered
+    settings().layout = () => ({ body: { top: -1 } })
+    await expect(render(await awarded())).rejects.toThrow('body.top')
   })
 })
 

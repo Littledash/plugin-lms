@@ -5,6 +5,7 @@ import type { LMSPluginConfig, SanitizedLMSPluginConfig } from '../types.js'
 import { addressesCollection } from '../addresses/addressesCollection.js'
 import { categoriesCollection } from '../categoires/categoriesCollection.js'
 import { certificatesCollection } from '../certificates/certificatesCollection.js'
+import { resolveCertificateLayout } from '../certificates/layout.js'
 import { courseFilesCollection } from '../courseFiles/courseFilesCollection.js'
 import { coursesCollection } from '../courses/coursesCollection.js'
 import { documentsCollection } from '../documents/documentsCollection.js'
@@ -97,6 +98,11 @@ export const lmsPlugin =
         typeof sanitizedPluginConfig.certificates === 'object'
           ? sanitizedPluginConfig.certificates.certificatesCollection
           : undefined
+
+      // Check a fixed layout at startup rather than when the first certificate is generated
+      if (typeof sanitizedPluginConfig.certificates === 'object' && typeof sanitizedPluginConfig.certificates.layout === 'object') {
+        resolveCertificateLayout(sanitizedPluginConfig.certificates.layout)
+      }
 
       const certificates = certificatesCollection({
         mediaCollectionSlug: collectionSlugMap.media,
@@ -295,6 +301,10 @@ export const lmsPlugin =
         lms: {
           canSelfEnroll:
             typeof sanitizedPluginConfig.courses === 'object' ? sanitizedPluginConfig.courses.canSelfEnroll : undefined,
+          certificates:
+            typeof sanitizedPluginConfig.certificates === 'object'
+              ? { layout: sanitizedPluginConfig.certificates.layout, render: sanitizedPluginConfig.certificates.render }
+              : {},
           quizAttemptCooldownSeconds:
             typeof sanitizedPluginConfig.quizzes === 'object'
               ? (sanitizedPluginConfig.quizzes.attemptCooldownSeconds ?? 5)

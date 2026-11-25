@@ -126,8 +126,149 @@ export type CourseFilesConfig = {
   courseFilesCollection?: CollectionOverride
 }
 
+/**
+ * A PDF font: the name of one of the 14 standard PDF fonts (no file needed, Latin text only), or the
+ * bytes of a TrueType or OpenType file, which also prints the characters the file covers.
+ */
+export type CertificateFont =
+  | 'Courier'
+  | 'Courier-Bold'
+  | 'Courier-BoldOblique'
+  | 'Courier-Oblique'
+  | 'Helvetica'
+  | 'Helvetica-Bold'
+  | 'Helvetica-BoldOblique'
+  | 'Helvetica-Oblique'
+  | 'Times-Bold'
+  | 'Times-BoldItalic'
+  | 'Times-Italic'
+  | 'Times-Roman'
+  | ArrayBuffer
+  | Uint8Array
+
+/**
+ * Changes to the built-in certificate layout. Every property is optional and defaults to the layout
+ * described in docs/how-to/certificates.md. Positions and sizes are in PDF points (1/72 inch) with
+ * the origin at the bottom left of the page; A4 landscape is 842 × 595.
+ */
+export type CertificateLayout = {
+  /**
+   * The centred block: the intro line, student name, description, course title and presenter. Its
+   * lines below the student name shrink together, down to half size, until the last one is at or
+   * above `bottom`.
+   */
+  body?: {
+    /** Lowest baseline, clear of logos or signatures on the template. @default 165 */
+    bottom?: number
+    /** Horizontal centre, as a fraction of the page width. @default 0.5 */
+    center?: number
+    /** Width lines wrap to, as a fraction of the page width. @default 0.7 */
+    maxWidth?: number
+    /** Font sizes before shrinking. Gaps between lines scale with them. */
+    sizes?: {
+      /** @default 24 */
+      courseTitle?: number
+      /** @default 20 */
+      description?: number
+      /** @default 20 */
+      intro?: number
+      /** @default 16 */
+      presentedBy?: number
+      /** @default 18 */
+      presenter?: number
+      /** @default 22 */
+      studentName?: number
+    }
+    /** Distance from the top of the page to the intro line's baseline. @default 190 */
+    top?: number
+  }
+  /** Text colours as `#rrggbb`. */
+  colors?: {
+    /** @default '#4054a5' */
+    courseTitle?: string
+    /** @default '#cc3366' */
+    studentName?: string
+    /** Every other line. @default '#000000' */
+    text?: string
+  }
+  /** The completion date, right-aligned at `right` points from the right edge. `false` leaves it out. */
+  date?:
+    | {
+        /** Formats the award's completion date. Overrides `locale`. */
+        format?: (date: Date) => string
+        /** Locale for `toLocaleDateString`, printed as day, long month and year. @default 'en-US' */
+        locale?: string
+        /** @default 150 */
+        right?: number
+        /** @default 12 */
+        size?: number
+        /** Baseline. @default 100 */
+        y?: number
+      }
+    | false
+  fonts?: {
+    /** Student name, course title and description headings. @default 'Helvetica-Bold' */
+    bold?: CertificateFont
+    /** @default 'Helvetica' */
+    regular?: CertificateFont
+  }
+  /** Page size as `[width, height]`. @default [842, 595] */
+  pageSize?: [number, number]
+  /** Fixed wording. An empty string leaves that line out. */
+  text?: {
+    /** Printed when the certificate has no description. @default 'Certificate of Completion' */
+    defaultDescription?: string
+    /** Above the student name. @default 'this certifies that' */
+    intro?: string
+    /** Above the presenter. @default 'presented by' */
+    presentedBy?: string
+  }
+}
+
+export type CertificateLayoutArgs = {
+  /** The certificate at depth 1 */
+  certificate: { [key: string]: unknown; id: number | string }
+  /** The course at depth 0 */
+  course: { [key: string]: unknown; id: number | string }
+  req: PayloadRequest
+  /** The student at depth 0 */
+  student: { [key: string]: unknown; id: number | string }
+}
+
+export type CertificateRenderArgs = {
+  /** The award's completion date. */
+  completedDate: Date
+  /** `completedDate` formatted by the layout's `date` settings. */
+  completionDate: string
+  courseTitle: string
+  /** The certificate's description: Lexical rich text, a string, or undefined. */
+  description: unknown
+  /** The resolved layout. */
+  layout: CertificateLayout
+  /** The certificate's presenter name, else the first author's name. */
+  presenterName?: string
+  /** Renders the built-in certificate, with `layout` merged over the resolved layout. */
+  renderDefault: (layout?: CertificateLayout) => Promise<Uint8Array>
+  /** The first and last name. */
+  studentName: string
+  /** The template image's URL, or an empty string. */
+  templateImage: string
+} & CertificateLayoutArgs
+
 export type CertificateConfig = {
   certificatesCollection?: CollectionOverride
+  /**
+   * Changes the built-in layout. A function is called for each certificate, so the layout can
+   * depend on fields you add to the certificates collection.
+   */
+  layout?:
+    | ((args: CertificateLayoutArgs) => CertificateLayout | Promise<CertificateLayout>)
+    | CertificateLayout
+  /**
+   * Replaces the built-in PDF. Return the PDF bytes, for example from pdf-lib or a headless
+   * browser. Call `renderDefault` to start from the built-in certificate instead.
+   */
+  render?: (args: CertificateRenderArgs) => Promise<Uint8Array> | Uint8Array
 }
 
 export type QuestionTypeOption = {
